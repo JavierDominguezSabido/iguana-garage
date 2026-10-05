@@ -1,0 +1,46 @@
+# Dependencias y caches de Node
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/install-state.gz
+.pnp.*
+
+# Next.js, compilacion y TypeScript
+.next/
+/out/
+/dist/
+/build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Variables locales y secretos; solo plantillas sin valores reales son versionables
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Resultados de pruebas
+/coverage/
+/playwright-report/
+/test-results/
+/blob-report/
+
+# Estado local de Supabase; conservar migraciones y configuracion reproducible
+/supabase/.temp/
+/supabase/.branches/
+
+# Temporales del sistema y logs
+*.log
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+
+# Conservar lockfiles, documentacion, assets/ y references/.
