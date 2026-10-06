@@ -1,6 +1,6 @@
 # Infraestructura Supabase
 
-Proyecto de desarrollo autorizado: `iguana-garage` (`atibisongftmspwtyndv`). Las migraciones fueron aplicadas mediante el conector Supabase y sus versiones locales coinciden con el historial remoto. No se utiliza LiftTrack. Sin interfaces de producto, datos demo ni copias públicas de assets.
+Proyecto de desarrollo autorizado: `iguana-garage` (`atibisongftmspwtyndv`). Las migraciones fueron aplicadas mediante el conector Supabase y sus versiones locales coinciden con el historial remoto. No se utiliza LiftTrack. La V1 incorpora área privada y portfolio real sobre esta infraestructura; los fixtures de QA se limpian y no se copian assets demo a carpetas públicas.
 
 ## Modelo y permisos
 
@@ -14,7 +14,9 @@ RLS activado en ambas tablas. Autenticados solo pueden SELECT/INSERT/UPDATE/DELE
 
 - `job-originals`: bucket **privado**, JPEG/PNG/WebP, máximo 10 MiB. Ruta `owner_uuid/job_uuid/media_uuid.ext`. INSERT exige ámbito propio y trabajo propio existente. SELECT/DELETE restringidos al ámbito propio; permiten limpiar originales huérfanos. Sin UPDATE/upsert.
 - `portfolio-derivatives`: bucket **privado**, solo WebP, máximo 5 MiB. Ruta `job_uuid/media_uuid.webp`. Escritura/borrado exigen medio de un trabajo propio. El MVP privado genera derivados en servidor con Sharp: decodificación completa, orientación, hasta 1600 px por lado, WebP y eliminación de metadatos. No se copian originales como publicación; el usuario revisa qué fotos hace públicas mediante el control `is_public`.
-- Lectura pública de derivados solo mediante operaciones Storage de descarga/información autenticada con clave publicable, y solo si el trabajo sigue publicado. No enumeración anónima, URLs de bucket público ni firma anónima. Usar `cacheControl: "0"` en la futura publicación y respuestas sin caché compartida. Al despublicar, la siguiente petición se vuelve a autorizar; no se pueden recuperar archivos ya descargados.
+- Lectura pública de derivados solo mediante operaciones Storage de descarga/información autenticada con clave publicable, y solo si el trabajo sigue publicado. No enumeración anónima, URLs de bucket público ni firma anónima. Las subidas usan `cacheControl: "0"`; la home y la entrega de imágenes evitan caché compartida. Al despublicar, la siguiente petición se vuelve a autorizar; no se pueden recuperar archivos ya descargados.
+
+La home usa un cliente anónimo servidor, independiente de cookies, y el RPC existente. El endpoint `/api/portfolio/photos/[jobId]/[mediaId]` acepta solo UUID y anchos permitidos, reconstruye `job_uuid/media_uuid.webp` y descarga únicamente `portfolio-derivatives` bajo RLS. Genera variantes responsive en memoria, sin crop/upscale y sin originales como fallback. `next/image` usa loader propio, `sizes` y espacio reservado; `/_next/image` tiene bloqueadas estas rutas para no crear copias cacheadas que sobrevivan a una retirada. Respuestas de imagen `private, no-store`, incluidas denegaciones. No se cambiaron tablas, funciones, grants, políticas ni buckets.
 
 El RPC `list_public_jobs(p_limit=50, p_offset=0)` entrega solo:
 

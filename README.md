@@ -1,6 +1,6 @@
 # Iguana Garage
 
-Área privada MVP sobre la foundation y seguridad aceptadas de Gate 3A: acceso real, listado, alta, detalle, edición, fotografías, publicación/retirada y borrado. `/` sigue vacío: el portfolio público completo pertenece a una fase posterior. Configuración Supabase en [supabase/README.md](supabase/README.md); decisiones y evidencia del bloque privado en [docs/private-mvp-verification.md](docs/private-mvp-verification.md).
+Portfolio público en `/` y área privada MVP: acceso real, listado, alta, detalle, edición, fotografías, publicación/retirada y borrado. La home consulta exclusivamente trabajos publicados y muestra sus derivados autorizados; no promociona el acceso privado ni crea páginas individuales por trabajo. Configuración Supabase en [supabase/README.md](supabase/README.md); evidencia del área privada en [docs/private-mvp-verification.md](docs/private-mvp-verification.md) y del cierre público en [docs/public-mvp-verification.md](docs/public-mvp-verification.md).
 
 Las instrucciones y el alcance están en `AGENTS.md`, `PRODUCT.md` y `DESIGN.md`. `PRODUCT.md` formaliza publicación explícita y contrato público; `AGENTS.md`, `DESIGN.md`, assets y referencias permanecen intactos.
 
@@ -66,9 +66,15 @@ npm run start
 
 `typecheck` genera primero los tipos de Next para no depender de un build anterior. `.env.example` declara URL y clave publicable de Supabase; los valores van en `.env.local`, ignorado. Ninguna clave privilegiada forma parte de la aplicación. Las credenciales temporales de integración van exclusivamente en `.env.integration.local`, también ignorado; ver `.env.integration.example`.
 
-Vitest usa Node y `@/`. Prueba layout, validación de entradas, proyección pública y manejo de cookies/errores SSR. El test de SSR usa mocks de transporte y no prueba RLS; las pruebas SQL y HTTP reales están separadas. La cobertura exige al menos 80% del comportamiento implementado; los tipos generados, el wrapper declarativo de Proxy y la UI vacía no cuentan como lógica comprobable.
+Vitest usa Node y `@/`. Prueba validación, proyección pública, transporte, procesamiento/proporciones de imágenes, construcción de WhatsApp y cookies/errores SSR. Los mocks de transporte no prueban RLS; autorización, DAL y entrega de imágenes se verifican contra Supabase mediante integración/E2E. La cobertura exige al menos 80% de la lógica comprobable; tipos generados, wrappers declarativos y UI no cuentan como lógica unitaria.
 
 Playwright ejecuta Chrome instalado a 390, 768 y 1440 px, contra producción local en `127.0.0.1:3100`. Requiere las cuentas temporales confirmadas en `.env.integration.local` y el proyecto dedicado autorizado. `npm run build` seguido de `npm run test:e2e` recorre acceso, CRUD, fotos JPEG/PNG/WebP, publicación, retirada y limpieza. Usa fotos reales de `assets/demo/`; crea adaptaciones de QA únicamente en memoria. No requiere fixtures locales sin versionar. Incluye axe, targets táctiles, overflow y galería por teclado. Traces/HAR están desactivados para no registrar credenciales ni cookies; screenshots se toman con campos de acceso vacíos o dentro de la app, sin emails de cuentas.
+
+El recorrido público comprueba también exclusión de datos privados, originales inaccesibles, variantes WebP, revocación sobre la misma URL y bloqueo del optimizador cacheado de Next. Las capturas `public-viewport.png` y del modal son la evidencia visual fiable: en este entorno Chrome algunas capturas `fullPage` pintan imágenes negras aunque el viewport consecutivo muestre las fotos decodificadas correctamente. No se modificó la página para compensar ese artefacto.
+
+## Contacto de producción
+
+`IGUANA_WHATSAPP_NUMBER`, declarado vacío en `.env.example`, es el único dato de contacto. Configurarlo en el entorno de despliegue con el número real confirmado en formato E.164: `+`, código internacional y dígitos, sin espacios. `src/features/portfolio/contact.ts` construye ambos CTA. Con valor ausente o inválido se muestra contacto pendiente, sin número inventado, enlace `tel:` ni WhatsApp ficticio. No se ha confirmado todavía el teléfono de Robin.
 
 En Gate 2 se ejecutó además un smoke técnico de Playwright con Chrome local 154.0.8037.97, en desktop y móvil: HTTP 200, título/idioma del documento, ausencia de errores JavaScript e icono idéntico al original.
 
@@ -81,4 +87,4 @@ En Gate 2 se ejecutó además un smoke técnico de Playwright con Chrome local 1
 - ECC: guía, flujo equivalente Research → Plan → TDD → Implement → Review → Verify, `tdd-workflow` y `verification-loop`. `orch-build-mvp` se evaluó y no se aplica completo porque excede la foundation.
 - Onboarding: las mappings actuales detectan Next.js/React/TypeScript. `project-init` se evaluó mediante `install-apply.js --target codex --dry-run --json --skills coding-standards,tdd-workflow,verification-loop`; el plan apunta a configuración global de Codex. No se aplicó ni se duplicó ECC en el proyecto.
 
-Gate 3A tiene el checkpoint `aa35c011bb28258f42af520ab354f53da3383cda`. Este bloque privado queda sin staging/commit/push para revisión humana. Las pruebas y límites de la infraestructura anterior están en [docs/gate-3a-verification.md](docs/gate-3a-verification.md).
+Gate 3A tiene el checkpoint `aa35c011bb28258f42af520ab354f53da3383cda`; el MVP privado aprobado tiene `76967ca3cd4d835c36f2cddd2c04c6aa85393bc6`. El bloque público permanece sin staging, commit ni push para revisión humana. Las pruebas de infraestructura anterior están en [docs/gate-3a-verification.md](docs/gate-3a-verification.md).
