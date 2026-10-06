@@ -13,7 +13,7 @@ RLS activado en ambas tablas. Autenticados solo pueden SELECT/INSERT/UPDATE/DELE
 ## Originales y entrega pública
 
 - `job-originals`: bucket **privado**, JPEG/PNG/WebP, máximo 10 MiB. Ruta `owner_uuid/job_uuid/media_uuid.ext`. INSERT exige ámbito propio y trabajo propio existente. SELECT/DELETE restringidos al ámbito propio; permiten limpiar originales huérfanos. Sin UPDATE/upsert.
-- `portfolio-derivatives`: bucket **privado**, solo WebP, máximo 5 MiB. Ruta `job_uuid/media_uuid.webp`. Escritura/borrado exigen medio de un trabajo propio. Generar derivados es una operación futura: decodificar/re-encodear, retirar EXIF y revisar qué se publica; no subir originales directamente como estrategia de publicación.
+- `portfolio-derivatives`: bucket **privado**, solo WebP, máximo 5 MiB. Ruta `job_uuid/media_uuid.webp`. Escritura/borrado exigen medio de un trabajo propio. El MVP privado genera derivados en servidor con Sharp: decodificación completa, orientación, hasta 1600 px por lado, WebP y eliminación de metadatos. No se copian originales como publicación; el usuario revisa qué fotos hace públicas mediante el control `is_public`.
 - Lectura pública de derivados solo mediante operaciones Storage de descarga/información autenticada con clave publicable, y solo si el trabajo sigue publicado. No enumeración anónima, URLs de bucket público ni firma anónima. Usar `cacheControl: "0"` en la futura publicación y respuestas sin caché compartida. Al despublicar, la siguiente petición se vuelve a autorizar; no se pueden recuperar archivos ya descargados.
 
 El RPC `list_public_jobs(p_limit=50, p_offset=0)` entrega solo:
@@ -26,7 +26,7 @@ Solo aparecen `is_public=true`; `media` incluye únicamente derivados existentes
 
 El RPC expuesto es SECURITY INVOKER y delega la proyección en funciones de lectura SECURITY DEFINER **privadas**, con `search_path=''`, referencias cualificadas, argumentos acotados y sin SQL dinámico. Esta excepción está limitada a lectura pública explícita, no a gestión de trabajos ni a corregir errores de permisos. El esquema `private` no debe exponerse en Data API. No hay service-role en el código Next.js.
 
-Eliminar medios en el futuro exige objetos -> metadatos -> trabajo; conservar metadatos ante errores para reintentar. PostgreSQL y Storage no son una transacción conjunta. Supabase prohíbe borrar objetos por SQL; usar su API. Las políticas y validadores están preparados, pero todavía no hay pipeline de subida/borrado ni conversión de imágenes. La comprobación de firma inicial no sustituye una decodificación segura y límites de píxeles.
+El MVP elimina objetos -> metadatos -> trabajo y conserva metadatos ante errores para reintentar. PostgreSQL y Storage no son una transacción conjunta. Los objetos se borran mediante la API con identidad del usuario. La subida procesa una imagen por petición (10 MiB, hasta 40 megapíxeles, sin animación), conserva originales y genera WebP separado. Guardado reanudable por UUID; normaliza posiciones sin colisiones y solo publica tras completar las fotos. Antes de editar/eliminar se retira la publicación. No se modificaron esquema, grants ni políticas de Gate 3A.
 
 ## Auth y Next.js
 

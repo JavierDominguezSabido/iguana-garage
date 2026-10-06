@@ -1,6 +1,6 @@
 # Iguana Garage
 
-Foundation técnica e infraestructura de Gate 3A: Supabase Auth/SSR, modelo, RLS y Storage. `/` sigue vacío; no hay login visual ni interfaces de producto. Configuración y repetición de pruebas en [supabase/README.md](supabase/README.md).
+Área privada MVP sobre la foundation y seguridad aceptadas de Gate 3A: acceso real, listado, alta, detalle, edición, fotografías, publicación/retirada y borrado. `/` sigue vacío: el portfolio público completo pertenece a una fase posterior. Configuración Supabase en [supabase/README.md](supabase/README.md); decisiones y evidencia del bloque privado en [docs/private-mvp-verification.md](docs/private-mvp-verification.md).
 
 Las instrucciones y el alcance están en `AGENTS.md`, `PRODUCT.md` y `DESIGN.md`. `PRODUCT.md` formaliza publicación explícita y contrato público; `AGENTS.md`, `DESIGN.md`, assets y referencias permanecen intactos.
 
@@ -25,6 +25,8 @@ Entorno verificado: Node.js **24.18.0**, npm **11.16.0**. El proyecto declara No
 | server-only | 0.0.1 |
 | Supabase CLI (desarrollo) | 2.119.0 |
 | @vitest/coverage-v8 (desarrollo) | 5.0.3 |
+| Sharp (procesado de imágenes) | 0.35.5 |
+| axe-core (QA accesibilidad, desarrollo) | 4.14.0 |
 
 Versiones consultadas en npm durante la inicialización. TypeScript 6.0.3 está dentro del rango admitido por el parser instalado (`>=4.8.4 <6.1.0`). ESLint permanece en 9.39.5 por los bloqueos documentados a continuación.
 
@@ -66,7 +68,7 @@ npm run start
 
 Vitest usa Node y `@/`. Prueba layout, validación de entradas, proyección pública y manejo de cookies/errores SSR. El test de SSR usa mocks de transporte y no prueba RLS; las pruebas SQL y HTTP reales están separadas. La cobertura exige al menos 80% del comportamiento implementado; los tipos generados, el wrapper declarativo de Proxy y la UI vacía no cuentan como lógica comprobable.
 
-Playwright está preparado para Chromium desktop y móvil Pixel 7, contra el servidor de producción en `127.0.0.1:3100`. `test:e2e:config` valida la configuración con cero escenarios; no equivale a una suite E2E aprobada. Cuando existan recorridos autorizados, crear sus pruebas en `e2e/`, instalar Chromium con `npx playwright install chromium` y ejecutar `npm run build` seguido de `npm run test:e2e`.
+Playwright ejecuta Chrome instalado a 390, 768 y 1440 px, contra producción local en `127.0.0.1:3100`. Requiere las cuentas temporales confirmadas en `.env.integration.local` y el proyecto dedicado autorizado. `npm run build` seguido de `npm run test:e2e` recorre acceso, CRUD, fotos JPEG/PNG/WebP, publicación, retirada y limpieza. Usa fotos reales de `assets/demo/`; crea adaptaciones de QA únicamente en memoria. No requiere fixtures locales sin versionar. Incluye axe, targets táctiles, overflow y galería por teclado. Traces/HAR están desactivados para no registrar credenciales ni cookies; screenshots se toman con campos de acceso vacíos o dentro de la app, sin emails de cuentas.
 
 En Gate 2 se ejecutó además un smoke técnico de Playwright con Chrome local 154.0.8037.97, en desktop y móvil: HTTP 200, título/idioma del documento, ausencia de errores JavaScript e icono idéntico al original.
 
@@ -79,4 +81,4 @@ En Gate 2 se ejecutó además un smoke técnico de Playwright con Chrome local 1
 - ECC: guía, flujo equivalente Research → Plan → TDD → Implement → Review → Verify, `tdd-workflow` y `verification-loop`. `orch-build-mvp` se evaluó y no se aplica completo porque excede la foundation.
 - Onboarding: las mappings actuales detectan Next.js/React/TypeScript. `project-init` se evaluó mediante `install-apply.js --target codex --dry-run --json --skills coding-standards,tdd-workflow,verification-loop`; el plan apunta a configuración global de Codex. No se aplicó ni se duplicó ECC en el proyecto.
 
-El checkpoint de foundation existe. Gate 3A no crea staging, commits ni push. Las pruebas y limitaciones actuales se registran en [docs/gate-3a-verification.md](docs/gate-3a-verification.md).
+Gate 3A tiene el checkpoint `aa35c011bb28258f42af520ab354f53da3383cda`. Este bloque privado queda sin staging/commit/push para revisión humana. Las pruebas y límites de la infraestructura anterior están en [docs/gate-3a-verification.md](docs/gate-3a-verification.md).
