@@ -66,7 +66,7 @@ test("V1: portfolio anónimo, proporciones, publicación/retirada y limpieza", a
     await expect(publicPage.locator('a[href="/login"],a[href^="/app"]')).toHaveCount(0);
     await expect(publicPage.getByText("Estamos preparando las fotografías de nuestros trabajos.")).toBeVisible();
     await audit(publicPage); await publicPage.screenshot({ path: testInfo.outputPath("public-empty.png"), fullPage: true });
-    await publicPage.getByRole("link", { name: "Contacto", exact: true }).first().click(); await expect(publicPage.getByRole("heading", { name: "¿Hablamos de tu coche?" })).toBeVisible();
+    await publicPage.locator("#contacto").scrollIntoViewIfNeeded(); await expect(publicPage.getByRole("heading", { name: "¿Hablamos de tu coche?" })).toBeVisible();
     if (!process.env.IGUANA_WHATSAPP_NUMBER) await expect(publicPage.locator('a[href^="https://wa.me/"],a[href^="tel:"]')).toHaveCount(0);
     await publicPage.goto("http://127.0.0.1:3100/app"); await expect(publicPage).toHaveURL(/\/login$/);
     expect((await publicPage.request.get("http://127.0.0.1:3100/login")).headers()["x-robots-tag"]).toContain("noindex");
@@ -87,8 +87,8 @@ test("V1: portfolio anónimo, proporciones, publicación/retirada y limpieza", a
     await publicPage.waitForLoadState("networkidle");
     // Comprobar el render real antes de capturar: las imágenes lazy fuera de viewport
     // no se pintan solo porque se pida una screenshot de página completa.
-    // Con un único trabajo, conservar su galería y evitar duplicarlo en el hero.
-    await expect(publicPage.locator(".pub-hero-figure.pub-hero-mark")).toHaveCount(1);
+    // Hero de texto: la fotografía aparece una sola vez, dentro del portfolio.
+    await expect(publicPage.locator(".pub-hero-figure")).toHaveCount(0);
     await expect(publicPage.locator(".pub-hero-figure .pub-photo")).toHaveCount(0);
     await publicPage.locator(".pub-work-photo").first().scrollIntoViewIfNeeded();
     await expect.poll(() => publicPage.locator(".pub-work-photo img").first().evaluate((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0)).toBe(true);
@@ -100,17 +100,17 @@ test("V1: portfolio anónimo, proporciones, publicación/retirada y limpieza", a
     await audit(publicPage); await publicPage.screenshot({ path: testInfo.outputPath("public-published.png"), fullPage: true });
     const metrics = await publicPage.evaluate(() => ({ ...(window as unknown as { iguanaMetrics: { cls: number; lcp: number } }).iguanaMetrics, javascriptBytes: performance.getEntriesByType("resource").filter((entry) => entry.name.endsWith(".js")).reduce((total, entry) => total + (entry as PerformanceResourceTiming).encodedBodySize, 0) }));
     expect(metrics.cls).toBeLessThan(0.1); await testInfo.attach("public-performance", { body: JSON.stringify(metrics), contentType: "application/json" });
-    const photoButton = publicPage.getByRole("button", { name: `Ver fotos de ${name} editado`, exact: true });
+    const photoButton = publicPage.getByRole("button", { name: `Ver galería de ${name} editado`, exact: true });
     await photoButton.focus(); await publicPage.keyboard.press("Enter"); await expect(publicPage.getByRole("dialog")).toBeVisible();
     await expect(publicPage.getByRole("button", { name: "Cerrar fotografías", exact: true })).toBeFocused();
-    await expect(publicPage.getByText("Fotografía 1 de 3", { exact: true })).toBeVisible();
+    await expect(publicPage.getByText("Fotografía 3 de 3", { exact: true })).toBeVisible();
     for (let index = 0; index < 3; index++) {
       await expect.poll(() => publicPage.locator(".pub-full-photo img").evaluateAll((images) => images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0))).toBe(true);
       expect(await publicPage.locator(".pub-full-photo img").evaluate((image) => getComputedStyle(image).objectFit)).toBe("contain");
       await publicPage.screenshot({ path: testInfo.outputPath(`public-full-${index + 1}.png`) });
       if (index < 2) await publicPage.getByRole("button", { name: "Siguiente →", exact: true }).click();
     }
-    await audit(publicPage); await publicPage.keyboard.press("ArrowLeft"); await expect(publicPage.getByText("Fotografía 2 de 3", { exact: true })).toBeVisible();
+    await audit(publicPage); await publicPage.keyboard.press("ArrowLeft"); await expect(publicPage.getByText("Fotografía 1 de 3", { exact: true })).toBeVisible();
     await publicPage.keyboard.press("Escape"); await expect(publicPage.getByRole("dialog")).not.toBeVisible(); await expect(photoButton).toBeFocused();
     const result = await anon.rpc("list_public_jobs"); const publicJob = result.data.find((job: { id: string }) => job.id === jobId);
     expect(Object.keys(publicJob).sort()).toEqual(["id", "job_date", "media", "name"]);
@@ -140,9 +140,9 @@ test("V1: portfolio anónimo, proporciones, publicación/retirada y limpieza", a
         return { width: innerWidth, gridWidth: grid.getBoundingClientRect().width, lastWidth: works.at(-1)!.getBoundingClientRect().width, firstId, heroSrc: hero?.src ?? "", photoRatios: works.map((work) => { const box = work.querySelector(".pub-work-photo")!.getBoundingClientRect(); return box.width / box.height; }) };
       });
       expect(composition.heroSrc).not.toContain(`/photos/${composition.firstId}/`);
-      if (composition.width >= 1200 || composition.width < 768) expect(Math.abs(composition.lastWidth - composition.gridWidth)).toBeLessThan(1);
+      if (composition.width < 700) expect(Math.abs(composition.lastWidth - composition.gridWidth)).toBeLessThan(1);
       else expect(composition.lastWidth).toBeLessThan(composition.gridWidth / 2);
-      if (composition.width < 768) for (const ratio of composition.photoRatios) expect(ratio).toBeCloseTo(4 / 5, 2);
+      for (const ratio of composition.photoRatios) expect(ratio).toBeCloseTo(composition.width >= 1200 ? 3 / 2 : 4 / 3, 2);
       await testInfo.attach("public-editorial-composition", { body: JSON.stringify(composition), contentType: "application/json" });
       await publicPage.screenshot({ path: testInfo.outputPath("public-multiple.png"), fullPage: true });
       expect(await page.evaluate(async (id) => (await fetch(`/app/api/jobs/${id}`, { method: "DELETE" })).status, noPhotoId)).toBe(200); pending.delete(noPhotoId); jobId = mainId;
