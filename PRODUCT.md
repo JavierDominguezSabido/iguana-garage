@@ -24,8 +24,8 @@ Cuenta de Robin en `auth.users`, sin tabla propia de contraseñas/perfiles. Una 
 
 | Entidad | Campos |
 | --- | --- |
-| `jobs` | `id` UUID PK, `owner_id` FK a Auth, `name` texto obligatorio, `job_date` date obligatorio, `paint_code` texto nullable, `created_at`/`updated_at` técnicos. |
-| `job_media` | `id` UUID PK, `job_id` FK, `storage_path` único, `mime_type`, `position`, `width`/`height`, `byte_size`. |
+| `jobs` | `id` UUID PK, `owner_id` FK a Auth, `name` texto obligatorio, `job_date` date obligatorio, `paint_code` texto nullable, `is_public` boolean NOT NULL DEFAULT false, `created_at`/`updated_at` técnicos. |
+| `job_media` | `id` UUID PK, `job_id` FK, `storage_path` único, `mime_type`, `position`, `width`/`height`, `byte_size`, `created_at` técnico. |
 
 Fecha de calendario sin conversión horaria; código alfanumérico, vacío normalizado a null. El propietario del medio se deriva del trabajo. Orden estable mediante `position`, sin exigir reordenación manual. Guardar rutas, no URLs firmadas ni binarios en PostgreSQL. V1 admite imágenes; revisar metadatos de vídeo después.
 
@@ -45,7 +45,9 @@ Una aplicación Next.js App Router con React, TypeScript strict y Tailwind CSS; 
 
 Lecturas en servidor, cliente para interacción y Server Actions propuestas para mutaciones. Autorizar cada operación además del layout; evitar cachés públicas de datos privados. Gestión con sesión validada y RLS por propietario en tablas/Storage, sin claves privilegiadas para eludir políticas. Propuesta de acceso: cuenta aprovisionada, sin autorregistro, email/contraseña; confirmar identificador porque el mockup dice «Usuario».
 
-**Publicación pendiente:** confirmar si todos los trabajos/medios son públicos. Recomiendo selección explícita y originales privados; una capa de servidor entregaría solo campos/medios autorizados. Si se aprueba, valorar `portfolio_media(media_id, position)` como relación técnica mínima, sin estados ni workflow editorial. Acordar selección y entrega antes de habilitar políticas públicas; hasta entonces, denegar exposición. Una URL firmada compartida concede acceso temporal.
+**Publicación confirmada:** trabajos privados por defecto. Solo `is_public=true` autoriza su aparición pública; sin estados ni workflow editorial. El contrato público contiene exclusivamente `id`, `name`, `job_date` y `media` (identificador/ruta de derivados autorizados). Nunca incluye `owner_id`, `paint_code`, rutas de originales ni metadatos privados. Las tablas privadas siguen sin lectura anónima general, incluso para trabajos publicados.
+
+Originales en bucket privado `job-originals`. Los derivados de publicación van separados a `portfolio-derivatives`, también privado; únicamente se permite descargar derivados existentes de trabajos publicados, sin enumeración anónima ni firma pública de URLs. Al despublicar, RLS deniega nuevas descargas. La generación de derivados (re-encodear, retirar EXIF y revisar contenido publicable) pertenece al futuro pipeline de medios; no se copian originales automáticamente. Retirar una publicación no recupera copias ya descargadas.
 
 Fundamentos verificados: [estructura Next.js](https://nextjs.org/docs/app/getting-started/project-structure), [autorización por operación](https://nextjs.org/docs/app/guides/authentication), [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security) y [buckets de Supabase](https://supabase.com/docs/guides/storage/buckets/fundamentals).
 
@@ -62,7 +64,7 @@ TDD y review en cada incremento; seguridad desde el principio.
 
 ## Pendientes y riesgos
 
-- Regla de publicación, campos visibles, portada y entrega/revocación de medios. Retirar una publicación no recupera copias descargadas.
+- Portada y generación/revisión de derivados de publicación; la regla `is_public` y el contrato público ya están definidos.
 - Identificador, aprovisionamiento/recuperación de Robin y contacto WhatsApp real. Datos de contacto del mockup sin confirmar.
 - Guardado sin fotos, formatos/tamaño y máximo: «20 fotos» es ilustrativo. Gestionar fallos entre base de datos y Storage.
 - Fotos con matrículas/entornos particulares; `result` no garantiza vehículo completamente montado. Seleccionar contenido publicable sin alterar originales.

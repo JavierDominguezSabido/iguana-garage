@@ -1,8 +1,8 @@
 # Iguana Garage
 
-Gate 2: foundation técnica. `/` está vacío deliberadamente; únicamente existen el layout raíz y el icono técnico. No hay autenticación, Supabase ni interfaces de producto.
+Foundation técnica e infraestructura de Gate 3A: Supabase Auth/SSR, modelo, RLS y Storage. `/` sigue vacío; no hay login visual ni interfaces de producto. Configuración y repetición de pruebas en [supabase/README.md](supabase/README.md).
 
-Las instrucciones y el alcance están en `AGENTS.md`, `PRODUCT.md` y `DESIGN.md`. Esos archivos y todos los materiales originales se conservan íntegros.
+Las instrucciones y el alcance están en `AGENTS.md`, `PRODUCT.md` y `DESIGN.md`. `PRODUCT.md` formaliza publicación explícita y contrato público; `AGENTS.md`, `DESIGN.md`, assets y referencias permanecen intactos.
 
 ## Entorno y versiones instaladas
 
@@ -20,6 +20,11 @@ Entorno verificado: Node.js **24.18.0**, npm **11.16.0**. El proyecto declara No
 | @playwright/test | 1.63.0 |
 | @types/node | 24.19.1 |
 | @types/react / @types/react-dom | 19.3.0 |
+| @supabase/supabase-js | 2.117.2 |
+| @supabase/ssr | 0.12.7 |
+| server-only | 0.0.1 |
+| Supabase CLI (desarrollo) | 2.119.0 |
+| @vitest/coverage-v8 (desarrollo) | 5.0.3 |
 
 Versiones consultadas en npm durante la inicialización. TypeScript 6.0.3 está dentro del rango admitido por el parser instalado (`>=4.8.4 <6.1.0`). ESLint permanece en 9.39.5 por los bloqueos documentados a continuación.
 
@@ -49,14 +54,17 @@ npm run dev
 npm run typecheck
 npm run lint
 npm test
+npm run test:coverage
+npm run test:supabase:public
+npm run test:supabase
 npm run test:e2e:config
 npm run build
 npm run start
 ```
 
-`typecheck` genera primero los tipos de Next para no depender de un build anterior. `.env.example` explica la configuración de entorno; no hay variables requeridas ni credenciales. Los valores futuros irán en `.env.local`, excluido por el `.gitignore` existente.
+`typecheck` genera primero los tipos de Next para no depender de un build anterior. `.env.example` declara URL y clave publicable de Supabase; los valores van en `.env.local`, ignorado. Ninguna clave privilegiada forma parte de la aplicación. Las credenciales temporales de integración van exclusivamente en `.env.integration.local`, también ignorado; ver `.env.integration.example`.
 
-Vitest usa Node, el alias `@/` y una única prueba del layout: documento en español y conservación de `children`. Se observó RED con layout incompleto y GREEN al implementarlo. No hay cobertura ficticia ni lógica de negocio añadida para probarla.
+Vitest usa Node y `@/`. Prueba layout, validación de entradas, proyección pública y manejo de cookies/errores SSR. El test de SSR usa mocks de transporte y no prueba RLS; las pruebas SQL y HTTP reales están separadas. La cobertura exige al menos 80% del comportamiento implementado; los tipos generados, el wrapper declarativo de Proxy y la UI vacía no cuentan como lógica comprobable.
 
 Playwright está preparado para Chromium desktop y móvil Pixel 7, contra el servidor de producción en `127.0.0.1:3100`. `test:e2e:config` valida la configuración con cero escenarios; no equivale a una suite E2E aprobada. Cuando existan recorridos autorizados, crear sus pruebas en `e2e/`, instalar Chromium con `npx playwright install chromium` y ejecutar `npm run build` seguido de `npm run test:e2e`.
 
@@ -65,10 +73,10 @@ En Gate 2 se ejecutó además un smoke técnico de Playwright con Chrome local 1
 ## Decisiones de foundation
 
 - Inicialización manual siguiendo [Next.js](https://nextjs.org/docs/app/getting-started/installation), para preservar archivos existentes y evitar scaffolding de pantallas/configuración de agentes.
-- Solo `src/app/` tiene una función actual. Componentes, features y lib se crearán cuando exista comportamiento real que alojar.
+- `src/features/` contiene validación y contrato público; `src/lib/supabase/`, clientes tipados y sesión. No hay componentes, repositorios genéricos ni capas vacías.
 - Tailwind mediante PostCSS, sin tema de marca, fuentes remotas ni librerías visuales.
 - `src/app/icon.png` es una copia byte a byte del símbolo oficial; no hay retoque ni modificación del original.
 - ECC: guía, flujo equivalente Research → Plan → TDD → Implement → Review → Verify, `tdd-workflow` y `verification-loop`. `orch-build-mvp` se evaluó y no se aplica completo porque excede la foundation.
 - Onboarding: las mappings actuales detectan Next.js/React/TypeScript. `project-init` se evaluó mediante `install-apply.js --target codex --dry-run --json --skills coding-standards,tdd-workflow,verification-loop`; el plan apunta a configuración global de Codex. No se aplicó ni se duplicó ECC en el proyecto.
 
-Los checks de Gate 2 verifican infraestructura; Auth, RLS, Storage y recorridos de usuario se comprobarán en sus fases autorizadas. No hay staging, commits, remote ni push.
+El checkpoint de foundation existe. Gate 3A no crea staging, commits ni push. Las pruebas y limitaciones actuales se registran en [docs/gate-3a-verification.md](docs/gate-3a-verification.md).
