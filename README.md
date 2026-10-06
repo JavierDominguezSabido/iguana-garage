@@ -2,6 +2,8 @@
 
 Portfolio público en `/` y área privada MVP: acceso real, listado, alta, detalle, edición, fotografías, publicación/retirada y borrado. La home consulta exclusivamente trabajos publicados y muestra sus derivados autorizados; no promociona el acceso privado ni crea páginas individuales por trabajo. Configuración Supabase en [supabase/README.md](supabase/README.md); evidencia del área privada en [docs/private-mvp-verification.md](docs/private-mvp-verification.md) y del cierre público en [docs/public-mvp-verification.md](docs/public-mvp-verification.md).
 
+Preproducción y despliegue: [docs/preproduction-verification.md](docs/preproduction-verification.md). Uso y entrega a Robin/Javier: [docs/production-handoff.md](docs/production-handoff.md). La aplicación se ha comprobado en producción local; todavía no existe un deployment HTTPS.
+
 Las instrucciones y el alcance están en `AGENTS.md`, `PRODUCT.md` y `DESIGN.md`. `PRODUCT.md` formaliza publicación explícita y contrato público; `AGENTS.md`, `DESIGN.md`, assets y referencias permanecen intactos.
 
 ## Entorno y versiones instaladas
@@ -87,4 +89,12 @@ En Gate 2 se ejecutó además un smoke técnico de Playwright con Chrome local 1
 - ECC: guía, flujo equivalente Research → Plan → TDD → Implement → Review → Verify, `tdd-workflow` y `verification-loop`. `orch-build-mvp` se evaluó y no se aplica completo porque excede la foundation.
 - Onboarding: las mappings actuales detectan Next.js/React/TypeScript. `project-init` se evaluó mediante `install-apply.js --target codex --dry-run --json --skills coding-standards,tdd-workflow,verification-loop`; el plan apunta a configuración global de Codex. No se aplicó ni se duplicó ECC en el proyecto.
 
-Gate 3A tiene el checkpoint `aa35c011bb28258f42af520ab354f53da3383cda`; el MVP privado aprobado tiene `76967ca3cd4d835c36f2cddd2c04c6aa85393bc6`. El bloque público permanece sin staging, commit ni push para revisión humana. Las pruebas de infraestructura anterior están en [docs/gate-3a-verification.md](docs/gate-3a-verification.md).
+Gate 3A tiene el checkpoint `aa35c011bb28258f42af520ab354f53da3383cda`; el MVP privado aprobado tiene `76967ca3cd4d835c36f2cddd2c04c6aa85393bc6`; el portfolio público y cierre visual V1, `9eba03e9d1f6ed1fb13407064417e1101a2f873f`. La preproducción está revisada y aprobada para su checkpoint Git. El siguiente paso será crear un repositorio **privado de GitHub** y enlazarlo; publicar código o desplegar requiere nueva autorización. Las pruebas de infraestructura anterior están en [docs/gate-3a-verification.md](docs/gate-3a-verification.md).
+
+## Despliegue de V1
+
+Usar un servicio **Node 24 completo** con SSR, Proxy, Route Handlers y Sharp nativo. Target preparado: **Render Web Service**, con `npm ci --include=dev && npm run build` y `npm run start -- --hostname 0.0.0.0 --port $PORT`. No es una exportación estática. Las dos variables `NEXT_PUBLIC_SUPABASE_*` deben existir al construir y ejecutar; `IGUANA_WHATSAPP_NUMBER`, en ejecución. El directorio de aplicación contiene `src/app`, componentes compartidos, lógica en `src/features`, clientes tipados en `src/lib/supabase` y migraciones en `supabase/migrations`.
+
+Vercel Functions tiene un [límite de 4,5 MB por petición](https://vercel.com/docs/functions/limitations), incompatible con nuestras fotos de hasta 10 MiB procesadas en el servidor. No se reduce ese límite ni se cambia la arquitectura para desplegar. No hay proveedor autenticado, repositorio remoto ni URL final; la configuración exacta y el smoke HTTPS pendiente están en el informe de preproducción.
+
+La CSP de documentos usa un nonce por petición, también en los scripts SSR de Next. Solo desarrollo permite `unsafe-eval`. `style-src-attr` permite atributos de estilo de Next/Image; los scripts inline siguen necesitando nonce. Las cabeceras deshabilitan marcos, MIME sniffing y permisos innecesarios. Login y superficies privadas conservan `noindex` y la protección de sesión/RLS. El proxy admite 10 MiB + 64.000 bytes de envoltura multipart; el archivo sigue limitado a 10 MiB.

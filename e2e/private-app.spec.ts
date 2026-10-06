@@ -7,7 +7,11 @@ import axe from "axe-core";
 import sharp from "sharp";
 
 async function accessible(page: Page) {
-  await page.addScriptTag({ content: axe.source });
+  await page.evaluate((source) => {
+    const script = document.createElement("script");
+    script.nonce = document.querySelector<HTMLScriptElement>("script[nonce]")?.nonce ?? "";
+    script.textContent = source; document.head.append(script);
+  }, axe.source);
   const issues = await page.evaluate(async () => {
     const scanner = window as unknown as { axe: { run: (options: unknown) => Promise<{ violations: { id: string; nodes: { target: unknown }[] }[] }> } };
     const result = await scanner.axe.run({ runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } });
@@ -38,8 +42,15 @@ test("área privada: acceso, CRUD, fotos, publicación y limpieza", async ({ pag
   const origin = "http://127.0.0.1:3100";
   const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
   const failures: string[] = []; page.on("pageerror", () => { failures.push("browser-error"); });
+  await page.addInitScript(() => {
+    (window as unknown as { cspViolations: string[] }).cspViolations = [];
+    document.addEventListener("securitypolicyviolation", (event) => {
+      (window as unknown as { cspViolations: string[] }).cspViolations.push(event.violatedDirective);
+    });
+  });
   page.on("request", (request) => { if (request.method() === "POST" && new URL(request.url()).pathname === "/app/api/jobs") { try { jobId = request.postDataJSON().id; } catch {} } });
   const layoutCheck = async () => {
+    expect(await page.evaluate(() => (window as unknown as { cspViolations: string[] }).cspViolations)).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect.poll(() => page.locator('img').evaluateAll((images) => images.filter((image) => { const box = image.getBoundingClientRect(); return box.width && box.height && box.top < innerHeight && box.bottom > 0; }).every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0))).toBe(true);
   };
@@ -114,6 +125,7 @@ test("área privada: acceso, CRUD, fotos, publicación y limpieza", async ({ pag
     await expect(page.getByRole("heading", { name: `${name} editado`, exact: true })).toHaveCount(0); jobId = "";
     await page.getByRole("button", { name: "Cerrar sesión" }).click(); await page.waitForURL("**/login");
     await page.goto("/app"); await expect(page).toHaveURL(/\/login$/);
+    await layoutCheck();
     expect(failures).toEqual([]);
   } finally {
     if (jobId) {

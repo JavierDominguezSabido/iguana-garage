@@ -22,7 +22,12 @@ async function login(page: Page) {
   }
 }
 async function audit(page: Page) {
-  await page.addScriptTag({ content: axe.source });
+  expect(await page.evaluate(() => (window as unknown as { cspViolations: string[] }).cspViolations)).toEqual([]);
+  await page.evaluate((source) => {
+    const script = document.createElement("script");
+    script.nonce = document.querySelector<HTMLScriptElement>("script[nonce]")?.nonce ?? "";
+    script.textContent = source; document.head.append(script);
+  }, axe.source);
   expect(await page.evaluate(async () => {
     const scanner = window as unknown as { axe: { run: (options: unknown) => Promise<{ violations: { id: string }[] }> } };
     return (await scanner.axe.run({ runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } })).violations.map((issue) => issue.id);
@@ -41,6 +46,10 @@ test("V1: portfolio anónimo, proporciones, publicación/retirada y limpieza", a
   const context = await browser.newContext({ viewport: testInfo.project.use.viewport, deviceScaleFactor: 1, isMobile: Boolean(testInfo.project.use.isMobile), hasTouch: Boolean(testInfo.project.use.hasTouch) });
   const publicPage = await context.newPage();
   await publicPage.addInitScript(() => {
+    (window as unknown as { cspViolations: string[] }).cspViolations = [];
+    document.addEventListener("securitypolicyviolation", (event) => {
+      (window as unknown as { cspViolations: string[] }).cspViolations.push(event.violatedDirective);
+    });
     const metrics = { cls: 0, lcp: 0 }; (window as unknown as { iguanaMetrics: typeof metrics }).iguanaMetrics = metrics;
     new PerformanceObserver((list) => { for (const entry of list.getEntries()) { const shift = entry as PerformanceEntry & { hadRecentInput: boolean; value: number }; if (!shift.hadRecentInput) metrics.cls += shift.value; } }).observe({ type: "layout-shift", buffered: true });
     new PerformanceObserver((list) => { metrics.lcp = list.getEntries().at(-1)?.startTime ?? 0; }).observe({ type: "largest-contentful-paint", buffered: true });
