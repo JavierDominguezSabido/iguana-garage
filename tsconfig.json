@@ -22,6 +22,7 @@
     "src/**/*.tsx",
     "*.config.ts",
     "e2e/**/*.ts",
+    "tests/isolated/**/*.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],

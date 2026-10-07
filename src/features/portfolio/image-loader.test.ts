@@ -15,3 +15,8 @@ it("adapta la sonda de 400px sin ampliar lo que admite el endpoint", () => {
 it("mantiene el rechazo de anchuras inválidas", () => {
   for (const width of [0, -1, 1.5, NaN, Infinity]) expect(() => publicImageUrl(job, media, width)).toThrow();
 });
+it("elige únicamente tamaños preparados también para sondas intermedias",()=>{
+  expect(publicImageUrl(job,media,390)).toBe(publicPhotoUrl(job,media,390));
+  expect(publicImageUrl(job,media,768)).toBe(publicPhotoUrl(job,media,768));
+  expect(publicImageUrl(job,media,1440)).toBe(publicPhotoUrl(job,media,1600));
+});

@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:isolated": "vitest run --config vitest.isolated.config.ts",
     "test:supabase": "vitest run --config vitest.supabase.config.ts",
     "test:supabase:public": "vitest run --config vitest.supabase.config.ts tests/supabase/public.integration.test.ts",
     "test:e2e": "playwright test",
@@ -32,6 +33,7 @@
     "sharp": "0.35.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
     "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "24.19.1",

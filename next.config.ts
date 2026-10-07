@@ -7,8 +7,8 @@ const nextConfig: NextConfig = {
     proxyClientMaxBodySize: 10 * 1024 * 1024 + 64_000,
   },
   images: {
-    deviceSizes: [390, 640, 768, 1024, 1440, 1600],
-    imageSizes: [160, 320],
+    deviceSizes: [320, 390, 640, 768, 1600],
+    imageSizes: [],
     // Impide convertir nuestras imágenes revocables en copias cacheadas en /_next/image.
     localPatterns: [{ pathname: "/_next/static/media/**", search: "" }],
     remotePatterns: [],

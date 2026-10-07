@@ -1,10 +1,13 @@
 import { isUuid } from "@/features/jobs/validation";
 import type { PublicJob } from "./contract";
+import { PREPARED_IMAGE_WIDTHS } from "./variants";
 
-export const PUBLIC_IMAGE_WIDTHS = [160, 320, 390, 640, 768, 1024, 1440, 1600];
+export const PUBLIC_IMAGE_WIDTHS: readonly number[] = PREPARED_IMAGE_WIDTHS;
+// URLs de páginas abiertas antes de un deploy: conservar el whitelist histórico.
+const LEGACY_REQUEST_WIDTHS = [160, 1024, 1440];
 export const PUBLIC_PAGE_SIZE = 12;
 function validPhoto(job: string, media: string, width: number, retry: number) {
-  if (!isUuid(job) || !isUuid(media) || !PUBLIC_IMAGE_WIDTHS.includes(width) || !Number.isInteger(retry) || retry < 0 || retry > 3) throw new Error("Fotografía no disponible");
+  if (!isUuid(job) || !isUuid(media) || ![...PUBLIC_IMAGE_WIDTHS,...LEGACY_REQUEST_WIDTHS].includes(width) || !Number.isInteger(retry) || retry < 0 || retry > 3) throw new Error("Fotografía no disponible");
 }
 export function publicPhotoUrl(job: string, media: string, width: number, retry = 0): string {
   validPhoto(job, media, width, retry);

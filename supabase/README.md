@@ -1,6 +1,6 @@
 # Infraestructura Supabase
 
-Proyecto de desarrollo autorizado: `iguana-garage` (`atibisongftmspwtyndv`). Las migraciones fueron aplicadas mediante el conector Supabase y sus versiones locales coinciden con el historial remoto. No se utiliza LiftTrack. La V1 incorpora área privada y portfolio real sobre esta infraestructura; los fixtures de QA se limpian y no se copian assets demo a carpetas públicas.
+Proyecto `iguana-garage` (`atibisongftmspwtyndv`), actualmente **producción con datos reales**. Las dos migraciones de Gate 3A y la migración responsive están aplicadas. Esta última se aplicó el 7 de octubre de 2026 con autorización explícita, conservando datos, buckets, grants y policies. El conector registró `responsive_private_derivatives` como versión remota `20261007112616`, correspondiente al archivo local `20261007090238_responsive_private_derivatives.sql`; revisar esta correspondencia antes de sincronizar migraciones mediante CLI, sin ejecutar un push ciego. No se utiliza LiftTrack. No ejecutar suites mutantes, reset ni limpieza de fixtures sobre este proyecto.
 
 ## Modelo y permisos
 
@@ -13,10 +13,12 @@ RLS activado en ambas tablas. Autenticados solo pueden SELECT/INSERT/UPDATE/DELE
 ## Originales y entrega pública
 
 - `job-originals`: bucket **privado**, JPEG/PNG/WebP, máximo 10 MiB. Ruta `owner_uuid/job_uuid/media_uuid.ext`. INSERT exige ámbito propio y trabajo propio existente. SELECT/DELETE restringidos al ámbito propio; permiten limpiar originales huérfanos. Sin UPDATE/upsert.
-- `portfolio-derivatives`: bucket **privado**, solo WebP, máximo 5 MiB. Ruta `job_uuid/media_uuid.webp`. Escritura/borrado exigen medio de un trabajo propio. El MVP privado genera derivados en servidor con Sharp: decodificación completa, orientación, hasta 1600 px por lado, WebP y eliminación de metadatos. No se copian originales como publicación; el usuario revisa qué fotos hace públicas mediante el control `is_public`.
+- `portfolio-derivatives`: bucket **privado**, solo WebP, máximo 5 MiB. Master compatible `job_uuid/media_uuid.webp` y cuatro variantes `job_uuid/media_uuid/{320,390,640,768}.webp`. La migración responsive amplía exclusivamente las dos funciones de autorización, con cinco nombres exactos por medio; no cambia buckets, grants, policies ni RPC. Los cinco paths están autorizados en producción con control de propietario/publicación. Sharp procesa todas las variantes durante la subida: orientación EXIF, proporción conservada, sin upscale ni metadata; calidad 78 para pequeñas/medias y 82 para el master. El original privado conserva sus bytes.
 - Lectura pública de derivados solo mediante operaciones Storage de descarga/información autenticada con clave publicable, y solo si el trabajo sigue publicado. No enumeración anónima, URLs de bucket público ni firma anónima. Las subidas usan `cacheControl: "0"`; la home y la entrega de imágenes evitan caché compartida. Al despublicar, la siguiente petición se vuelve a autorizar; no se pueden recuperar archivos ya descargados.
 
-La home usa un cliente anónimo servidor, independiente de cookies, y el RPC existente. El endpoint `/api/portfolio/photos/[jobId]/[mediaId]` acepta solo UUID y anchos permitidos, reconstruye `job_uuid/media_uuid.webp` y descarga únicamente `portfolio-derivatives` bajo RLS. Genera variantes responsive en memoria, sin crop/upscale y sin originales como fallback. `next/image` usa loader propio, `sizes` y espacio reservado; `/_next/image` tiene bloqueadas estas rutas para no crear copias cacheadas que sobrevivan a una retirada. Respuestas de imagen `private, no-store`, incluidas denegaciones. No se cambiaron tablas, funciones, grants, políticas ni buckets.
+La home usa un cliente anónimo servidor, independiente de cookies, y el RPC existente. El endpoint valida UUID/anchos y descarga una variante preparada bajo RLS en cada petición; entrega sus bytes sin Sharp. Si falta la variante, descarga el master con una nueva comprobación RLS y aplica el resize legacy, nunca originales. El master 1600 se transmite directamente. Las URLs históricas de ocho tamaños siguen admitidas, pero nuevas imágenes solicitan solo los cinco tamaños preparados. `next/image` conserva `sizes` y espacio reservado; `/_next/image` tiene bloqueadas estas rutas. Respuestas `private, no-store`, incluidas denegaciones. Sin cache pública ni signed URLs.
+
+Upload escribe el master al final, limpia variantes nuevas si falla y conserva original/metadata para reintentar. La subida directa exige que el trabajo esté privado, como ya hace el formulario mediante `prepareJob`. Delete elimina las cinco rutas antes del original y metadata. Mantenimiento propietario explícito, dry-run por defecto y sin sobrescribir masters/originales: ver [pipeline y evidencias](../docs/image-pipeline.md). No se ha ejecutado sobre las 13 fotografías reales.
 
 El RPC `list_public_jobs(p_limit=50, p_offset=0)` entrega solo:
 
@@ -39,6 +41,8 @@ Cada futura operación privada debe llamar a `requireAuthenticatedSupabase()` y 
 V1: cuenta de Robin aprovisionada en Auth, sin autorregistro, perfiles ni roles. **El `config.toml` solo configura el stack local.** En remoto, desactivar «Allow new users to sign up» y anonymous sign-ins en Dashboard; crear la cuenta de Robin manualmente. Email/contraseña Auth, sin comprobaciones locales de contraseña. La aplicación solo necesita las dos variables de `.env.example`, diseñadas para navegador.
 
 ## Repetición de pruebas
+
+**Para este bloque utilizar `npm run test:isolated`.** No carga `.env`, crea PostgreSQL efímero y ejecuta las migraciones/policies reales con roles separados. Su adaptador HTTP sirve únicamente transporte de pruebas local: no equivale al servicio HTTP completo de Supabase, GoTrue o Storage. Las instrucciones históricas siguientes solo son válidas en un destino de desarrollo dedicado; **no en el proyecto actual de producción**.
 
 Unitarias: `npm test` y `npm run test:coverage`. HTTP anónimo real: `npm run test:supabase:public`. SQL real: ejecutar íntegro `supabase/tests/authorization.sql` en el SQL Editor/conector del proyecto de desarrollo autorizado. Usa roles reales y `auth.uid()` con claims de prueba, assertions activadas y transacción revertida; no demuestra emisión de JWT ni transferencia de bytes de Storage.
 

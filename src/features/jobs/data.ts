@@ -5,6 +5,7 @@ import { buildOriginalPath, isUuid, validateJob, validateMediaMetadata } from ".
 import type { JobInput } from "./validation";
 import { processJobImage } from "./image-processing";
 import { removeMediaSafely } from "./workflow";
+import { derivativePath, derivativePaths, PREPARED_IMAGE_WIDTHS, type PreparedWidth } from "@/features/portfolio/variants";
 
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
 export type Media = Database["public"]["Tables"]["job_media"]["Row"];
@@ -48,6 +49,38 @@ async function putObject(db: Client, bucket: string, path: string, bytes: Uint8A
   const result = await db.storage.from(bucket).upload(path, bytes, { contentType: mime, cacheControl: "0", upsert: false });
   if (result.error) throw new JobError("No se pudo subir una fotografía. Reintenta sin cerrar este formulario.", 503);
 }
+async function putDerivatives(db: Client, jobId: string, mediaId: string, processed: Awaited<ReturnType<typeof processJobImage>>, widths: readonly PreparedWidth[] = PREPARED_IMAGE_WIDTHS) {
+  const created: string[] = [];
+  try {
+    // Master al final: conserva la señal de foto completa de la proyección legacy.
+    for (const width of widths) {
+      const path = derivativePath(jobId, mediaId, width);
+      if (!await objectExists(db,"portfolio-derivatives",path)) created.push(path);
+      // Registrar antes de upload también permite limpiar un ACK perdido.
+      await putObject(db,"portfolio-derivatives",path,processed.variants[width],"image/webp");
+    }
+  } catch (error) {
+    const cleanup = await Promise.allSettled(created.map(path=>removeObject(db,"portfolio-derivatives",path)));
+    if (cleanup.some(result=>result.status==="rejected")) throw new JobError("La foto sigue incompleta. Conservamos original y metadatos para reintentar la limpieza.",503);
+    throw error;
+  }
+}
+// Mantenimiento explícito owner-only; nunca se llama desde visitas ni publicación.
+export async function prepareLegacyVariants(db: Client, owner: string, jobId: string, mediaId: string, apply = false): Promise<string[]> {
+  await ownedJob(db,owner,jobId);checkId(mediaId);
+  const row=await db.from("job_media").select("*").eq("job_id",jobId).eq("id",mediaId).maybeSingle();
+  if(row.error || !row.data)throw new JobError("Fotografía no encontrada",404);
+  if(!await objectExists(db,"portfolio-derivatives",derivativePath(jobId,mediaId,1600)))throw new JobError("Falta el master. Reanuda primero el guardado del trabajo.",409);
+  const missing: PreparedWidth[]=[];
+  for(const width of PREPARED_IMAGE_WIDTHS)if(width!==1600 && !await objectExists(db,"portfolio-derivatives",derivativePath(jobId,mediaId,width)))missing.push(width);
+  if(apply && missing.length){
+    const original=await db.storage.from("job-originals").download(row.data.storage_path);
+    if(original.error || !original.data)throw new JobError("No se pudo leer el original privado",503);
+    const processed=await processJobImage(new Uint8Array(await original.data.arrayBuffer()),row.data.mime_type);
+    await putDerivatives(db,jobId,mediaId,processed,missing);
+  }
+  return missing.map(width=>derivativePath(jobId,mediaId,width));
+}
 export async function prepareJob(db: Client, owner: string, id: string, input: unknown, create: boolean) {
   checkId(id); const fields = validateJob(input);
   if (create) {
@@ -73,7 +106,7 @@ export async function finishJob(db: Client, owner: string, id: string, input: un
       const original = await db.storage.from("job-originals").download(photo.storage_path);
       if (original.error || !original.data) throw new JobError("Una fotografía sigue incompleta. El trabajo permanece privado.", 503);
       const processed = await processJobImage(new Uint8Array(await original.data.arrayBuffer()), photo.mime_type);
-      await putObject(db, "portfolio-derivatives", `${id}/${photo.id}.webp`, processed.webp, "image/webp");
+      await putDerivatives(db,id,photo.id,processed);
     }
     if (photo.position !== position) {
       const updated = await db.from("job_media").update({ position }).eq("id", photo.id).eq("job_id", id).select("id");
@@ -84,7 +117,9 @@ export async function finishJob(db: Client, owner: string, id: string, input: un
   if (result.error || result.data?.length !== 1) throw new JobError("No se pudo finalizar el guardado. Reintenta.", 503);
 }
 export async function uploadPhoto(db: Client, owner: string, jobId: string, mediaId: string, file: File) {
-  await ownedJob(db, owner, jobId); checkId(mediaId);
+  const job=await ownedJob(db, owner, jobId); checkId(mediaId);
+  // El formulario ya usa prepareJob. Aplicar la misma garantía al acceso directo.
+  if(job.is_public)throw new JobError("Retira el trabajo del portfolio antes de añadir fotografías.",409);
   const bytes = new Uint8Array(await file.arrayBuffer());
   let processed;
   try { processed = await processJobImage(bytes, file.type); }
@@ -95,17 +130,21 @@ export async function uploadPhoto(db: Client, owner: string, jobId: string, medi
   if (existing.data && existing.data.storage_path !== path) throw new JobError("Fotografía incompatible", 409);
   await putObject(db, "job-originals", path, bytes, file.type);
   if (!existing.data) {
-    const last = await db.from("job_media").select("position").eq("job_id", jobId).order("position", { ascending: false }).limit(1);
-    if (last.error) throw new JobError("No se pudo ordenar la fotografía. Reintenta.", 503);
-    const metadata = validateMediaMetadata({ storage_path: path, mime_type: file.type, position: (last.data[0]?.position ?? -1) + 1, width: processed.width, height: processed.height, byte_size: bytes.length }, { ownerId: owner, jobId, mediaId });
-    const inserted = await db.from("job_media").insert({ ...metadata, id: mediaId, job_id: jobId });
-    if (inserted.error) {
-      await removeObject(db, "job-originals", path);
-      throw new JobError("No se pudo registrar la fotografía. Reintenta.", 503);
+    try {
+      const last = await db.from("job_media").select("position").eq("job_id", jobId).order("position", { ascending: false }).limit(1);
+      if (last.error) throw new JobError("No se pudo ordenar la fotografía. Reintenta.", 503);
+      const metadata = validateMediaMetadata({ storage_path: path, mime_type: file.type, position: (last.data[0]?.position ?? -1) + 1, width: processed.width, height: processed.height, byte_size: bytes.length }, { ownerId: owner, jobId, mediaId });
+      const inserted = await db.from("job_media").insert({ ...metadata, id: mediaId, job_id: jobId });
+      if (inserted.error) throw new JobError("No se pudo registrar la fotografía. Reintenta.", 503);
+    } catch(error) {
+      // Si el ACK de INSERT se perdió, no borrar el original de una fila existente.
+      const registered=await db.from("job_media").select("id").eq("id",mediaId).eq("job_id",jobId).maybeSingle();
+      if(!registered.error && !registered.data) await removeObject(db,"job-originals",path);
+      throw error;
     }
   }
   // Si esta parte falla, conservar original + metadatos: el mismo ID permite reanudar.
-  await putObject(db, "portfolio-derivatives", `${jobId}/${mediaId}.webp`, processed.webp, "image/webp");
+  await putDerivatives(db,jobId,mediaId,processed);
 }
 export async function deletePhoto(db: Client, owner: string, jobId: string, mediaId: string) {
   await ownedJob(db, owner, jobId); checkId(mediaId);
@@ -114,7 +153,9 @@ export async function deletePhoto(db: Client, owner: string, jobId: string, medi
   if (!result.data) return; // Reintento de un borrado ya completado.
   const photo = result.data;
   await removeMediaSafely({
-    derivative: () => removeObject(db, "portfolio-derivatives", `${jobId}/${photo.id}.webp`),
+    derivative: async () => {
+      for(const path of derivativePaths(jobId,photo.id)) await removeObject(db,"portfolio-derivatives",path);
+    },
     original: () => removeObject(db, "job-originals", photo.storage_path),
     metadata: async () => {
       const removed = await db.from("job_media").delete().eq("id", photo.id).eq("job_id", jobId).select("id");

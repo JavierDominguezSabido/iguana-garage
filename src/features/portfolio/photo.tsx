@@ -8,7 +8,9 @@ export function PublicPhoto({ jobId, mediaId, alt, sizes, preload = false, previ
 }) {
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
-  const image = <Image key={retry} src={`/api/portfolio/photos/${jobId}/${mediaId}`} loader={({ width }) => publicImageUrl(jobId, mediaId, width, retry)} fill sizes={sizes} alt={alt} preload={preload} className={preview ? "pub-photo-cover" : "pub-photo-contain"} onError={() => setFailed(true)} />;
+  // Lazy nativo evita preloads SSR duplicados con respuestas rápidas no-store.
+  // Las críticas visibles conservan prioridad alta; las restantes, normal.
+  const image = <Image key={retry} src={`/api/portfolio/photos/${jobId}/${mediaId}`} loader={({ width }) => publicImageUrl(jobId, mediaId, width, retry)} fill sizes={sizes} alt={alt} loading="lazy" fetchPriority={preload ? "high" : "auto"} className={preview ? "pub-photo-cover" : "pub-photo-contain"} onError={() => setFailed(true)} />;
   return <div className="pub-photo">
     {failed ? <div className="pub-photo-failed"><p>Fotografía no disponible.</p>{retry < 3 && <button type="button" className="pub-text-action" onClick={() => { setRetry(retry + 1); setFailed(false); }}>Reintentar foto</button>}</div>
       : onOpen ? <button type="button" className="pub-photo-trigger" onClick={onOpen} aria-label={label} aria-haspopup="dialog">{image}</button> : image}
