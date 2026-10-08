@@ -56,7 +56,7 @@ RLS separa trabajos y medios por propietario; anon no lee las tablas privadas, a
 
 ### Encuadre (punto focal)
 
-El propietario puede abrir «Encuadre» en cada foto guardada de `/app/jobs/[id]/edit`, mover un marco 4:3 sobre la foto completa (táctil, ratón o teclado), ver vistas previas fieles y guardar explícitamente (`PATCH /app/api/jobs/[id]/photos/[mediaId]`). Solo se guarda un par de enteros: no se recorta ni se regenera original, master ni sidecars, y se puede cambiar con el trabajo publicado.
+El propietario puede abrir «Encuadre» en cada foto guardada de `/app/jobs/[id]/edit`, mover un marco 4:3 sobre la foto completa (táctil, ratón o teclado), ver vistas previas fieles y guardar explícitamente (`PATCH /app/api/jobs/[id]/photos/[mediaId]`). Solo se guarda un par de enteros: no se recorta ni se regenera original, master ni sidecars, y se puede cambiar con el trabajo publicado. El encuadre se aplica a todos los recortes `cover`: en la home pública y, en la gestión, en las tarjetas de `/app`, las miniaturas de la galería del detalle y las del formulario de edición. La foto principal del detalle y el visor muestran la imagen completa y no lo usan; sin valor guardado, centro (50/50).
 
 ## PWA y estructura
 

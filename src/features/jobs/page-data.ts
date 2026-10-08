@@ -10,4 +10,4 @@ export async function privateJob(id: string) {
   try { const job = await ownedJob(supabase, user.id, id); const media = await jobMedia(supabase, id); return { job, media }; }
   catch (error) { if (error instanceof JobError && error.status === 404) notFound(); throw error; }
 }
-export function displayDate(date: string) { return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`)); }
+export { displayDate } from "./format";
