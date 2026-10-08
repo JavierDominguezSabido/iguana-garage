@@ -2,6 +2,17 @@
 
 Proyecto `iguana-garage` (`atibisongftmspwtyndv`), actualmente **producción con datos reales**. Las dos migraciones de Gate 3A y la migración responsive están aplicadas. Esta última se aplicó el 7 de octubre de 2026 con autorización explícita, conservando datos, buckets, grants y policies. El conector registró `responsive_private_derivatives` como versión remota `20261007112616`, correspondiente al archivo local `20261007090238_responsive_private_derivatives.sql`; revisar esta correspondencia antes de sincronizar migraciones mediante CLI, sin ejecutar un push ciego. No se utiliza LiftTrack. No ejecutar suites mutantes, reset ni limpieza de fixtures sobre este proyecto.
 
+## Migraciones funcionales en producción
+
+Aplicadas en este orden el 8 de octubre de 2026, únicamente a `atibisongftmspwtyndv`, mediante el conector (que registra su propio timestamp):
+
+| Archivo local | Versión remota | Nombre remoto |
+| --- | --- | --- |
+| `20261008120000_job_hours_description.sql` | `20261008165445` | `job_hours_description` |
+| `20261009120000_media_focal_point.sql` | `20261008165516` | `media_focal_point` |
+
+Revisar también esta correspondencia antes de sincronizar mediante CLI; no reaplicar estos archivos ni las migraciones históricas. Horas nullable con CHECK explícito 0–999,99 (incluye denegación de `NaN`); descripción nullable de 1–500 caracteres normalizados; focales `smallint` 0–100 con default 50/50. Se verificaron RPC, grants, aislamiento por propietario y conservación de datos, policies y objetos Storage. Estas migraciones no cambian Auth, buckets ni políticas RLS.
+
 ## Modelo y permisos
 
 `jobs`: UUID, propietario Auth obligatorio, nombre, fecha de calendario, código de pintura nullable, `is_public=false`, timestamps. Nombre no vacío/normalizado (máximo técnico 200 caracteres), código normalizado (máximo 80), fecha entre años 0001 y 9999. Índices por propietario/fecha y parcial por fecha para publicación. `updated_at` se actualiza mediante trigger; los clientes no pueden escribir timestamps, IDs en UPDATE ni transferir propietarios.
