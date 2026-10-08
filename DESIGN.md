@@ -1,53 +1,52 @@
-# Iguana Garage — dirección de diseño
+# Iguana Garage — decisiones visuales
 
-## Referencias y alcance
+## Identidad y dirección
 
-`references/desktop/` y `references/mobile/` son la dirección visual aprobada. Interpretar personalidad, jerarquía, sensación, simplicidad y coherencia; no copiar píxeles. `PRODUCT.md` delimita funcionalidades.
+Identidad oficial inmutable; interfaz **siempre oscura**, sin azul ni tema claro. [PRODUCT.md](PRODUCT.md) delimita funciones y [AGENTS.md](AGENTS.md) la operación.
 
-- Desktop: 6 PNG — home, listado, alta, detalle, edición y login.
-- Mobile: 6 PNG de 941 × 1672 — dos homes, listado, alta, detalle y login. Falta edición móvil; proponer adaptación del formulario móvil de alta.
-- Home `01-home-iguana-garage-mobile1.png` muestra teléfono y trabajos en filas; `01-home-iguana-garage-mobile.png` mantiene secciones anchas y cuatro tarjetas en paralelo. Confirmar composición pública durante diseño.
-- Marcos de teléfono, barras del sistema y fondo exterior son presentación del mockup, no UI ni medidas CSS.
-
-Descripciones por trabajo, filtros, selector de vistas, límites de fotos y enlaces a casos no amplían el alcance. «Ver trabajos» puede desplazarse a la galería de `/`; ampliar fotos dentro de esa página. Antes/proceso/después no implica estados ni categorías obligatorias. Textos ingleses/fechas de las capturas son ilustrativos.
-
-## Lenguaje visual
-
-Dirección observada: carbón casi negro, superficies oscuras con matiz verde, texto claro/gris secundario, acentos verde lima, bordes finos y esquinas suaves. Fotografías protagonistas, títulos sans serif marcados y texto breve.
-
-Portfolio expresivo; gestión privada legible y rápida. Formularios sobre superficies estables, con contraste comprobado. Verde para acción principal; rojo con texto/confirmación para borrar. No depender de color, hover o iconos sin nombre accesible. Movimiento discreto respetando reducción de movimiento.
-
-Sin fuentes ni tokens oficiales entregados: proponer una sans serif disponible y una escala/paleta pequeñas al implementar. No inventar tipografía de marca ni añadir librerías decorativas.
-
-## Mobile-first y responsive
-
-- Diseñar primero los recorridos en teléfono, priorizando referencias móviles para privado. Formularios en una columna, etiquetas visibles, errores junto al campo y datos conservados ante fallo.
-- Acción principal alcanzable con teclado abierto. Proponer objetivos táctiles de 44 × 44 CSS px; revisar foco, zoom, textos largos y zonas seguras.
-- Galería utilizable con tacto, teclado y lector de pantalla. Proponer ficha móvil con medio, datos y acciones; distinguir borrado con confirmación.
-- Adaptar específicamente escritorio: anchuras, galería, formularios y acciones pueden tener composiciones distintas. Compartir comportamiento/marca, sin equivalencia 1:1.
-- Breakpoints según contenido. Verificar teléfonos estrechos/anchos, tamaños intermedios y escritorio, sin desbordamiento ni dependencia de hover.
-- Diseñar carga, vacío, error y progreso de subida. Verificar fotos reales y móvil real.
-
-## Assets oficiales
-
-Solo usar `assets/brand/`:
-
-| PNG | Tamaño |
+| Color oficial | Valor |
 | --- | --- |
-| `iguana-garage-logo-horizontal.png` | 2172 × 724 |
-| `iguana-garage-wordmark.png` | 2172 × 724 |
-| `iguana-garage-symbol.png` | 1312 × 1199 |
+| Iguana Green | `#7A9A3A` |
+| Carbon | `#0E1110` |
+| Bone | `#F8F4DA` |
+| Metal | `#2A2D2B` |
 
-Los tres tienen transparencia. Logo/wordmark presentan márgenes amplios y textura/bordes diferentes del logo limpio de las capturas: revisar lectura a tamaño real sin retocarlos. Escalar proporcionalmente; no estirar, recolorear, trazar, redibujar ni regenerar el lagarto. No extraer marca del mockup. Sin vector ni lema como asset separado.
+El portfolio aplica estos tokens en `src/app/portfolio.css`; PWA usa Carbon. El privado conserva tonos operativos aprobados de `globals.css`, incluidas superficies oscuras y un verde de acción más claro (`#C0E878`): no afirmar que todos sus tokens son idénticos a los públicos ni recolorearlo como corrección documental. Tipografía de interfaz: Arial/Helvetica/sans-serif; la tipografía oficial de marca se conserva en sus assets gráficos.
 
-## Fotografía
+## Marca y materiales
 
-14 WebP de 1080 × 1350 (4:5), todos verticales: Mercedes Clase E (4), paragolpes Mercedes (3), llantas Audi A3 (2) y Suzuki Vitara (5). Preparación, piezas, detalles y resultados en entorno doméstico/taller; luz variable y algunas fotos poco nítidas. No hay vídeos ni hero panorámico equivalente a las referencias.
+Solo identidad de `assets/brand/`: logo horizontal, wordmark y símbolo oficiales. No redibujar, reinterpretar, recolorear, regenerar, deformar ni modificar la iguana o la tipografía oficial; tampoco extraer marca de mockups. Escalar proporcionalmente sin recortar el arte.
 
-- Admitir verticales, horizontales y mezcladas sin exigir fotografías profesionales. Preservar proporciones y reparación relevante: recorte CSS en tarjetas cuando sirva, imagen completa en galería.
-- Reservar espacio por dimensiones y cargar tamaños adecuados progresivamente; evitar todas las fotos a máxima resolución al abrir un listado móvil.
-- Separar texto/foto si no hay encuadre adecuado. No forzar una vertical como hero panorámico ni sustituir material real por stock/generación premium.
-- No asumir comparaciones por nombres: el Mercedes `result` aún muestra piezas sin montar. No inventar resultados ni mezclar trabajos como una reparación.
-- Seleccionar conscientemente fotos con matrículas/elementos particulares antes de publicar. Conservar originales; tratamientos futuros solo en derivados acordados.
+`src/app/icon.png`, `src/app/favicon.ico` y los iconos `public/pwa/` son derivados/copias técnicos separados. Los generadores `scripts/prepare-favicon.mjs` y `scripts/prepare-pwa-icons.mjs` reutilizan el símbolo; no crean marca ni se ejecutan en requests.
 
-**Preservar íntegros `assets/` y `references/`:** no modificar, renombrar, mover ni borrar. No copiarlos automáticamente a carpetas públicas para imitar los mockups.
+Preservar `assets/brand/` y `references/`. Las referencias desktop/mobile orientan lenguaje y coherencia, no imponen nuevos campos ni funciones y no son una maqueta obligatoria de la home actual. Marcos de teléfono/barras de sistema no son UI. Los 14 demos se eliminaron intencionadamente: `assets/demo/` ya no existe; no reconstruirlos ni conservar su inventario antiguo como material disponible.
+
+## Portfolio público actual
+
+Dirección de **reportaje de carrocería / ficha de taller**: fotografía protagonista, composición editorial, menos bordes y asimetría controlada. Evitar decoración que compita con reparaciones reales.
+
+Secuencia: header simple → hero de copy y CTA → transformación curada si está disponible → trabajos/galería → contacto → footer. El hero actual no es una fotografía panorámica. Copy corto y concreto; no añadir descripciones, promesas ni datos comerciales inventados.
+
+- Móvil: trabajos en **una columna**, fotografías grandes y CTA claros; navegación simple hacia la galería. La transformación es una pareja Antes/Después de dos imágenes, también en móvil.
+- Tablet/escritorio: composición adaptada, columnas y espacios proporcionados; el último trabajo sin pareja recibe un remate centrado, sin gran vacío lateral.
+- Fotografías con relaciones de aspecto diversas. Las vistas previas pueden usar `cover` para componer; al ampliar se conserva la imagen completa con `contain`, sin deformarla.
+- Comparación curada del mismo trabajo: preparación y acabado de pintura; no inferir un vehículo completamente montado ni un Antes/Después por orden de archivos.
+- Galería/visor con contador, miniaturas, anterior/siguiente, cierre y teclado. El dialog público está centrado respecto al viewport, con `fixed/inset/margin:auto`; no depende del contenedor de la home.
+
+El portfolio puede evolucionar o rediseñarse con aprobación posterior. La identidad oficial, la publicación explícita, el contrato público limitado y la separación de la PWA privada se mantienen.
+
+## Gestión privada
+
+Compacta, funcional y mobile-first, priorizando operación cotidiana desde teléfono. Formularios con etiquetas visibles, errores útiles, progreso y reintento; los datos confirmados no deben perderse ni comunicar un guardado incompleto como éxito.
+
+No introducir rediseños decorativos que reduzcan legibilidad, espacio de fotos, acceso a botones o rapidez de uso. Verde para acciones principales; borrados identificados con texto y confirmación, sin depender solo del color. El login comparte la identidad privada sin mostrar el marco de gestión antes de autenticar.
+
+El visor privado mantiene centrado robusto de dialog respecto al viewport (`fixed`, `inset:0`, `margin:auto`), fotografías `contain`, proporción real y controles accesibles. No acoplar cambios de su presentación al visor público sin comprobar ambos.
+
+## Responsive y accesibilidad
+
+Diseñar y verificar en este orden: **390 px principal → 768 px adaptación → 1440 px adaptación**. Los breakpoints reales del CSS responden al contenido; no equivalen necesariamente a esos tres anchos de QA. No diseñar desktop primero ni compactar más móvil para imitarlo.
+
+Conservar objetivos táctiles de al menos 44 × 44 px, contraste, foco visible, etiquetas y nombres accesibles; Escape, flechas y retorno de foco del dialog nativo. Respetar reducción de movimiento y comprobar teclado abierto, zoom, overflow, orientación y estados de carga/vacío/error.
+
+Reservar espacio de imágenes y ajustar `sizes` a su ancho pintado; no confundir marco CSS con ancho real de una foto `contain`. Verificar fotografía vertical/horizontal real autorizada, sin stock/IA ni cambios de producción para montar capturas. La emulación no sustituye una prueba física en Android/iPhone; no declarar esa QA sin ejecutarla.

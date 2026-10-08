@@ -1,41 +1,57 @@
-# Iguana Garage — instrucciones operativas
+# Iguana Garage — guía operativa
 
-## Alcance y Gate 1
+## Estado y fuentes
 
-Proyecto nuevo: no reutilizar código/configuración del antiguo proyecto Robin. Leer `PRODUCT.md` y `DESIGN.md`; distinguir requisitos, propuestas y decisiones pendientes.
+Aplicación real desplegada en **Render**, con portfolio público y gestión privada/PWA. Esta guía es común a Codex, Claude Code y futuros agentes: leerla junto con [PRODUCT.md](PRODUCT.md) y [DESIGN.md](DESIGN.md) antes de actuar. Si el harness no carga AGENTS.md automáticamente, realizar esa lectura explícitamente; no se presupone integración automática con Claude Code.
 
-**Gate 1 permite solo preparación y documentación.** Esperar aprobación explícita del plan antes de implementar. En esta fase: no instalar Next.js/dependencias, conectar Supabase, construir componentes/pantallas, hacer staging/commits ni configurar remotos. ECC no anula estos límites.
+- **AGENTS.md:** operación, seguridad, autorizaciones y QA.
+- **PRODUCT.md:** funciones, rutas, datos y arquitectura actuales.
+- **DESIGN.md:** identidad, composición y criterios visuales.
+- Código, configuración, tests y Git contrastan las afirmaciones. README e informes de `docs/` contienen también estados históricos; no convertir sus pendientes antiguos en tareas ni copiarlos como estado actual. Mantener estos tres documentos al cambiar sus contratos.
 
-## Workflow Codex/ECC
+## Stack real
 
-1. Inspeccionar el workspace e instrucciones aplicables; elegir y leer las skills pertinentes antes de actuar.
-2. Concretar alcance, aceptación, arquitectura mínima y riesgos; no inventar reglas de negocio.
-3. Tras aprobar el plan, implementar incrementos mediante TDD, revisar y verificar.
-4. Informar cambios, evidencias reales, limitaciones y decisiones abiertas.
+Next.js **16.3.8** (App Router), React/React DOM **19.3.0**, TypeScript **6.0.3** strict, Tailwind CSS **4.3.3**. Node **24.x** (local 24.18.0), npm **11.x** (11.16.0); alias `@/* → src/*`.
 
-Usar `ecc-guide` para localizar capacidades, `intent-driven-development` para aceptación, `frontend-design-direction` para dirección visual y `tdd-workflow`/`verification-loop` durante desarrollo. Comprobar disponibilidad; no instalar skills, duplicar configuración ni activar agentes/herramientas sin necesidad y autorización aplicable. No asumir comandos de Claude en Codex.
+Supabase JS **2.117.2**, SSR **0.12.7**, Sharp **0.35.5**; Vitest **5.0.3**, Playwright **1.63.0**, PGlite **0.5.8** para PostgreSQL aislado. ESLint **9.39.5** y eslint-config-next **16.3.8**: ESLint 9 es deuda temporal por peers de plugins; no forzar ESLint 10. Versiones y resolución: `package.json`/`package-lock.json`; revisarlas antes de actualizar, sin fijar versiones por memoria.
 
-## TDD, review y verification
+## Workflow proporcional con ECC
 
-- RED observado por el comportamiento previsto → implementación mínima → misma prueba GREEN → refactor con pruebas verdes. Conservar comandos/resultados; no ejecutar checkpoints Git contra instrucciones del usuario.
-- Unitarias para validación, integración real de Auth/RLS/Storage y E2E de recorridos críticos. Los mocks no prueban autorización real.
-- Objetivo ECC: 80% de cobertura del código comprobable; probar explícitamente denegaciones, errores y recuperación independientemente del porcentaje.
-- Revisar alcance, seguridad, límites servidor/cliente, accesibilidad, móvil y estados de carga/vacío/error.
-- Cuando exista aplicación: build, tipos strict, lint, pruebas/cobertura y revisión de cambios/secretos con scripts reales. Declarar lo no ejecutado; nunca inventar PASS.
-- En este gate documental: coherencia, rutas, `git status` e integridad de materiales. No crear pruebas artificiales de aplicación.
+1. Inspeccionar instrucciones, estado Git y archivos relevantes; leer las skills pertinentes antes de actuar.
+2. Diagnosticar o planificar según el riesgo; concretar alcance y aceptación sin inventar funciones.
+3. Para cambios de comportamiento: reproducer RED observado → corrección mínima → misma prueba GREEN → review y verificación.
+4. Informar evidencia real y límites; no declarar PASS de checks no ejecutados.
 
-## Arquitectura y seguridad
+Usar `ecc-guide` para localizar capacidades, `tdd-workflow`/`verification-loop` al desarrollar y `living-docs-governance` para documentación. Aceptación/dirección visual solo cuando procedan. No instalar ni duplicar ECC, asumir comandos de Claude en Codex, activar agentes o ejecutar suites sin necesidad. Cambios documentales requieren coherencia, revisión del diff y `git diff --check`, no tests artificiales ni suites de aplicación.
 
-- Stack previsto: Next.js, React, TypeScript strict, Tailwind CSS y Supabase Auth/PostgreSQL/Storage. Justificar dependencias adicionales; respetar rutas/modelo de `PRODUCT.md` y evitar capas innecesarias.
-- Proteger todo `/app` con sesión validada en servidor y autorizar cada lectura/mutación/operación de medios. Ocultar enlaces o comprobar solo un layout no basta.
-- RLS por propietario y políticas de Storage para originales privados. Probar anónimo, sesión caducada y usuario ajeno mediante acceso directo.
-- No hardcodear credenciales ni comprobar contraseñas en React. No incluir secretos en documentación, fixtures, logs o `NEXT_PUBLIC_*`; exponer solo configuración diseñada para navegador.
-- Gestionar con identidad del usuario y RLS; nunca usar claves privilegiadas en cliente o para eludir políticas.
-- Portfolio limitado a publicación autorizada: no abrir lecturas anónimas generales ni copiar automáticamente demo/referencias a `public/`.
-- Validar entradas/archivos y coordinar subidas/borrados con metadatos y recuperación. No comunicar éxito incompleto.
+## Contratos que deben preservarse
 
-## Diseño y materiales
+- **Público:** `/`, sin enlace de login ni manifest PWA. Cliente Supabase anónimo independiente de cookies; RPC/proyección limitada a trabajos `is_public=true`, sin acceso anónimo general a tablas ni originales.
+- **Privado:** `/app`, `/app/new`, `/app/jobs/[id]`, `/app/jobs/[id]/edit`. Sesión validada en servidor y autorización por operación, además de RLS por propietario. `/app/login` es la única excepción anónima del guard y el único formulario real.
+- **Compatibilidad:** `/login` devuelve HTTP 307 a `/app/login` desde `src/proxy.ts`; no recrear una página React en esa ruta. `(workspace)` agrupa la gestión sin cambiar URLs.
+- **PWA privada:** `scope=/app`, `start_url=/app`, `display=standalone`. Manifest enlazado solo por el layout de `/app`, incluido login; `/` queda fuera. Sin service worker ni caché/offline de contenido privado.
+- **Seguridad:** Auth servidor, RLS y ambos buckets privados. CSP con nonce por petición y `strict-dynamic`; no habilitar `unsafe-inline` para scripts, retirar nonces ni relajar políticas. Datos/imágenes revocables mantienen `private, no-store` y CDN `no-store` donde está configurado.
+- **Imágenes:** originales privados intactos; master WebP legacy hasta 1600 px en `job_uuid/media_uuid.webp`; sidecars exclusivamente `job_uuid/media_uuid/{320,390,640,768}.webp`. Preparación en subida; entrega normal de bytes preparados sin Sharp. Existen fallbacks legacy explícitos para variantes ausentes; no generalizarlos ni volver al procesamiento normal por request.
+- Mantener `server-only` en entradas de aplicación. `src/features/jobs/server/media.ts` es interno de Node para DAL/mantenimiento, no client-safe; respetar su guard y la restricción ESLint de imports.
 
-Diseñar primero teléfono y adaptar específicamente escritorio. Las referencias orientan el lenguaje visual; `PRODUCT.md` delimita funciones.
+## Autorización y producción
 
-**No modificar, renombrar, mover, borrar ni sobrescribir `assets/` o `references/`.** Mantenerlos versionables. Derivados futuros irán separados, dentro de alcance autorizado. Usar solo identidad oficial de `assets/brand/`: no redibujar, reinterpretar, recolorear ni regenerar el lagarto. Verificar con fotos reales de `assets/demo/`; no sustituirlas por stock premium ni extraer assets de los mockups.
+Producción: `https://iguana-garage.onrender.com`, Supabase Iguana Garage `atibisongftmspwtyndv`, con datos reales. No tocar LiftTrack. Render es un Web Service Node completo; el push autorizado a `main` dispara su despliegue automático.
+
+Requieren autorización explícita aplicable: cambios de alcance/diseño, dependencias/configuración funcional, migraciones/policies, Auth/usuarios/URLs, variables remotas, backfill, fixtures remotos, cambios de Render, commits/push y despliegues. Una autorización ya concedida para el alcance actual no se pide de nuevo por microdecisiones reversibles.
+
+No ejecutar resets, limpieza de fixtures, borrados, sobrescrituras ni suites mutantes contra producción. No usar `service_role`/claves privilegiadas en aplicación o mantenimiento para eludir RLS. Mantenimiento: dry-run primero, proyecto y propietario confirmados, `--apply` protegido por `IGUANA_VARIANTS_ALLOW_WRITE`, sin reemplazar originales/masters ni variantes válidas. Revisar la correspondencia de versiones de migración en `supabase/README.md` antes de cualquier sincronización CLI.
+
+Nunca imprimir credenciales, cookies, JWT, contraseñas o claves privadas en chat, docs, logs, fixtures, screenshots o Git. `NEXT_PUBLIC_*` solo para configuración diseñada para navegador. `.env.local`, `.env.integration.local` y `.env.maintenance.local` están ignorados; únicamente plantillas vacías son versionables.
+
+## QA y Git
+
+- Mobile-first: **390 → 768 → 1440**; imágenes verticales/horizontales, overflow, teclado/foco, cierre/navegación del visor y estados de carga/vacío/error. Emulación no demuestra instalación ni uso en un teléfono físico.
+- Pruebas proporcionales: `npm test -- <archivos>`; `npm run test:isolated` para DAL/RLS aislados. Integración remota y E2E mutantes solo en un entorno aislado/disposable expresamente autorizado. Los mocks no prueban permisos reales.
+- Algunas suites antiguas usan `assets/demo/`, eliminado intencionadamente. No recrearlo ni ejecutar ciegamente `test:supabase` o todos los E2E por sus flags históricos; revisar destino, fixtures y efectos antes.
+- Cambios de código: tests afectados, `npm run typecheck`, `npm run lint`, build cuando afecte a producción/rutas/configuración y `git diff --check`. Cobertura objetivo/configurada: 80% de lógica comprobable; no inflarla con tests ficticios ni revalidar internamente Supabase sin dependencia propia.
+- Repo GitHub **público**: revisar diff/staging, secretos, privacidad e ignorados antes de publicar; conservar identidad Git noreply local. Stage solo lo autorizado; no force push, amend, rebase ni reescritura de historial sin autorización específica. Tras un despliegue autorizado, comprobar Render Live y smoke real de solo lectura.
+
+## Identidad y materiales
+
+Preservar íntegros `assets/brand/` y `references/`: no mover, borrar, sobrescribir, redibujar, reinterpretar ni recolorear la iguana o la tipografía oficial. Derivados técnicos autorizados van separados; favicon e iconos PWA usan el símbolo oficial. No reconstruir demos eliminadas, extraer marca de mockups ni sustituir fotografías reales por stock/IA. El portfolio puede evolucionar con aprobación; la identidad y los contratos funcionales se mantienen.
