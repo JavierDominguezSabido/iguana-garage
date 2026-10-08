@@ -114,7 +114,7 @@ dialog::backdrop { background: #020705dd; }
 .confirm-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
 .danger { background: #a63025; color: white; }
 .danger:hover { background: #ba392d; }
-.image-dialog { max-width: calc(100vw - 24px); width: 1080px; padding: 14px; max-height: calc(100dvh - 24px); }
+.image-dialog { position: fixed; inset: 0; margin: auto; max-width: calc(100vw - 24px); width: 1080px; padding: 14px; max-height: calc(100dvh - 24px); }
 .image-dialog > img { width: 100%; height: auto; max-height: 72dvh; object-fit: contain; }
 .dialog-toolbar { display: flex; justify-content: space-between; align-items: center; font-size: .8rem; color: var(--muted); margin-bottom: 12px; }
 .dialog-navigation { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; }
