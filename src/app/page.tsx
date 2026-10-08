@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Barlow, Barlow_Condensed } from "next/font/google";
 import { Brand } from "@/components/brand";
-import { publicJobs } from "@/features/portfolio/data";
+import { homeData } from "@/features/portfolio/data";
 import { portfolioPage } from "@/features/portfolio/delivery";
 import { whatsappContact } from "@/features/portfolio/contact";
 import { ContactLink } from "@/features/portfolio/contact-link";
@@ -11,8 +11,6 @@ import { PublicGallery } from "@/features/portfolio/gallery";
 import { FeaturedTransformation } from "@/features/portfolio/featured-transformation";
 import { RevealOnScroll } from "@/features/portfolio/reveal";
 import { StickyContact } from "@/features/portfolio/sticky-contact";
-import { selectFeaturedTransformation } from "@/features/portfolio/transformation";
-import type { PublicJob } from "@/features/portfolio/contract";
 import symbol from "../../assets/brand/iguana-garage-symbol.png";
 import "./portfolio.css";
 
@@ -37,9 +35,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
   const query = await searchParams;
   const page = portfolioPage(typeof query.page === "string" ? query.page : undefined);
   const contact = whatsappContact(process.env.IGUANA_WHATSAPP_NUMBER);
-  let jobs: PublicJob[] = []; let hasNext = false; let failed = false;
-  try { ({ jobs, hasNext } = await publicJobs(page)); } catch { failed = true; }
-  const transformation = selectFeaturedTransformation(jobs);
+  const { jobs, hasNext, failed, transformation } = await homeData(page);
   return <div className={`portfolio-page ${display.variable} ${text.variable}`} id="inicio">
     <RevealOnScroll />
     <a className="skip-link" href="#contenido-publico">Ir al contenido</a>
