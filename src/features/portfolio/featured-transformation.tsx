@@ -86,7 +86,7 @@ export function FeaturedTransformation({ transformation }: { transformation: Pub
       <span className="pub-compare-chip pub-compare-chip-after" aria-hidden="true">Después</span>
       <div className="pub-compare-bar" aria-hidden="true"><span className="pub-compare-knob"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6" /></svg></span></div>
     </div>
-    <button type="button" className="pub-compare-open" onClick={() => setViewing(true)} aria-haspopup="dialog">Ver fotos <span aria-hidden="true">↗</span><span className="pub-sr-only"> de {job.name}</span></button>
+    <button type="button" className="pub-compare-open" onClick={() => setViewing(true)} aria-haspopup="dialog">Ver fotos <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="7" width="14" height="14" rx="2" /><path d="M7 3h12a2 2 0 0 1 2 2v12" /></svg><span className="pub-sr-only"> de {job.name}</span></button>
     {viewing && <PublicViewer job={job} initialMediaId={after.id} onClose={() => setViewing(false)} />}
   </div>;
 }

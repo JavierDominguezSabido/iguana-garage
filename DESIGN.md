@@ -53,7 +53,7 @@ Contenedor máximo de 1760 px, centrado; márgenes laterales de 20 px (móvil), 
 
 - Una sola imagen con barra deslizante: la foto «Después» completa y la «Antes» recortada por `clip-path`; chips «Antes» y «Después» en las esquinas. Ambas con `cover` y su punto focal.
 - Es un `role="slider"` con nombre «Comparador Antes y Después: {trabajo}», `aria-valuenow/min/max` y `aria-valuetext` («Antes 58 %, Después 42 %»). Teclado: flechas ±4 (Mayús ±10), Re Pág/Av Pág ±10, Inicio y Fin.
-- **Solo se arrastra, no se toca para abrir.** Debajo, un botón visible «Ver fotos» abre el visor del trabajo. No hay umbral arrastre/toque.
+- **Solo se arrastra, no se toca para abrir.** Debajo, un botón visible «Ver fotos» abre el visor del trabajo. Lleva un icono de fotos y no la flecha ↗, que sugiere un enlace externo (solo los enlaces a WhatsApp la llevan). No hay umbral arrastre/toque.
 - `touch-action: pan-y`: el scroll vertical de la página funciona siempre, también empezando sobre la foto; solo se captura el gesto horizontal. En táctil el arrastre es relativo (sin saltos); con ratón la barra sigue al puntero.
 - La barra se mantiene entre el 14 % y el 86 % del ancho para no chocar con el gesto de «atrás». Tirador de 52 px, verde con anillo, siempre visible.
 - Pista de uso: al entrar en pantalla la barra se desplaza sola ≈12 puntos y vuelve, una sola vez; se cancela si la persona interactúa. Sin pista con `prefers-reduced-motion`.
@@ -66,16 +66,28 @@ Contenedor máximo de 1760 px, centrado; márgenes laterales de 20 px (móvil), 
 - Trabajo sin fotos: bloque «Fotografías próximamente».
 - Estados de error, vacío y paginación conservan el contrato de [PRODUCT.md](PRODUCT.md) con la misma tipografía.
 
+### Botón fijo de WhatsApp (móvil)
+
+- Solo por debajo de 700 px y solo con número de WhatsApp válido: botón verde a todo el ancho (12 px de margen, 52 px de alto, respeta el área segura) con «Escríbenos por WhatsApp ↗».
+- Aparece cuando el título sale de pantalla. Se retira al llegar a «contacto» o al pie, para no tapar el contenido final ni duplicar el CTA, y mientras hay un visor abierto (el dialog modal ya lo deja inerte y debajo de su fondo; el CSS lo oculta además con `:has(dialog[open])`).
+- Oculto es `visibility: hidden`: fuera del orden de tabulación y del árbol de accesibilidad. Entra con un desplazamiento de 16 px y fundido (0,22 s); con `prefers-reduced-motion` aparece sin transición.
+
+### Imagen para compartir
+
+Imagen Open Graph **estática y solo de marca**: logo oficial completo, a su proporción, sobre Carbon, más «CHAPA Y PINTURA» en Barlow Condensed 800; sin fotos de trabajos. Es `public/share/iguana-garage-og.png` (1200×630), generada a mano con `scripts/prepare-og-image.mjs` (no se ejecuta en build ni en peticiones) y enlazada desde los metadatos de `/` (`og:image`, `twitter:image` y `twitter:card=summary_large_image`). La URL es absoluta: `metadataBase` usa `RENDER_EXTERNAL_URL` o, si falta, la URL de producción.
+
 ### Movimiento
 
-- **Entrada al hacer scroll** en titulares, bandas, fotos del muro y contacto: aparición con ligero desplazamiento vertical (18 px, 0,45 s) y escalonado de 60 ms entre fotos de una fila. Solo se oculta lo que queda bajo la primera pantalla, y solo con JavaScript (`RevealOnScroll`); sin JS todo es visible.
+- **Título:** al cargar, sus dos líneas suben escalonadas (0,38 em y fundido, 0,75 s, la segunda con 0,12 s de retardo), una sola vez y solo con CSS.
+- **Entrada al hacer scroll** en titulares, bandas y contacto: aparición con ligero desplazamiento vertical (18 px, 0,45 s). Solo se oculta lo que queda bajo la primera pantalla, y solo con JavaScript (`RevealOnScroll`); sin JS todo es visible.
+- **Pasada de pintura** en las fotos del muro (sustituye al fundido de entrada, no se suma): al entrar en pantalla, una franja en Iguana Green (28 % del ancho de la foto) la recorre de izquierda a derecha y va descubriéndola, 0,62 s lineales, una sola vez, con 70 ms de escalonado entre fotos de una fila. Solo anima `transform` y `opacity` (la ventana avanza, la foto contra-avanza y la franja corre aparte) y espera, hasta 0,7 s, a que la foto esté cargada para descubrir imagen y no un hueco. Estado final sin transformaciones residuales.
 - Zoom muy leve (1,03) al pasar el ratón sobre una foto del muro.
-- Con `prefers-reduced-motion: reduce` no hay entrada animada, ni zoom, ni pista del comparador.
+- Con `prefers-reduced-motion: reduce` no hay título animado, ni entrada, ni pasada de pintura, ni zoom, ni pista del comparador; todo se ve desde el principio.
 
 ### Reglas técnicas del visor y las imágenes
 
 - Las vistas previas pueden recortar con `cover` y punto focal; al ampliar se muestra la imagen completa con `contain`, sin deformar.
-- El visor (dialog nativo) va centrado respecto al viewport con `fixed/inset/margin:auto`, independiente del layout de la home, con contador, miniaturas, anterior/siguiente, cierre, Escape/flechas y retorno de foco. El diseño no lo modifica.
+- El visor (dialog nativo) va centrado respecto al viewport con `fixed/inset/margin:auto`, independiente del layout de la home, con contador, miniaturas, anterior/siguiente, cierre, Escape/flechas y retorno de foco. En táctil se cambia de foto deslizando a izquierda o derecha (recorrido de al menos 48 px y claramente horizontal; `touch-action: pan-y` conserva el scroll vertical), además de botones y teclado; el ratón no desliza.
 - Reservar espacio de imágenes y ajustar `sizes` al ancho realmente pintado (por foto del muro y para el comparador).
 
 ## Gestión privada

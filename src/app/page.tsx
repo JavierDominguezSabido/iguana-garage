@@ -10,6 +10,7 @@ import { ContactLink } from "@/features/portfolio/contact-link";
 import { PublicGallery } from "@/features/portfolio/gallery";
 import { FeaturedTransformation } from "@/features/portfolio/featured-transformation";
 import { RevealOnScroll } from "@/features/portfolio/reveal";
+import { StickyContact } from "@/features/portfolio/sticky-contact";
 import { selectFeaturedTransformation } from "@/features/portfolio/transformation";
 import type { PublicJob } from "@/features/portfolio/contract";
 import symbol from "../../assets/brand/iguana-garage-symbol.png";
@@ -20,11 +21,15 @@ const display = Barlow_Condensed({ subsets: ["latin"], weight: ["600", "700", "8
 const text = Barlow({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-pub-text", display: "swap" });
 
 const description = "Iguana Garage. Chapa y pintura: fotografías de nuestros trabajos y contacto por WhatsApp.";
+// Imagen para compartir: estática y solo de marca (logo oficial sobre Carbon), sin fotos de trabajos.
+// og:image debe ser absoluta: Render expone RENDER_EXTERNAL_URL; sin ella se usa la URL de producción.
+const shareImage = { url: "/share/iguana-garage-og.png", width: 1200, height: 630, alt: "Iguana Garage · Chapa y pintura" };
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.RENDER_EXTERNAL_URL || "https://iguana-garage.onrender.com"),
   title: "Iguana Garage · Chapa y pintura",
   description,
-  openGraph: { title: "Iguana Garage · Chapa y pintura", description, type: "website", locale: "es_ES", siteName: "Iguana Garage" },
-  twitter: { card: "summary", title: "Iguana Garage · Chapa y pintura", description },
+  openGraph: { title: "Iguana Garage · Chapa y pintura", description, type: "website", locale: "es_ES", siteName: "Iguana Garage", images: [shareImage] },
+  twitter: { card: "summary_large_image", title: "Iguana Garage · Chapa y pintura", description, images: [{ url: shareImage.url, alt: shareImage.alt }] },
 };
 export const dynamic = "force-dynamic";
 
@@ -55,5 +60,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
       <section className="pub-contact" id="contacto" aria-labelledby="contact-title"><div className="pub-contact-inner" data-reveal><div><h2 id="contact-title">¿Hablamos de tu coche?</h2><p>Cuéntanos qué necesitas.</p></div>{contact ? <ContactLink contact={contact} /> : <p className="pub-contact-pending">Nuestro contacto por WhatsApp estará disponible próximamente.</p>}</div></section>
     </main>
     <footer className="pub-footer"><a href="#inicio" aria-label="Iguana Garage — volver al inicio"><Brand /></a><p>Chapa y pintura.</p><a href="#inicio" className="pub-text-action">Volver arriba ↑</a></footer>
+    {contact && <StickyContact href={contact.href} />}
   </div>;
 }

@@ -6,6 +6,7 @@ const slider = (page: Page) => page.getByRole("slider", { name: /^Comparador Ant
 const sliderValue = async (page: Page) => Number(await slider(page).getAttribute("aria-valuenow"));
 
 test("portada: título y comparador visibles sin scroll, con el comparador junto al título en escritorio y debajo en móvil", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" }); // mide la composición final, no la animación de entrada del título
   await page.goto("/");
   await expect(slider(page)).toBeVisible({ timeout: 5000 });
   const viewport = page.viewportSize()!;
