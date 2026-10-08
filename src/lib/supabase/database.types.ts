@@ -19,6 +19,8 @@ export type Database = {
         Row: {
           byte_size: number | null
           created_at: string
+          focal_x: number
+          focal_y: number
           height: number | null
           id: string
           job_id: string
@@ -30,6 +32,8 @@ export type Database = {
         Insert: {
           byte_size?: number | null
           created_at?: string
+          focal_x?: number
+          focal_y?: number
           height?: number | null
           id?: string
           job_id: string
@@ -41,6 +45,8 @@ export type Database = {
         Update: {
           byte_size?: number | null
           created_at?: string
+          focal_x?: number
+          focal_y?: number
           height?: number | null
           id?: string
           job_id?: string

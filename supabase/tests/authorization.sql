@@ -39,6 +39,11 @@ do $$ begin
   assert (select count(*) = 1 from public.job_media), 'A debe leer su medio';
   update public.job_media set position = 1;
   assert (select position = 1 from public.job_media limit 1), 'A debe editar su medio';
+  assert (select focal_x = 50 and focal_y = 50 from public.job_media limit 1), 'Punto focal por defecto: centro';
+  update public.job_media set focal_x = 20, focal_y = 80;
+  assert (select focal_x = 20 and focal_y = 80 from public.job_media limit 1), 'A debe editar el punto focal';
+  begin update public.job_media set focal_x = 101; raise exception 'Punto focal fuera de rango aceptado';
+  exception when check_violation then null; end;
   begin
     update public.job_media set position = -1;
     raise exception 'Posición negativa aceptada';
@@ -68,6 +73,8 @@ do $$ declare affected integer; begin
   assert affected = 0, 'B no debe eliminar trabajos de A';
   update public.job_media set position = 3; get diagnostics affected = row_count;
   assert affected = 0, 'B no debe modificar medios de A';
+  update public.job_media set focal_x = 1; get diagnostics affected = row_count;
+  assert affected = 0, 'B no debe modificar el punto focal de A';
   delete from public.job_media; get diagnostics affected = row_count;
   assert affected = 0, 'B no debe eliminar medios de A';
   begin
@@ -107,6 +114,7 @@ do $$ declare result jsonb; begin
   assert result->>'description' = 'Descripción pública de prueba.', 'Descripción pública ausente';
   assert jsonb_array_length(result->'media') = 1, 'Derivado autorizado ausente';
   assert not (result->'media'->0) ? 'storage_path', 'Se expuso ruta de original';
+  assert (result->'media'->0->>'focal_x')::int = 20 and (result->'media'->0->>'focal_y')::int = 80, 'Punto focal público ausente';
   assert (select count(*) = 0 from storage.objects where bucket_id = 'job-originals'), 'Publicar abrió originales';
 end $$;
 -- Cada operación se comprueba con el mismo GUC que utiliza la versión instalada de Storage.

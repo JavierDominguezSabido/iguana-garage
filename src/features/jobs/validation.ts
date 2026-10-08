@@ -1,4 +1,5 @@
 export type JobInput = { name: string; job_date: string; paint_code: string | null; work_hours: number | null; description: string | null; is_public: boolean };
+export type FocalPoint = { focal_x: number; focal_y: number };
 export const MAX_WORK_HOURS = 999.99;
 export const MAX_DESCRIPTION = 500;
 export type MediaMetadata = { storage_path: string; mime_type: string; position: number; width: number | null; height: number | null; byte_size: number };
@@ -55,6 +56,14 @@ export function validateJob(input: unknown): JobInput {
     work_hours: data.work_hours ?? null, description: plainDescription(data.description),
     is_public: data.is_public === true,
   };
+}
+
+// Punto focal: porcentajes enteros 0–100 (50/50 = centro). Solo presentación; no toca ninguna imagen.
+export function validateFocalPoint(input: unknown): FocalPoint {
+  const data = fields(input, ["focal_x", "focal_y"]);
+  const valid = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100;
+  if (!valid(data.focal_x) || !valid(data.focal_y)) throw new Error("Encuadre inválido");
+  return { focal_x: data.focal_x, focal_y: data.focal_y };
 }
 
 export function buildOriginalPath(ownerId: string, jobId: string, mediaId: string, mime: string): string {

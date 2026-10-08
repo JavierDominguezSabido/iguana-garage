@@ -37,7 +37,7 @@ describe("Storage: whitelist responsive bajo RLS PostgreSQL aislado",()=>{
     await db.query("delete from storage.objects where name=$1",[paths[1]]);
     expect((await read(paths[1])).rows).toHaveLength(0);
     const projection=await asRole<{media:{id:string;path:string}[]}>(db,"anon",null,"","select * from public.list_public_jobs()");
-    expect(projection.rows[0].media).toEqual([{id:mediaA,path:legacy}]);
+    expect(projection.rows[0].media).toEqual([{id:mediaA,path:legacy,focal_x:50,focal_y:50}]);
     await db.query("update public.jobs set is_public=false where id=$1",[jobA]);
     for(const path of paths)expect((await read(path)).rows).toHaveLength(0);
   });

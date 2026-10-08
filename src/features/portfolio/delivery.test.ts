@@ -37,7 +37,7 @@ describe("paginación pública acotada", () => {
 });
 
 describe("hero sin repetición inmediata del primer trabajo", () => {
-  const work = (id: string, photos = 1): PublicJob => ({ id, name: id, job_date: "2026-10-06", description: null, media: Array.from({ length: photos }, (_, index) => ({ id: `${id}-${index}`, path: `${id}/${index}.webp` })) });
+  const work = (id: string, photos = 1): PublicJob => ({ id, name: id, job_date: "2026-10-06", description: null, media: Array.from({ length: photos }, (_, index) => ({ id: `${id}-${index}`, path: `${id}/${index}.webp`, focal_x: 50, focal_y: 50 })) });
   it("elige otro trabajo de la página y conserva el orden y las fotografías del listado", () => {
     const jobs = [work("primero"), work("segundo"), work("tercero")];
     const original = structuredClone(jobs);

@@ -1,5 +1,5 @@
 import "server-only";
-import { buildOriginalPath, validateJob, validateMediaMetadata } from "./validation";
+import { buildOriginalPath, validateFocalPoint, validateJob, validateMediaMetadata } from "./validation";
 import type { JobInput } from "./validation";
 import { processJobImage } from "./image-processing";
 import { removeMediaSafely } from "./workflow";
@@ -73,6 +73,14 @@ export async function uploadPhoto(db: Client, owner: string, jobId: string, medi
   }
   // Si esta parte falla, conservar original + metadatos: el mismo ID permite reanudar.
   await putDerivatives(db,jobId,mediaId,processed);
+}
+// Solo presentación (object-position): no reprocesa ni toca originales, master ni variantes. Permitido con el trabajo publicado.
+export async function setFocalPoint(db: Client, owner: string, jobId: string, mediaId: string, input: unknown) {
+  const focal = validateFocalPoint(input);
+  await ownedJob(db, owner, jobId); checkId(mediaId);
+  const result = await db.from("job_media").update(focal).eq("id", mediaId).eq("job_id", jobId).select("id");
+  if (result.error) throw new JobError("No se pudo guardar el encuadre. Reintenta.", 503);
+  if (result.data?.length !== 1) throw new JobError("Fotografía no encontrada", 404);
 }
 export async function deletePhoto(db: Client, owner: string, jobId: string, mediaId: string) {
   await ownedJob(db, owner, jobId); checkId(mediaId);

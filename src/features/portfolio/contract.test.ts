@@ -3,7 +3,7 @@ import { parsePublicJobs } from "./contract";
 
 const jobId = "22222222-2222-4222-8222-222222222222";
 const mediaId = "33333333-3333-4333-8333-333333333333";
-const row = { id: jobId, name: "Audi", job_date: "2026-10-06", description: null, media: [{ id: mediaId, path: `${jobId}/${mediaId}.webp` }] };
+const row = { id: jobId, name: "Audi", job_date: "2026-10-06", description: null, media: [{ id: mediaId, path: `${jobId}/${mediaId}.webp`, focal_x: 50, focal_y: 50 }] };
 
 describe("contrato público", () => {
   it("conserva únicamente campos expresamente públicos, incluso ante cambios del RPC", () => {
@@ -24,6 +24,13 @@ describe("contrato público", () => {
   });
   it.each([" ", "x".repeat(501), 42, {}])("rechaza una descripción pública inválida", (description) => {
     expect(() => parsePublicJobs([{ ...row, description }])).toThrow(/^Contrato público inválido$/);
+  });
+  it("propaga el punto focal público y usa el centro si el RPC no lo envía", () => {
+    expect(parsePublicJobs([{ ...row, media: [{ ...row.media[0], focal_x: 20, focal_y: 80 }] }])[0].media[0]).toMatchObject({ focal_x: 20, focal_y: 80 });
+    expect(parsePublicJobs([{ ...row, media: [{ id: mediaId, path: row.media[0].path }] }])[0].media[0]).toMatchObject({ focal_x: 50, focal_y: 50 });
+  });
+  it.each([{ focal_x: -1 }, { focal_y: 101 }, { focal_x: 1.5 }, { focal_y: "50" }])("rechaza un punto focal inválido %j", (bad) => {
+    expect(() => parsePublicJobs([{ ...row, media: [{ ...row.media[0], ...bad }] }])).toThrow(/^Contrato público inválido$/);
   });
   it("admite trabajos sin derivados preparados y una respuesta vacía", () => {
     expect(parsePublicJobs([{ ...row, media: [] }])[0].media).toEqual([]);

@@ -79,6 +79,24 @@ h2 { font-size: 1.2rem; line-height: 1.3; font-weight: 700; }
 .photo-previews { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .photo-preview { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: #0b100d; }
 .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.focal-open { position: absolute; right: 8px; bottom: 8px; min-height: 44px; padding: 0 12px; background: #121912ed; border: 1px solid #7f8d80; border-radius: 6px; font-size: .8rem; font-weight: 700; }
+.focal-dialog { position: fixed; inset: 0; margin: auto; width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; padding: 16px; border: 0; background: #101513; color: var(--text); overflow-y: auto; }
+.focal-dialog[open] { display: flex; flex-direction: column; gap: 14px; }
+.focal-dialog::backdrop { background: #000c; }
+.focal-head h2 { font-size: 1.25rem; }
+.focal-head p, .focal-help { color: var(--muted); font-size: .85rem; line-height: 1.5; margin-top: 6px; }
+.focal-body { display: flex; flex-direction: column; gap: 10px; }
+.focal-stage { position: relative; margin: 0 auto; overflow: hidden; border-radius: 6px; background: #0b100d; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+.focal-stage:active { cursor: grabbing; }
+.focal-stage img { display: block; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
+.focal-frame { position: absolute; border: 2px solid #fff; border-radius: 2px; box-shadow: 0 0 0 100vmax #000a; pointer-events: none; }
+.focal-previews { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+.focal-previews figure { margin: 0; }
+.focal-previews figure > div { overflow: hidden; border-radius: 6px; background: #0b100d; }
+.focal-previews img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.focal-previews figcaption { margin-top: 6px; color: var(--muted); font-size: .75rem; }
+.focal-actions { position: sticky; bottom: -16px; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: auto -16px -16px; padding: 12px 16px; background: #101513; border-top: 1px solid var(--line); }
+.focal-actions .primary { grid-column: 1 / -1; order: -1; }
 .remove-photo { position: absolute; right: 4px; top: 4px; min-width: 44px; min-height: 44px; background: #121912ed; border: 1px solid #7f8d80; border-radius: 6px; display: grid; place-items: center; }
 .photo-position { position: absolute; left: 8px; bottom: 8px; font-size: .7rem; background: #101513df; padding: 3px 8px; border-radius: 4px; }
 .add-photo { position: relative; aspect-ratio: 1; min-height: 120px; border: 1px dashed #6e7f70; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-size: .8rem; cursor: pointer; }
@@ -140,6 +158,8 @@ dialog::backdrop { background: #020705dd; }
 .loading-state > .spinner { margin-right: 12px; }
 .skeleton-grid { display: grid; gap: 24px; margin-top: 32px; }
 .skeleton-grid > div { height: 300px; background: #1d2920; border-radius: 10px; }
+@media (min-width: 768px) { .focal-dialog { padding: 24px 32px; } .focal-actions { display: flex; justify-content: flex-end; bottom: -24px; margin: auto -32px -24px; padding: 14px 32px; } .focal-actions .primary { order: 0; } }
+@media (min-width: 1100px) { .focal-dialog { inset: 0; width: min(1000px, calc(100vw - 48px)); height: min(900px, calc(100dvh - 48px)); border: 1px solid var(--line); border-radius: 10px; } .focal-body { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px 24px; align-items: start; } .focal-body .focal-help { grid-column: 1; } .focal-previews { grid-column: 2; grid-row: 1 / span 2; grid-template-columns: 1fr; } }
 @media (min-width: 600px) { .photo-previews { grid-template-columns: repeat(3, minmax(0, 1fr)); } .page-heading > .button { width: auto; } .confirm-actions { flex-direction: row; } .jobs-grid, .skeleton-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 768px) { .workspace { padding: 48px 32px 80px; } .header-inner { padding: 0 32px; min-height: 96px; } .header-caption, .logout-button span { display: block; } .brand { width: 230px; } .form-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 48px; } .job-form { padding: 36px; } .form-photos { margin: 0; padding: 0; border: 0; } .form-actions { justify-content: end; } .form-actions > * { flex: 0 1 auto; min-width: 170px; } .login-panel { background: var(--surface); padding: 44px 36px; border: 1px solid var(--line); border-radius: 16px; width: 480px; } .detail-grid { grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr); } }
 @media (min-width: 1100px) { .jobs-grid, .skeleton-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .workspace { padding-left: 20px; padding-right: 20px; } .header-inner { padding: 0 20px; } .photo-previews { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

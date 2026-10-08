@@ -23,10 +23,10 @@ Upload escribe el master al final, limpia variantes nuevas si falla y conserva o
 El RPC `list_public_jobs(p_limit=50, p_offset=0)` entrega solo:
 
 ```ts
-{ id: string; name: string; job_date: string; media: { id: string; path: string }[]; description: string | null }[]
+{ id: string; name: string; job_date: string; media: { id: string; path: string; focal_x: number; focal_y: number }[]; description: string | null }[]
 ```
 
-Solo aparecen `is_public=true`; `media` incluye únicamente derivados existentes. Orden estable por fecha/UUID y por posición/UUID; respuesta limitada a 100 trabajos. La única novedad es `description` (texto plano opcional, ≤ 500 caracteres; migración `20261008120000_job_hours_description`). No devuelve `owner_id`, `paint_code`, `work_hours` (horas de trabajo, privadas), `storage_path` original, tamaños ni timestamps. El parser TypeScript vuelve a proyectar campos expresamente públicos.
+Solo aparecen `is_public=true`; `media` incluye únicamente derivados existentes. Orden estable por fecha/UUID y por posición/UUID; respuesta limitada a 100 trabajos. `focal_x`/`focal_y` (% 0–100, centro 50/50; migración `20261009120000_media_focal_point`) solo viajan para medios publicados con derivado existente y solo afectan a `object-position` del recorte cover. Además `description` (texto plano opcional, ≤ 500 caracteres; migración `20261008120000_job_hours_description`). No devuelve `owner_id`, `paint_code`, `work_hours` (horas de trabajo, privadas), `storage_path` original, tamaños ni timestamps. El parser TypeScript vuelve a proyectar campos expresamente públicos.
 
 El RPC expuesto es SECURITY INVOKER y delega la proyección en funciones de lectura SECURITY DEFINER **privadas**, con `search_path=''`, referencias cualificadas, argumentos acotados y sin SQL dinámico. Esta excepción está limitada a lectura pública explícita, no a gestión de trabajos ni a corregir errores de permisos. El esquema `private` no debe exponerse en Data API. No hay service-role en el código Next.js.
 

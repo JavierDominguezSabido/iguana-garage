@@ -16,7 +16,7 @@ Web de taller de chapa y pintura desplegada en Render: portfolio fotográfico p�
 | WhatsApp | CTA construido desde `IGUANA_WHATSAPP_NUMBER` válido en formato E.164; sin valor válido muestra contacto pendiente. No inventar números ni datos comerciales. |
 | `/api/portfolio/photos/[jobId]/[mediaId]` | Descarga same-origin de derivados permitidos, reautorizada mediante RLS en cada petición; nunca entrega originales. |
 
-La home usa un cliente anónimo servidor sin cookies, aun cuando la visita el propietario. El RPC `list_public_jobs` proyecta exclusivamente `id`, `name`, `job_date`, `media: {id,path}[]` y `description` (null si no hay). No expone `owner_id`, `paint_code`, `work_hours`, rutas de originales ni metadatos privados. La retirada mediante `is_public=false` deniega nuevas lecturas/descargas; no recupera copias ya descargadas. No hay caché compartida del portfolio revocable ni URLs firmadas públicas.
+La home usa un cliente anónimo servidor sin cookies, aun cuando la visita el propietario. El RPC `list_public_jobs` proyecta exclusivamente `id`, `name`, `job_date`, `media: {id,path}[]` y `description` (null si no hay); cada medio añade `focal_x`/`focal_y` (solo presentación, `object-position` en recortes cover; el visor `contain` no lo usa). No expone `owner_id`, `paint_code`, `work_hours`, rutas de originales ni metadatos privados. La retirada mediante `is_public=false` deniega nuevas lecturas/descargas; no recupera copias ya descargadas. No hay caché compartida del portfolio revocable ni URLs firmadas públicas.
 
 ## Privado y sesión
 
@@ -39,7 +39,7 @@ Campos de trabajo: nombre libre obligatorio (1–200 caracteres), fecha de calen
 | --- | --- |
 | Supabase Auth | Identidad y sesión; sin tablas propias de contraseñas/perfiles, registro público ni roles de aplicación en la UI. |
 | `jobs` | `id`, `owner_id` FK a Auth, `name`, `job_date`, `paint_code` nullable, `work_hours` `numeric(5,2)` nullable (privado), `description` texto plano nullable (≤ 500), `is_public=false` por defecto, `created_at`, `updated_at`. |
-| `job_media` | `id`, `job_id`, `storage_path` único, `mime_type`, `position` no negativa y única por trabajo, dimensiones, tamaño original y `created_at`. |
+| `job_media` | `id`, `job_id`, `storage_path` único, `mime_type`, `position` no negativa y única por trabajo, dimensiones, tamaño original, **punto focal** `focal_x`/`focal_y` (`smallint` 0–100, 50/50 = centro) y `created_at`. |
 
 RLS separa trabajos y medios por propietario; anon no lee las tablas privadas, aunque un trabajo esté publicado. Ambos buckets son privados: `job-originals` y `portfolio-derivatives`. Lectura pública de derivados solo si el medio pertenece al trabajo y este sigue publicado. Gestión/subidas/mantenimiento usan identidad normal + RLS, sin `service_role`. PostgreSQL y Storage no forman una transacción conjunta: las operaciones incluyen recuperación/limpieza y no confían en borrar solo una fila.
 
@@ -52,6 +52,10 @@ RLS separa trabajos y medios por propietario; anon no lee las tablas privadas, a
 - Público y galería/visor privados usan loaders/`sizes` para elegir variantes preparadas. La entrega normal transmite WebP existente **sin Sharp por request**; `/_next/image` no puede cachear estas rutas. Hay vistas privadas `unoptimized` que usan directamente el master, y acceso explícito al original con autorización.
 - Compatibilidad: si falta un sidecar, el privado puede servir el master; el público conserva un resize legacy excepcional del master. Las entradas públicas antiguas `w=160/1024/1440` se mapean a rutas permitidas, no crean nuevos permisos de Storage.
 - Respuestas privadas y fotografías revocables: `private, no-store`, con CDN `no-store` en endpoints de imagen. Preparación de medios antiguos es mantenimiento explícito, dry-run por defecto, propietario + RLS y escritura habilitada solo para el proyecto confirmado; no ocurre al navegar.
+
+### Encuadre (punto focal)
+
+El propietario puede abrir «Encuadre» en cada foto guardada de `/app/jobs/[id]/edit`, mover un marco 4:3 sobre la foto completa (táctil, ratón o teclado), ver vistas previas fieles y guardar explícitamente (`PATCH /app/api/jobs/[id]/photos/[mediaId]`). Solo se guarda un par de enteros: no se recorta ni se regenera original, master ni sidecars, y se puede cambiar con el trabajo publicado.
 
 ## PWA y estructura
 

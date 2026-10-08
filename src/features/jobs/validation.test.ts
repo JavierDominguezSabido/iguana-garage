@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildOriginalPath, parseWorkHours, validateJob, validateMediaMetadata, validateImageBytes } from "./validation";
+import { buildOriginalPath, parseWorkHours, validateFocalPoint, validateJob, validateMediaMetadata, validateImageBytes } from "./validation";
 
 const owner = "11111111-1111-4111-8111-111111111111";
 const job = "22222222-2222-4222-8222-222222222222";
@@ -50,6 +50,16 @@ describe("horas de trabajo y descripción", () => {
     expect(parseWorkHours("0.25")).toBe(0.25);
     expect(parseWorkHours("")).toBeNull();
     for (const text of ["-1", "1,234", "1.000,5", "abc", "12 h", "1e2", "1000", ",5"]) expect(() => parseWorkHours(text)).toThrow();
+  });
+});
+
+describe("punto focal", () => {
+  it("acepta enteros 0–100 incluidos los extremos y el centro", () => {
+    expect(validateFocalPoint({ focal_x: 50, focal_y: 50 })).toEqual({ focal_x: 50, focal_y: 50 });
+    expect(validateFocalPoint({ focal_x: 0, focal_y: 100 })).toEqual({ focal_x: 0, focal_y: 100 });
+  });
+  it.each([{ focal_x: -1, focal_y: 0 }, { focal_x: 0, focal_y: 101 }, { focal_x: 0.5, focal_y: 0 }, { focal_x: "5", focal_y: 0 }, { focal_x: Number.NaN, focal_y: 0 }, { focal_x: 1 }, { focal_x: 1, focal_y: 1, owner_id: "x" }, null, []])("rechaza %j", (input) => {
+    expect(() => validateFocalPoint(input)).toThrow();
   });
 });
 
