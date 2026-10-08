@@ -5,7 +5,7 @@
 begin;
 
 alter table public.jobs
-  add column work_hours numeric(5,2) constraint jobs_work_hours_check check (work_hours is null or work_hours >= 0),
+  add column work_hours numeric(5,2) constraint jobs_work_hours_check check (work_hours is null or work_hours between 0 and 999.99),
   add column description text constraint jobs_description_check
     check (description is null or (description = btrim(description) and char_length(description) between 1 and 500));
 comment on column public.jobs.work_hours is 'PRIVADO. Horas con 2 decimales como máximo (0–999,99). Nunca forma parte de la proyección pública.';

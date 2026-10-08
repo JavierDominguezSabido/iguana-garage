@@ -39,6 +39,7 @@ describe("horas de trabajo y descripción: propietario y aislamiento",()=>{
 
 describe("restricciones del esquema",()=>{
   it.each([["horas negativas","update public.jobs set work_hours=-0.01 where id=$1","23514"],
+    ["horas no numéricas","update public.jobs set work_hours='NaN'::numeric where id=$1","23514"],
     ["horas fuera de rango","update public.jobs set work_hours=1000 where id=$1","22003"],
     ["descripción vacía","update public.jobs set description='' where id=$1","23514"],
     ["descripción sin recortar","update public.jobs set description=' texto ' where id=$1","23514"],
