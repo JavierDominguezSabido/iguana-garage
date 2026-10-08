@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { requireAuthenticatedSupabase } from "@/lib/supabase/server";
 import { jobMedia, JobError, ownedJob } from "./data";
 export async function privateContext() {
-  try { return await requireAuthenticatedSupabase(); } catch { redirect("/login"); }
+  try { return await requireAuthenticatedSupabase(); } catch { redirect("/app/login"); }
 }
 export async function privateJob(id: string) {
   const { supabase, user } = await privateContext();

@@ -32,14 +32,14 @@ it("protege el documento público con nonce nuevo y sin consultar una sesión pr
 it("conserva redirección, cookies de sesión y no-store al añadir CSP", async () => {
   session.mockImplementation((request: NextRequest) => {
     expect(request.headers.get("x-nonce")).toBeTruthy();
-    const response = NextResponse.redirect(new URL("/login", request.url));
+    const response = NextResponse.redirect(new URL("/app/login", request.url));
     response.cookies.set("refresh", "placeholder", { secure: true });
     response.headers.set("cache-control", "private, no-store");
     return response;
   });
   const response = await proxy(new NextRequest("https://garage.example/app"));
   expect(response.status).toBe(307);
-  expect(response.headers.get("location")).toBe("https://garage.example/login");
+  expect(response.headers.get("location")).toBe("https://garage.example/app/login");
   expect(response.cookies.get("refresh")?.value).toBe("placeholder");
   expect(response.headers.get("cache-control")).toContain("no-store");
   expect(response.headers.get("content-security-policy")).toContain("upgrade-insecure-requests");

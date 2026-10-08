@@ -34,8 +34,8 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     // Consulta al servidor Auth: identidad actual, no confianza en getSession()/cookies sin validar.
     const { data, error } = await supabase.auth.getUser();
     if (error && (error.status ?? 0) >= 500) throw new Error("Auth no disponible");
-    if (request.nextUrl.pathname.startsWith("/app") && (error || !data.user || data.user.is_anonymous)) {
-      const redirect = NextResponse.redirect(new URL("/login", request.url));
+    if (request.nextUrl.pathname.startsWith("/app") && request.nextUrl.pathname !== "/app/login" && (error || !data.user || data.user.is_anonymous)) {
+      const redirect = NextResponse.redirect(new URL("/app/login", request.url));
       response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
       return noCache(redirect);
     }

@@ -60,7 +60,7 @@ describe("infraestructura SSR (unitarias, no prueba de autorización RLS)", () =
     } } }));
     const response = await updateSession(new NextRequest("https://garage.example/app/jobs/123?next=https://other.example"));
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("https://garage.example/login");
+    expect(response.headers.get("location")).toBe("https://garage.example/app/login");
     expect(response.cookies.get("refresh")?.value).toBe("placeholder");
     expect(response.headers.get("cache-control")).toContain("no-store");
   });
@@ -68,6 +68,16 @@ describe("infraestructura SSR (unitarias, no prueba de autorización RLS)", () =
     const response = await updateSession(new NextRequest("https://garage.example/app"));
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toContain("private");
+  });
+  it("solo el login exacto permite anónimo dentro de /app, sin omitir validación Auth",async()=>{
+    mock.getUser.mockResolvedValue({data:{user:null},error:null});
+    const login=await updateSession(new NextRequest("https://garage.example/app/login"));
+    expect(login.status).toBe(200);expect(login.headers.get("cache-control")).toContain("private, no-store");
+    expect(mock.getUser).toHaveBeenCalledOnce();
+    for(const path of ["/app","/app/new","/app/login/extra","/app/loginish","/app/api/jobs"]){
+      const response=await updateSession(new NextRequest(`https://garage.example${path}`));
+      expect(response.status).toBe(307);expect(response.headers.get("location")).toBe("https://garage.example/app/login");
+    }
   });
   it("cierra el acceso ante errores de red y configuración", async () => {
     mock.getUser.mockRejectedValue(new Error("Internal details"));

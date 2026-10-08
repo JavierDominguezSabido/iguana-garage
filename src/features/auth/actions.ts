@@ -20,5 +20,5 @@ export async function logout(_previous: AuthState): Promise<AuthState> {
     const result = await db.auth.signOut({ scope: "local" });
     if (result.error) return { error: "No se pudo cerrar la sesión. Reintenta." };
   } catch { return { error: "No se pudo cerrar la sesión. Reintenta." }; }
-  redirect("/login");
+  redirect("/app/login");
 }
