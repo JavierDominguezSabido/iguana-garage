@@ -10,6 +10,16 @@ export default defineConfig([
       "@typescript-eslint/consistent-type-imports": "error",
     },
   },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/features/jobs/data.ts", "src/features/jobs/server/**"],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [{
+        group: ["@/features/jobs/server/**", "**/jobs/server/**", "./server/**", "../server/**"],
+        message: "Usa la entrada jobs/data protegida con server-only; server/ es interno de Node.",
+      }] }],
+    },
+  },
   globalIgnores([
     ".next/**",
     "out/**",

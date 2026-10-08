@@ -32,6 +32,9 @@ it("una variante preparada pasa por RLS en cada entrega y se retira sin cache",a
 });
 it("mantenimiento dry-run no escribe; completa solo faltantes sin sustituir master/original",async()=>{
   const master=Buffer.from(fixture.files.get(`portfolio-derivatives/${paths[4]}`)!.bytes);
+  const existing=paths.slice(1).map(path=>Buffer.from(fixture.files.get(`portfolio-derivatives/${path}`)!.bytes));
+  const metadataBefore=(await fixture.db.query("select to_jsonb(m) as row from public.job_media m where id=$1",[media])).rows;
+  const jobBefore=(await fixture.db.query("select to_jsonb(j) as row from public.jobs j where id=$1",[jobA])).rows;
   await fixture.db.query("delete from storage.objects where name=$1",[paths[0]]);fixture.files.delete(`portfolio-derivatives/${paths[0]}`);
   fixture.calls.length=0;
   expect(await prepareLegacyVariants(fixture.client(ownerA),ownerA,jobA,media,false)).toEqual([paths[0]]);
@@ -39,7 +42,12 @@ it("mantenimiento dry-run no escribe; completa solo faltantes sin sustituir mast
   await prepareLegacyVariants(fixture.client(ownerA),ownerA,jobA,media,true);
   expect(fixture.files.get(`portfolio-derivatives/${paths[4]}`)?.bytes).toEqual(master);
   expect(fixture.files.get(`job-originals/${original}`)?.bytes).toEqual(Buffer.from(await file.arrayBuffer()));
+  expect(paths.slice(1).map(path=>fixture.files.get(`portfolio-derivatives/${path}`)!.bytes)).toEqual(existing);
+  expect((await fixture.db.query("select to_jsonb(m) as row from public.job_media m where id=$1",[media])).rows).toEqual(metadataBefore);
+  expect((await fixture.db.query("select to_jsonb(j) as row from public.jobs j where id=$1",[jobA])).rows).toEqual(jobBefore);
+  fixture.calls.length=0;
   expect(await prepareLegacyVariants(fixture.client(ownerA),ownerA,jobA,media,true)).toEqual([]);
+  expect(fixture.calls.some(c=>["upload","remove"].includes(c.operation))).toBe(false);
 });
 it("deletePhoto conserva metadata ante fallo y luego elimina todas las variantes sin huérfanos",async()=>{
   fixture.faults.push({operation:"list",path:""});

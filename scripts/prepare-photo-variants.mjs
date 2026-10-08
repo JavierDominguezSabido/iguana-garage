@@ -24,7 +24,7 @@ try {
   const login=await client.auth.signInWithPassword({email,password});
   if(login.error||!login.data.user||login.data.user.is_anonymous)throw new MaintenanceError('No se pudo validar la cuenta propietaria.');
   const owner=login.data.user.id;
-  const {jobMedia,prepareLegacyVariants}=await vite.ssrLoadModule('/src/features/jobs/data.ts');
+  const {jobMedia,prepareLegacyVariants}=await vite.ssrLoadModule('/src/features/jobs/server/media.ts');
   let photos=0,variants=0;
   for(let offset=0;;offset+=100){
     const jobs=await client.from('jobs').select('id').eq('owner_id',owner).order('id').range(offset,offset+99);
