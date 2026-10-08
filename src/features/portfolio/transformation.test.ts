@@ -9,7 +9,7 @@ const selection: TransformationSelection = {
 };
 const otherId = "44444444-4444-4444-8444-444444444444";
 const media = (id: string, jobId = selection.jobId) => ({ id, path: `${jobId}/${id}.webp` });
-const job = (photos = [media(selection.beforeMediaId), media(selection.afterMediaId)]): PublicJob => ({ id: selection.jobId, name: "Trabajo curado", job_date: "2026-10-06", media: photos });
+const job = (photos = [media(selection.beforeMediaId), media(selection.afterMediaId)]): PublicJob => ({ id: selection.jobId, name: "Trabajo curado", job_date: "2026-10-06", description: null, media: photos });
 
 describe("selección explícita de una transformación pública", () => {
   it("selecciona los IDs curados aunque cambien nombre, orden y fotografías adicionales", () => {

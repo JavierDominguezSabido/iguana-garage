@@ -16,7 +16,7 @@ Web de taller de chapa y pintura desplegada en Render: portfolio fotográfico p�
 | WhatsApp | CTA construido desde `IGUANA_WHATSAPP_NUMBER` válido en formato E.164; sin valor válido muestra contacto pendiente. No inventar números ni datos comerciales. |
 | `/api/portfolio/photos/[jobId]/[mediaId]` | Descarga same-origin de derivados permitidos, reautorizada mediante RLS en cada petición; nunca entrega originales. |
 
-La home usa un cliente anónimo servidor sin cookies, aun cuando la visita el propietario. El RPC `list_public_jobs` proyecta exclusivamente `id`, `name`, `job_date` y `media: {id,path}[]`. No expone `owner_id`, `paint_code`, rutas de originales ni metadatos privados. La retirada mediante `is_public=false` deniega nuevas lecturas/descargas; no recupera copias ya descargadas. No hay caché compartida del portfolio revocable ni URLs firmadas públicas.
+La home usa un cliente anónimo servidor sin cookies, aun cuando la visita el propietario. El RPC `list_public_jobs` proyecta exclusivamente `id`, `name`, `job_date`, `media: {id,path}[]` y `description` (null si no hay). No expone `owner_id`, `paint_code`, `work_hours`, rutas de originales ni metadatos privados. La retirada mediante `is_public=false` deniega nuevas lecturas/descargas; no recupera copias ya descargadas. No hay caché compartida del portfolio revocable ni URLs firmadas públicas.
 
 ## Privado y sesión
 
@@ -31,14 +31,14 @@ La home usa un cliente anónimo servidor sin cookies, aun cuando la visita el pr
 
 CRUD y fotografías usan Route Handlers en `/app/api/jobs`, `/app/api/jobs/[id]` y `/app/api/jobs/[id]/photos/[mediaId]`; la lectura de fotos usa `/app/api/photos/[id]`. Login/logout usan Server Actions. Todo acceso de gestión se valida en servidor y por propietario/RLS, no solo en el layout. Sin sesión válida, `/app` redirige a `/app/login`; login vuelve a `/app` y logout local a `/app/login`.
 
-Campos de trabajo: nombre libre obligatorio (1–200 caracteres), fecha de calendario obligatoria y código de pintura opcional (hasta 80; vacío → null). Se permiten trabajos sin fotos. No hay catálogo de vehículos. El guardado mantiene el trabajo privado durante cambios/subidas y solo restaura la publicación solicitada al completar la operación. Ante fallos conserva el estado confirmado para reintentar; borrar coordina derivados → original → metadatos → trabajo, sin anunciar éxito parcial.
+Campos de trabajo: nombre libre obligatorio (1–200 caracteres), fecha de calendario obligatoria y código de pintura opcional (hasta 80; vacío → null), **horas de trabajo** opcionales y privadas (0–999,99 con hasta 2 decimales; se escriben con coma o punto) y **descripción** opcional en texto plano (hasta 500) que solo es pública si el trabajo está publicado. Se permiten trabajos sin fotos. No hay catálogo de vehículos. El guardado mantiene el trabajo privado durante cambios/subidas y solo restaura la publicación solicitada al completar la operación. Ante fallos conserva el estado confirmado para reintentar; borrar coordina derivados → original → metadatos → trabajo, sin anunciar éxito parcial.
 
 ## Datos y autorización
 
 | Entidad | Datos actuales |
 | --- | --- |
 | Supabase Auth | Identidad y sesión; sin tablas propias de contraseñas/perfiles, registro público ni roles de aplicación en la UI. |
-| `jobs` | `id`, `owner_id` FK a Auth, `name`, `job_date`, `paint_code` nullable, `is_public=false` por defecto, `created_at`, `updated_at`. |
+| `jobs` | `id`, `owner_id` FK a Auth, `name`, `job_date`, `paint_code` nullable, `work_hours` `numeric(5,2)` nullable (privado), `description` texto plano nullable (≤ 500), `is_public=false` por defecto, `created_at`, `updated_at`. |
 | `job_media` | `id`, `job_id`, `storage_path` único, `mime_type`, `position` no negativa y única por trabajo, dimensiones, tamaño original y `created_at`. |
 
 RLS separa trabajos y medios por propietario; anon no lee las tablas privadas, aunque un trabajo esté publicado. Ambos buckets son privados: `job-originals` y `portfolio-derivatives`. Lectura pública de derivados solo si el medio pertenece al trabajo y este sigue publicado. Gestión/subidas/mantenimiento usan identidad normal + RLS, sin `service_role`. PostgreSQL y Storage no forman una transacción conjunta: las operaciones incluyen recuperación/limpieza y no confían en borrar solo una fila.

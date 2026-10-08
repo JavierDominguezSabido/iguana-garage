@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { removeMediaSafely, saveDraft } from "./workflow";
 import type { SaveDraft, SaveTransport } from "./workflow";
 
-const draft = (): SaveDraft => ({ id: "job", exists: false, job: { name: "Coche", job_date: "2026-10-06", paint_code: null, is_public: true }, photos: [{ id: "one", url: "blob:test", saved: false }, { id: "two", url: "blob:test2", saved: false }], removed: ["old"] });
+const draft = (): SaveDraft => ({ id: "job", exists: false, job: { name: "Coche", job_date: "2026-10-06", paint_code: null, work_hours: null, description: null, is_public: true }, photos: [{ id: "one", url: "blob:test", saved: false }, { id: "two", url: "blob:test2", saved: false }], removed: ["old"] });
 const transport = (): SaveTransport => ({ prepare: vi.fn(async () => {}), remove: vi.fn(async () => {}), upload: vi.fn(async () => {}), finish: vi.fn(async () => {}) });
 describe("guardado recuperable de un trabajo", () => {
   it("prepara, elimina, sube y solo entonces publica", async () => {

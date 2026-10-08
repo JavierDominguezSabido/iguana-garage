@@ -93,7 +93,7 @@ export async function deletePhoto(db: Client, owner: string, jobId: string, medi
 }
 export async function deleteJob(db: Client, owner: string, id: string) {
   const job = await ownedJob(db, owner, id);
-  await prepareJob(db, owner, id, { name: job.name, job_date: job.job_date, paint_code: job.paint_code, is_public: false }, false);
+  await prepareJob(db, owner, id, { name: job.name, job_date: job.job_date, paint_code: job.paint_code, work_hours: job.work_hours, description: job.description, is_public: false }, false);
   for (const photo of await jobMedia(db, id)) await deletePhoto(db, owner, id, photo.id);
   // También limpiar originales de subidas interrumpidas sin metadatos.
   const prefix = `${owner}/${id}`;

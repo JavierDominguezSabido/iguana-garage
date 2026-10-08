@@ -8,13 +8,18 @@ insert into auth.users (id, email) values
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
-insert into public.jobs (id, owner_id, name, job_date, paint_code) values
- ('22222222-2222-4222-8222-222222222222', '11111111-1111-4111-8111-111111111111', 'Trabajo A', '2026-10-06', 'PRIVATE-PAINT');
+insert into public.jobs (id, owner_id, name, job_date, paint_code, work_hours, description) values
+ ('22222222-2222-4222-8222-222222222222', '11111111-1111-4111-8111-111111111111', 'Trabajo A', '2026-10-06', 'PRIVATE-PAINT', 12.5, 'Descripción pública de prueba.');
 do $$ begin
   assert (select count(*) = 1 from public.jobs), 'A debe leer su trabajo';
   assert (select not is_public from public.jobs limit 1), 'Privado por defecto';
   update public.jobs set name = 'Trabajo A editado' where id = '22222222-2222-4222-8222-222222222222';
   assert (select name = 'Trabajo A editado' from public.jobs limit 1), 'A debe editar su trabajo';
+  assert (select work_hours = 12.5 and description = 'Descripción pública de prueba.' from public.jobs limit 1), 'A debe leer horas y descripción';
+  update public.jobs set work_hours = 8.25 where id = '22222222-2222-4222-8222-222222222222';
+  assert (select work_hours = 8.25 from public.jobs limit 1), 'A debe editar las horas';
+  begin update public.jobs set work_hours = -1; raise exception 'Horas negativas aceptadas';
+  exception when check_violation then null; end;
   begin
     insert into public.jobs (owner_id, name, job_date) values ('44444444-4444-4444-8444-444444444444', 'Suplantación', '2026-10-06');
     raise exception 'Insertar con otro propietario no fue denegado';
@@ -57,6 +62,8 @@ do $$ declare affected integer; begin
   assert (select count(*) = 0 from public.job_media), 'B no debe leer medios de A';
   update public.jobs set name = 'Ataque'; get diagnostics affected = row_count;
   assert affected = 0, 'B no debe modificar trabajos de A';
+  update public.jobs set work_hours = 99, description = 'Ataque'; get diagnostics affected = row_count;
+  assert affected = 0, 'B no debe modificar horas ni descripción de A';
   delete from public.jobs; get diagnostics affected = row_count;
   assert affected = 0, 'B no debe eliminar trabajos de A';
   update public.job_media set position = 3; get diagnostics affected = row_count;
@@ -80,6 +87,8 @@ select set_config('request.jwt.claims', '{"role":"anon"}', true);
 do $$ begin
   begin perform 1 from public.jobs; raise exception 'Lectura anónima de jobs permitida';
   exception when insufficient_privilege then null; end;
+  begin perform work_hours from public.jobs; raise exception 'Lectura anónima de horas permitida';
+  exception when insufficient_privilege then null; end;
   begin perform 1 from public.job_media; raise exception 'Lectura anónima de job_media permitida';
   exception when insufficient_privilege then null; end;
   assert (select count(*) = 0 from public.list_public_jobs()), 'Trabajo privado apareció públicamente';
@@ -94,7 +103,8 @@ select set_config('request.jwt.claims', '{"role":"anon"}', true);
 do $$ declare result jsonb; begin
   select to_jsonb(j) into result from public.list_public_jobs() j;
   assert result->>'id' = '22222222-2222-4222-8222-222222222222', 'Trabajo publicado ausente';
-  assert not result ? 'owner_id' and not result ? 'paint_code' and not result ? 'created_at', 'Contrato público reveló campos privados';
+  assert not result ? 'owner_id' and not result ? 'paint_code' and not result ? 'created_at' and not result ? 'work_hours', 'Contrato público reveló campos privados';
+  assert result->>'description' = 'Descripción pública de prueba.', 'Descripción pública ausente';
   assert jsonb_array_length(result->'media') = 1, 'Derivado autorizado ausente';
   assert not (result->'media'->0) ? 'storage_path', 'Se expuso ruta de original';
   assert (select count(*) = 0 from storage.objects where bucket_id = 'job-originals'), 'Publicar abrió originales';

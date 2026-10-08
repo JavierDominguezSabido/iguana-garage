@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildOriginalPath, validateJob, validateMediaMetadata, validateImageBytes } from "./validation";
+import { buildOriginalPath, parseWorkHours, validateJob, validateMediaMetadata, validateImageBytes } from "./validation";
 
 const owner = "11111111-1111-4111-8111-111111111111";
 const job = "22222222-2222-4222-8222-222222222222";
@@ -9,7 +9,7 @@ const path = `${owner}/${job}/${media}.png`;
 describe("validación de trabajos", () => {
   it("normaliza texto, conserva la fecha de calendario y deniega publicación implícita", () => {
     expect(validateJob({ name: "  Mercedes  ", job_date: "2024-02-29", paint_code: "  " })).toEqual({
-      name: "Mercedes", job_date: "2024-02-29", paint_code: null, is_public: false,
+      name: "Mercedes", job_date: "2024-02-29", paint_code: null, work_hours: null, description: null, is_public: false,
     });
   });
   it("acepta publicación explícita y código opcional", () => {
@@ -21,6 +21,35 @@ describe("validación de trabajos", () => {
   it("no permite introducir el propietario ni campos editoriales", () => {
     expect(() => validateJob({ name: "Audi", job_date: "2026-10-06", owner_id: owner })).toThrow();
     expect(() => validateJob({ name: "Audi", job_date: "2026-10-06", status: "done" })).toThrow();
+  });
+});
+
+describe("horas de trabajo y descripción", () => {
+  const base = { name: "Audi", job_date: "2026-10-06" };
+  it("son opcionales: sin ellos o vacíos el trabajo sigue siendo válido", () => {
+    expect(validateJob(base)).toMatchObject({ work_hours: null, description: null });
+    expect(validateJob({ ...base, work_hours: null, description: "   " })).toMatchObject({ work_hours: null, description: null });
+  });
+  it("acepta horas exactas con hasta dos decimales y descripción en texto plano recortada", () => {
+    expect(validateJob({ ...base, work_hours: 12.5, description: "  Reparación de paragolpes trasero y pintura.  " })).toMatchObject({ work_hours: 12.5, description: "Reparación de paragolpes trasero y pintura." });
+    expect(validateJob({ ...base, work_hours: 0 }).work_hours).toBe(0);
+    expect(validateJob({ ...base, work_hours: 999.99 }).work_hours).toBe(999.99);
+    expect(validateJob({ ...base, work_hours: 0.07 }).work_hours).toBe(0.07);
+    expect(validateJob({ ...base, description: "Línea 1\r\nLínea 2" }).description).toBe("Línea 1\nLínea 2");
+    expect(validateJob({ ...base, description: "x".repeat(500) }).description).toHaveLength(500);
+  });
+  it.each([-1, -0.01, 1000, 12.345, Number.NaN, Number.POSITIVE_INFINITY, "12", true])("rechaza horas inválidas %s", (work_hours) => {
+    expect(() => validateJob({ ...base, work_hours })).toThrow();
+  });
+  it.each([42, true, "x".repeat(501), "con\u0000nulo", "con\u001bescape"])("rechaza descripciones inválidas", (description) => {
+    expect(() => validateJob({ ...base, description })).toThrow();
+  });
+  it("interpreta el texto del formulario con coma o punto y rechaza formatos ambiguos", () => {
+    expect(parseWorkHours("12,5")).toBe(12.5);
+    expect(parseWorkHours(" 8 ")).toBe(8);
+    expect(parseWorkHours("0.25")).toBe(0.25);
+    expect(parseWorkHours("")).toBeNull();
+    for (const text of ["-1", "1,234", "1.000,5", "abc", "12 h", "1e2", "1000", ",5"]) expect(() => parseWorkHours(text)).toThrow();
   });
 });
 

@@ -1,4 +1,6 @@
-export type JobInput = { name: string; job_date: string; paint_code: string | null; is_public: boolean };
+export type JobInput = { name: string; job_date: string; paint_code: string | null; work_hours: number | null; description: string | null; is_public: boolean };
+export const MAX_WORK_HOURS = 999.99;
+export const MAX_DESCRIPTION = 500;
 export type MediaMetadata = { storage_path: string; mime_type: string; position: number; width: number | null; height: number | null; byte_size: number };
 
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -22,14 +24,35 @@ function positiveInteger(value: unknown, max = 2147483647): value is number {
   return typeof value === "number" && Number.isInteger(value) && value > 0 && value <= max;
 }
 
+// Texto del formulario ("12,5", "8", "") -> horas exactas con 2 decimales como maximo; vacio = sin dato.
+export function parseWorkHours(raw: string): number | null {
+  const text = raw.trim();
+  if (!text) return null;
+  if (!/^\d{1,3}([.,]\d{1,2})?$/.test(text)) throw new Error("Horas inválidas");
+  return Number(text.replace(",", "."));
+}
+function validWorkHours(value: unknown): value is number | null | undefined {
+  if (value == null) return true;
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= MAX_WORK_HOURS && Number.isInteger(Number((value * 100).toFixed(6)));
+}
+// Texto plano: sin caracteres de control (salvo saltos de línea), recortado, vacío = sin dato.
+function plainDescription(value: unknown): string | null {
+  if (value == null) return null;
+  if (typeof value !== "string") throw new Error("Descripción inválida");
+  const text = value.replace(/\r\n?|\r/g, "\n").trim();
+  if (/[\u0000-\u0009\u000B-\u001F\u007F]/.test(text) || text.length > MAX_DESCRIPTION) throw new Error("Descripción inválida");
+  return text || null;
+}
+
 export function validateJob(input: unknown): JobInput {
-  const data = fields(input, ["name", "job_date", "paint_code", "is_public"]);
+  const data = fields(input, ["name", "job_date", "paint_code", "work_hours", "description", "is_public"]);
   if (typeof data.name !== "string" || !data.name.trim() || data.name.trim().length > 200 || !isCalendarDate(data.job_date) ||
       (data.paint_code != null && (typeof data.paint_code !== "string" || data.paint_code.trim().length > 80)) ||
-      (data.is_public !== undefined && typeof data.is_public !== "boolean")) throw new Error("Trabajo inválido");
+      (data.is_public !== undefined && typeof data.is_public !== "boolean") || !validWorkHours(data.work_hours)) throw new Error("Trabajo inválido");
   return {
     name: data.name.trim(), job_date: data.job_date,
     paint_code: typeof data.paint_code === "string" ? data.paint_code.trim() || null : null,
+    work_hours: data.work_hours ?? null, description: plainDescription(data.description),
     is_public: data.is_public === true,
   };
 }

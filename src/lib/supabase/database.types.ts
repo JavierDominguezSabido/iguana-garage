@@ -62,6 +62,7 @@ export type Database = {
       jobs: {
         Row: {
           created_at: string
+          description: string | null
           id: string
           is_public: boolean
           job_date: string
@@ -69,9 +70,11 @@ export type Database = {
           owner_id: string
           paint_code: string | null
           updated_at: string
+          work_hours: number | null
         }
         Insert: {
           created_at?: string
+          description?: string | null
           id?: string
           is_public?: boolean
           job_date: string
@@ -79,9 +82,11 @@ export type Database = {
           owner_id: string
           paint_code?: string | null
           updated_at?: string
+          work_hours?: number | null
         }
         Update: {
           created_at?: string
+          description?: string | null
           id?: string
           is_public?: boolean
           job_date?: string
@@ -89,6 +94,7 @@ export type Database = {
           owner_id?: string
           paint_code?: string | null
           updated_at?: string
+          work_hours?: number | null
         }
         Relationships: []
       }
@@ -100,6 +106,7 @@ export type Database = {
       list_public_jobs: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: {
+          description: string
           id: string
           job_date: string
           media: Json

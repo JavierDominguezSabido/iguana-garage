@@ -18,6 +18,8 @@ describe("Supabase HTTP real, sin credenciales privadas", () => {
     expect(error).toBeNull();
     expect(Array.isArray(data)).toBe(true);
     expect(parsePublicJobs(data)).toEqual(data);
+    // Requiere la migración 20261008120000 aplicada. Las horas de trabajo nunca viajan en el contrato público.
+    for (const row of data ?? []) expect(Object.keys(row).sort()).toEqual(["description", "id", "job_date", "media", "name"]);
   });
   it("no expone el esquema privado por el API REST", async () => {
     const response = await fetch(`${url}/rest/v1/rpc/public_jobs_projection`, {
