@@ -15,14 +15,14 @@ Next.js **16.3.8** (App Router), React/React DOM **19.3.0**, TypeScript **6.0.3*
 
 Supabase JS **2.117.2**, SSR **0.12.7**, Sharp **0.35.5**; Vitest **5.0.3**, Playwright **1.63.0**, PGlite **0.5.8** para PostgreSQL aislado. ESLint **9.39.5** y eslint-config-next **16.3.8**: ESLint 9 es deuda temporal por peers de plugins; no forzar ESLint 10. Versiones y resolución: `package.json`/`package-lock.json`; revisarlas antes de actualizar, sin fijar versiones por memoria.
 
-## Workflow proporcional con ECC
+## Workflow proporcional
 
-1. Inspeccionar instrucciones, estado Git y archivos relevantes; leer las skills pertinentes antes de actuar.
+1. Inspeccionar instrucciones, estado Git y archivos relevantes antes de actuar.
 2. Diagnosticar o planificar según el riesgo; concretar alcance y aceptación sin inventar funciones.
-3. Para cambios de comportamiento: reproducer RED observado → corrección mínima → misma prueba GREEN → review y verificación.
+3. Para cambios de comportamiento: prueba en rojo observada → cambio mínimo → la misma prueba en verde → revisión del diff y verificación proporcional.
 4. Informar evidencia real y límites; no declarar PASS de checks no ejecutados.
 
-Usar `ecc-guide` para localizar capacidades, `tdd-workflow`/`verification-loop` al desarrollar y `living-docs-governance` para documentación. Aceptación/dirección visual solo cuando procedan. No instalar ni duplicar ECC, asumir comandos de Claude en Codex, activar agentes o ejecutar suites sin necesidad. Cambios documentales requieren coherencia, revisión del diff y `git diff --check`, no tests artificiales ni suites de aplicación.
+La dirección visual y la aceptación solo se abordan cuando procedan. Esta guía es independiente de plugins y herramientas concretas: no asumir comandos propios de un agente en otro, ni activar agentes o ejecutar suites sin necesidad. Los cambios documentales requieren coherencia con el código y los otros documentos, revisión del diff y `git diff --check`; no tests artificiales ni suites de aplicación.
 
 ## Contratos que deben preservarse
 
