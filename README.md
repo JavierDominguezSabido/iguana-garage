@@ -1,100 +1,70 @@
 # Iguana Garage
 
-Portfolio público en `/` y área privada MVP: acceso real, listado, alta, detalle, edición, fotografías, publicación/retirada y borrado. La home consulta exclusivamente trabajos publicados y muestra sus derivados autorizados; no promociona el acceso privado ni crea páginas individuales por trabajo. Configuración Supabase en [supabase/README.md](supabase/README.md); evidencia del área privada en [docs/private-mvp-verification.md](docs/private-mvp-verification.md) y del cierre público en [docs/public-mvp-verification.md](docs/public-mvp-verification.md).
+Web de un taller de chapa y pintura con dos partes:
 
-Preproducción y despliegue: [docs/preproduction-verification.md](docs/preproduction-verification.md). Uso y entrega a Robin/Javier: [docs/production-handoff.md](docs/production-handoff.md). La aplicación se ha comprobado en producción local; todavía no existe un deployment HTTPS.
+- **Portfolio público** en `/`: trabajos publicados con sus fotos, galería ampliable y contacto por WhatsApp.
+- **Gestión privada** en `/app` (instalable como PWA): el propietario crea, edita, publica y borra trabajos y fotos desde el móvil.
 
-Las instrucciones y el alcance están en `AGENTS.md`, `PRODUCT.md` y `DESIGN.md`. `PRODUCT.md` formaliza publicación explícita y contrato público; `AGENTS.md`, `DESIGN.md`, assets y referencias permanecen intactos.
+Producción: <https://iguana-garage.onrender.com> (Render). Cada push a `main` se despliega automáticamente.
 
-## Entorno y versiones instaladas
+## Documentación
 
-Entorno verificado: Node.js **24.18.0**, npm **11.16.0**. El proyecto declara Node 24 y npm 11. Dependencias exactas en `package.json`; resolución reproducible mediante `package-lock.json`.
-
-| Dependencia | Versión |
+| Archivo | Contenido |
 | --- | --- |
-| Next.js / eslint-config-next | 16.3.8 |
-| React / React DOM | 19.3.0 |
-| TypeScript | 6.0.3 |
-| Tailwind CSS / @tailwindcss/postcss | 4.3.3 |
-| PostCSS | 8.5.29 |
-| ESLint | 9.39.5 |
-| Vitest | 5.0.3 |
-| @playwright/test | 1.63.0 |
-| @types/node | 24.19.1 |
-| @types/react / @types/react-dom | 19.3.0 |
-| @supabase/supabase-js | 2.117.2 |
-| @supabase/ssr | 0.12.7 |
-| server-only | 0.0.1 |
-| Supabase CLI (desarrollo) | 2.119.0 |
-| @vitest/coverage-v8 (desarrollo) | 5.0.3 |
-| Sharp (procesado de imágenes) | 0.35.5 |
-| axe-core (QA accesibilidad, desarrollo) | 4.14.0 |
+| [CLAUDE.md](CLAUDE.md) | Entrada para Claude Code; importa los tres siguientes. |
+| [AGENTS.md](AGENTS.md) | Operación: stack, seguridad, autorizaciones, QA y Git. |
+| [PRODUCT.md](PRODUCT.md) | Funciones, rutas, datos, imágenes y arquitectura actuales. |
+| [DESIGN.md](DESIGN.md) | Identidad visual y dirección de diseño. |
+| [supabase/README.md](supabase/README.md) | Base de datos, migraciones y su correspondencia con producción. |
+| [docs/](docs/) | Informes de verificación de fases ya cerradas. Son históricos: no describen el estado actual ni contienen tareas pendientes. |
 
-Versiones consultadas en npm durante la inicialización. TypeScript 6.0.3 está dentro del rango admitido por el parser instalado (`>=4.8.4 <6.1.0`). ESLint permanece en 9.39.5 por los bloqueos documentados a continuación.
+## Requisitos
 
-## Deuda técnica temporal: actualización a ESLint 10
+Node 24 y npm 11 (`.node-version`). Las versiones exactas de las dependencias están en `package.json` y `package-lock.json`.
 
-Auditoría del 6 de octubre de 2026. Candidata estable actual consultada en npm: **ESLint 10.12.0**. Se inspeccionaron los manifiestos de **389 paquetes instalados**, incluidos los anidados, y se contrastaron con `package-lock.json`: sin discrepancias de versión. De los 13 paquetes con peer de ESLint, tres rechazan la candidata:
+## Variables de entorno
 
-| Paquete instalado | Peer completo de ESLint |
-| --- | --- |
-| `eslint-plugin-react@7.37.5` | `^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7` |
-| `eslint-plugin-import@2.32.0` | `^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9` |
-| `eslint-plugin-jsx-a11y@6.10.2` | `^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9` |
+Los archivos `.env.*.local` están ignorados por Git; solo se versionan las plantillas vacías.
 
-Son dependencias efectivamente cargadas por `eslint-config-next@16.3.8`: nuestro preset `core-web-vitals` incluye su configuración base, que registra esos plugins. Las versiones estables actuales de los tres paquetes en npm coinciden con las instaladas y mantienen estos peers.
-
-`eslint-config-next@16.3.8` declara `eslint >=9.0.0`, pero ese rango no basta para validar sus transitivas. `typescript-eslint`, su parser/plugin y utilidades instalados en 8.71.1 admiten ESLint 10 y TypeScript 6.0.3; React Hooks 7.1.1 también admite ESLint 10. Next.js 16.3.8 no declara un peer de ESLint y Node 24.18.0 cumple el motor de la candidata.
-
-**Decisión:** conservar temporalmente **ESLint 9.39.5**, con `package.json`, lockfile y configuración intactos. No instalar la candidata, forzar peers ni retirar reglas para esquivar el bloqueo. La advertencia de fin de soporte de ESLint 9 queda registrada como deuda técnica temporal, no como una actualización resuelta.
-
-**Criterio de cierre:** una combinación de versiones de la configuración de Next y los tres plugins que declare soporte de ESLint 10, seguida de verificación de configuración/reglas y de todos los checks del proyecto. No se ha ejecutado ESLint 10: la incompatibilidad declarada de peers ya impide la actualización autorizada. La [guía oficial de migración](https://eslint.org/docs/latest/use/migrate-to-10.0.0) describe además los cambios de API que deberán comprobarse al desbloquearla.
+| Archivo | Variables | Uso |
+| --- | --- | --- |
+| `.env.local` (plantilla `.env.example`) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `IGUANA_WHATSAPP_NUMBER` | Aplicación. Solo clave publicable, nunca `service_role`. WhatsApp en formato E.164 (`+34…`); sin valor válido la web muestra «contacto pendiente». |
+| `.env.integration.local` | `SUPABASE_TEST_*` | Cuentas temporales de un proyecto de desarrollo dedicado para integración y E2E. |
+| `.env.maintenance.local` | `IGUANA_MAINTENANCE_*`, `IGUANA_VARIANTS_ALLOW_WRITE` | Mantenimiento de variantes de imagen; escritura solo con autorización. |
 
 ## Comandos
 
 ```sh
-npm ci
-npm run dev
-npm run typecheck
-npm run lint
-npm test
-npm run test:coverage
-npm run test:supabase:public
-npm run test:supabase
-npm run test:e2e:config
-npm run build
-npm run start
+npm ci                      # instalar dependencias
+npm run dev                 # desarrollo
+npm run typecheck           # tipos (genera antes los de Next)
+npm run lint                # ESLint sin advertencias
+npm test                    # tests unitarios (Vitest)
+npm run test:coverage       # cobertura (objetivo: 80 % de la lógica comprobable)
+npm run test:isolated       # DAL y RLS contra PostgreSQL aislado (PGlite)
+npm run test:supabase       # integración contra el proyecto de pruebas dedicado
+npm run test:e2e            # Playwright a 390/768/1440 px (tras npm run build)
+npm run build && npm start  # producción local
 ```
 
-`typecheck` genera primero los tipos de Next para no depender de un build anterior. `.env.example` declara URL y clave publicable de Supabase; los valores van en `.env.local`, ignorado. Ninguna clave privilegiada forma parte de la aplicación. Las credenciales temporales de integración van exclusivamente en `.env.integration.local`, también ignorado; ver `.env.integration.example`.
+## Tests: estado conocido
 
-Vitest usa Node y `@/`. Prueba validación, proyección pública, transporte, procesamiento/proporciones de imágenes, construcción de WhatsApp y cookies/errores SSR. Los mocks de transporte no prueban RLS; autorización, DAL y entrega de imágenes se verifican contra Supabase mediante integración/E2E. La cobertura exige al menos 80% de la lógica comprobable; tipos generados, wrappers declarativos y UI no cuentan como lógica unitaria.
+- Los E2E se ejecutan contra producción local en `127.0.0.1:3100` y necesitan `.env.integration.local`. Algunos crean y borran datos: solo contra el proyecto de pruebas, nunca contra producción.
+- `e2e/public-portfolio.spec.ts` y `e2e/preproduction.spec.ts` todavía usan fotos de `assets/demo/`, carpeta eliminada a propósito. No pasarán hasta reescribirlos con fotos de prueba válidas; no recrear `assets/demo/`.
+- Las comprobaciones de composición de la home en `e2e/public-portfolio.spec.ts` corresponden al diseño anterior y deben reescribirse con el rediseño del portfolio.
 
-Playwright ejecuta Chrome instalado a 390, 768 y 1440 px, contra producción local en `127.0.0.1:3100`. Requiere las cuentas temporales confirmadas en `.env.integration.local` y el proyecto dedicado autorizado. `npm run build` seguido de `npm run test:e2e` recorre acceso, CRUD, fotos JPEG/PNG/WebP, publicación, retirada y limpieza. Usa fotos reales de `assets/demo/`; crea adaptaciones de QA únicamente en memoria. No requiere fixtures locales sin versionar. Incluye axe, targets táctiles, overflow y galería por teclado. Traces/HAR están desactivados para no registrar credenciales ni cookies; screenshots se toman con campos de acceso vacíos o dentro de la app, sin emails de cuentas.
+## Despliegue
 
-El recorrido público comprueba también exclusión de datos privados, originales inaccesibles, variantes WebP, revocación sobre la misma URL y bloqueo del optimizador cacheado de Next. Las capturas `public-viewport.png` y del modal son la evidencia visual fiable: en este entorno Chrome algunas capturas `fullPage` pintan imágenes negras aunque el viewport consecutivo muestre las fotos decodificadas correctamente. No se modificó la página para compensar ese artefacto.
+Render Web Service con Node completo (SSR, Route Handlers y Sharp nativo); no es una exportación estática.
 
-## Contacto de producción
+- Build: `npm ci --include=dev && npm run build`
+- Start: `npm run start -- --hostname 0.0.0.0 --port $PORT`
+- Variables: las dos `NEXT_PUBLIC_SUPABASE_*` en build y ejecución; `IGUANA_WHATSAPP_NUMBER` en ejecución.
 
-`IGUANA_WHATSAPP_NUMBER`, declarado vacío en `.env.example`, es el único dato de contacto. Configurarlo en el entorno de despliegue con el número real confirmado en formato E.164: `+`, código internacional y dígitos, sin espacios. `src/features/portfolio/contact.ts` construye ambos CTA. Con valor ausente o inválido se muestra contacto pendiente, sin número inventado, enlace `tel:` ni WhatsApp ficticio. No se ha confirmado todavía el teléfono de Robin.
+Vercel no sirve: su límite de 4,5 MB por petición es incompatible con fotos de hasta 10 MiB procesadas en el servidor.
 
-En Gate 2 se ejecutó además un smoke técnico de Playwright con Chrome local 154.0.8037.97, en desktop y móvil: HTTP 200, título/idioma del documento, ausencia de errores JavaScript e icono idéntico al original.
+La CSP usa un nonce por petición con `strict-dynamic`; no relajarla ni habilitar `unsafe-inline` para scripts.
 
-## Decisiones de foundation
+## Deuda técnica: ESLint 10
 
-- Inicialización manual siguiendo [Next.js](https://nextjs.org/docs/app/getting-started/installation), para preservar archivos existentes y evitar scaffolding de pantallas/configuración de agentes.
-- `src/features/` contiene validación y contrato público; `src/lib/supabase/`, clientes tipados y sesión. No hay componentes, repositorios genéricos ni capas vacías.
-- Tailwind mediante PostCSS, sin tema de marca, fuentes remotas ni librerías visuales.
-- `src/app/icon.png` es una copia byte a byte del símbolo oficial; no hay retoque ni modificación del original.
-- ECC: guía, flujo equivalente Research → Plan → TDD → Implement → Review → Verify, `tdd-workflow` y `verification-loop`. `orch-build-mvp` se evaluó y no se aplica completo porque excede la foundation.
-- Onboarding: las mappings actuales detectan Next.js/React/TypeScript. `project-init` se evaluó mediante `install-apply.js --target codex --dry-run --json --skills coding-standards,tdd-workflow,verification-loop`; el plan apunta a configuración global de Codex. No se aplicó ni se duplicó ECC en el proyecto.
-
-Gate 3A tiene el checkpoint `aa35c011bb28258f42af520ab354f53da3383cda`; el MVP privado aprobado tiene `76967ca3cd4d835c36f2cddd2c04c6aa85393bc6`; el portfolio público y cierre visual V1, `9eba03e9d1f6ed1fb13407064417e1101a2f873f`. La preproducción está revisada y aprobada para su checkpoint Git. El siguiente paso será crear un repositorio **privado de GitHub** y enlazarlo; publicar código o desplegar requiere nueva autorización. Las pruebas de infraestructura anterior están en [docs/gate-3a-verification.md](docs/gate-3a-verification.md).
-
-## Despliegue de V1
-
-Usar un servicio **Node 24 completo** con SSR, Proxy, Route Handlers y Sharp nativo. Target preparado: **Render Web Service**, con `npm ci --include=dev && npm run build` y `npm run start -- --hostname 0.0.0.0 --port $PORT`. No es una exportación estática. Las dos variables `NEXT_PUBLIC_SUPABASE_*` deben existir al construir y ejecutar; `IGUANA_WHATSAPP_NUMBER`, en ejecución. El directorio de aplicación contiene `src/app`, componentes compartidos, lógica en `src/features`, clientes tipados en `src/lib/supabase` y migraciones en `supabase/migrations`.
-
-Vercel Functions tiene un [límite de 4,5 MB por petición](https://vercel.com/docs/functions/limitations), incompatible con nuestras fotos de hasta 10 MiB procesadas en el servidor. No se reduce ese límite ni se cambia la arquitectura para desplegar. No hay proveedor autenticado, repositorio remoto ni URL final; la configuración exacta y el smoke HTTPS pendiente están en el informe de preproducción.
-
-La CSP de documentos usa un nonce por petición, también en los scripts SSR de Next. Solo desarrollo permite `unsafe-eval`. `style-src-attr` permite atributos de estilo de Next/Image; los scripts inline siguen necesitando nonce. Las cabeceras deshabilitan marcos, MIME sniffing y permisos innecesarios. Login y superficies privadas conservan `noindex` y la protección de sesión/RLS. El proxy admite 10 MiB + 64.000 bytes de envoltura multipart; el archivo sigue limitado a 10 MiB.
+Se mantiene **ESLint 9.39.5**: `eslint-plugin-react`, `eslint-plugin-import` y `eslint-plugin-jsx-a11y`, cargados por `eslint-config-next`, no declaran compatibilidad con ESLint 10 (auditoría del 6 de octubre de 2026). No forzar peers ni retirar reglas. Se podrá actualizar cuando esos plugins y la configuración de Next lo admitan, verificando después todos los checks. Guía: <https://eslint.org/docs/latest/use/migrate-to-10.0.0>.

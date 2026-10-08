@@ -2,7 +2,7 @@
 
 ## Estado y fuentes
 
-Aplicación real desplegada en **Render**, con portfolio público y gestión privada/PWA. Esta guía es común a Codex, Claude Code y futuros agentes: leerla junto con [PRODUCT.md](PRODUCT.md) y [DESIGN.md](DESIGN.md) antes de actuar. Si el harness no carga AGENTS.md automáticamente, realizar esa lectura explícitamente; no se presupone integración automática con Claude Code.
+Aplicación real desplegada en **Render**, con portfolio público y gestión privada/PWA. Esta guía es común a Codex, Claude Code y futuros agentes: leerla junto con [PRODUCT.md](PRODUCT.md) y [DESIGN.md](DESIGN.md) antes de actuar. En Claude Code, `CLAUDE.md` importa los tres documentos para que se carguen en cada sesión.
 
 - **AGENTS.md:** operación, seguridad, autorizaciones y QA.
 - **PRODUCT.md:** funciones, rutas, datos y arquitectura actuales.
@@ -54,4 +54,4 @@ Nunca imprimir credenciales, cookies, JWT, contraseñas o claves privadas en cha
 
 ## Identidad y materiales
 
-Preservar íntegros `assets/brand/` y `references/`: no mover, borrar, sobrescribir, redibujar, reinterpretar ni recolorear la iguana o la tipografía oficial. Derivados técnicos autorizados van separados; favicon e iconos PWA usan el símbolo oficial. No reconstruir demos eliminadas, extraer marca de mockups ni sustituir fotografías reales por stock/IA. El portfolio puede evolucionar con aprobación; la identidad y los contratos funcionales se mantienen.
+Preservar íntegro `assets/brand/`: no mover, borrar, sobrescribir, redibujar, reinterpretar ni recolorear la iguana o la tipografía oficial. Derivados técnicos autorizados van separados; favicon e iconos PWA usan el símbolo oficial. No reconstruir demos eliminadas ni sustituir fotografías reales por stock/IA. La home pública está abierta a rediseño completo (ver [DESIGN.md](DESIGN.md)): su presentación anterior no es un contrato; la identidad y los contratos funcionales sí se mantienen.

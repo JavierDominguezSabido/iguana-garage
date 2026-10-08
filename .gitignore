@@ -43,4 +43,7 @@ Desktop.ini
 *.swp
 *.swo
 
-# Conservar lockfiles, documentacion, assets/ y references/.
+# Instrucciones personales de Claude Code
+CLAUDE.local.md
+
+# Conservar lockfiles, documentacion y assets/.
