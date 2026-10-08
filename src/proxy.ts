@@ -28,9 +28,16 @@ export async function proxy(request: NextRequest) {
   // Next necesita la política en la petición para aplicar el nonce a sus scripts/styles SSR.
   request.headers.set("content-security-policy", policy);
   request.headers.set("x-nonce", nonce);
-  const response = request.nextUrl.pathname === "/"
+  // El alias legacy nunca renderiza React: redirección HTTP antes del filesystem.
+  const response = request.nextUrl.pathname === "/login"
+    ? NextResponse.redirect(new URL("/app/login", request.url))
+    : request.nextUrl.pathname === "/"
     ? NextResponse.next({ request })
     : await updateSession(request);
+  if (request.nextUrl.pathname === "/login") {
+    response.headers.set("cache-control", "private, no-store");
+    response.headers.set("x-robots-tag", "noindex, nofollow");
+  }
   response.headers.set("content-security-policy", policy);
   return response;
 }

@@ -48,7 +48,17 @@ test("start_url conserva login SSR, no-store y ausencia de service workers/cach�
 });
 
 test("login antiguo redirige al login privado y solo esa página acepta anónimo",async({page,request})=>{
+  const legacy=await request.get("/login",{maxRedirects:0});
+  expect(legacy.status()).toBe(307);
+  expect(new URL(legacy.headers().location,"http://localhost").pathname).toBe("/app/login");
+  expect(legacy.headers()["x-robots-tag"]).toBe("noindex, nofollow");
+  expect(await legacy.text()).not.toMatch(/<script\b|<html\b/i);
+  const errors:string[]=[];
+  page.on("console",message=>{if(message.type()==="error")errors.push(message.text());});
+  page.on("pageerror",()=>errors.push("pageerror"));
   await page.goto("/login");await expect(page).toHaveURL(/\/app\/login$/);
+  await page.waitForLoadState("networkidle");
+  expect(errors).toEqual([]);
   await expect(page.getByRole("heading",{name:"Acceso privado"})).toBeVisible();
   await expect(page.locator(".private-header")).toHaveCount(0);
   for(const path of ["/app/login/extra","/app/new","/app/api/photos/33333333-3333-4333-8333-333333333333?w=390"]){
@@ -56,4 +66,28 @@ test("login antiguo redirige al login privado y solo esa página acepta anónimo
     expect(new URL(response.headers().location,"http://localhost").pathname).toBe("/app/login");
     expect(response.headers()["cache-control"]).toContain("private, no-store");
   }
+});
+
+test("favicon nativo responde con un ICO válido y se anuncia en la web normal",async({page,request})=>{
+  const response=await request.get("/favicon.ico");expect(response.status()).toBe(200);
+  expect(response.headers()["content-type"]).toMatch(/^image\/(?:x-icon|vnd\.microsoft\.icon)/);
+  const ico=await response.body();
+  expect(ico.readUInt16LE(0)).toBe(0);expect(ico.readUInt16LE(2)).toBe(1);
+  const count=ico.readUInt16LE(4);expect(count).toBeGreaterThan(0);
+  for(let index=0;index<count;index++){
+    const entry=6+index*16,width=ico[entry]||256,height=ico[entry+1]||256;
+    const length=ico.readUInt32LE(entry+8),offset=ico.readUInt32LE(entry+12);
+    expect(offset+length).toBeLessThanOrEqual(ico.length);
+    const bitmap=ico.subarray(offset,offset+length);
+    expect(bitmap.readUInt32LE(0)).toBe(40); // BITMAPINFOHEADER, compatible también con ICO clásico.
+    expect([bitmap.readInt32LE(4),bitmap.readInt32LE(8)]).toEqual([width,height*2]);
+    expect(bitmap.readUInt16LE(14)).toBe(32);
+  }
+  await page.goto("/");
+  await expect(page.locator('link[rel="icon"][href^="/favicon.ico"]')).toHaveCount(1);
+  expect(await page.evaluate(async()=>{
+    const icon=new Image();icon.src="/favicon.ico";await icon.decode();
+    return icon.naturalWidth>0&&icon.naturalHeight>0;
+  })).toBe(true);
+  await expect(page.locator('link[rel="manifest"]')).toHaveCount(0);
 });

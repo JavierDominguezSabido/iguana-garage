@@ -45,6 +45,20 @@ it("conserva redirección, cookies de sesión y no-store al añadir CSP", async 
   expect(response.headers.get("content-security-policy")).toContain("upgrade-insecure-requests");
 });
 
+it("redirige el alias legacy por HTTP sin HTML, conservando CSP, noindex y no-store", async () => {
+  const response = await proxy(new NextRequest("https://garage.example/login"));
+  expect(response.status).toBe(307);
+  expect(response.headers.get("location")).toBe("https://garage.example/app/login");
+  expect(await response.text()).toBe("");
+  expect(response.headers.get("cache-control")).toBe("private, no-store");
+  expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+  const policy = response.headers.get("content-security-policy") ?? "";
+  expect(policy).toContain("'strict-dynamic'");
+  expect(policy).toMatch(/script-src 'self' 'nonce-[^']+'/);
+  expect(policy.match(/script-src[^;]+/)?.[0]).not.toContain("'unsafe-inline'");
+  expect(session).not.toHaveBeenCalled();
+});
+
 it("permite HMR solo en desarrollo y conserva HTTP local para el smoke de producción", async () => {
   let response = await proxy(new NextRequest("http://127.0.0.1:3100/"));
   expect(response.headers.get("content-security-policy")).not.toContain("upgrade-insecure-requests");
