@@ -1,5 +1,6 @@
 import {isUuid} from "./validation";
 import {preparedWidth} from "@/features/portfolio/variants";
+import {viewerStageSizes} from "@/features/viewer/sizes";
 
 // Solo construye URLs same-origin de la superficie privada autenticada.
 export function privateImageLoader({src,width}:{src:string;width:number}):string {
@@ -20,6 +21,7 @@ export function mainImageSizes(width:number|null,height:number|null):string {
   const cap=580*ratio(width,height);
   return `(min-width: 1200px) min(710.222px, ${cap}px), (min-width: 1100px) min(calc((100vw - 72px) * 1.7 / 2.7), ${cap}px), (min-width: 768px) min(calc(100vw - 356px), calc((100vw - 96px) * 1.7 / 2.7), ${cap}px), min(calc(100vw - 40px), ${cap}px)`;
 }
+// Visor a pantalla completa: mismo escenario contain que el público (ver @/features/viewer/sizes).
 export function privateViewerSizes(width:number|null,height:number|null):string {
-  return `min(calc(100vw - 54px), 1050px, ${72*ratio(width,height)}dvh)`;
+  return viewerStageSizes(ratio(width,height));
 }

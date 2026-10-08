@@ -103,14 +103,14 @@ test("V1: portfolio anónimo, proporciones, publicación/retirada y limpieza", a
     const photoButton = publicPage.getByRole("button", { name: `Ampliar ${name} editado, fotografía 1`, exact: true });
     await photoButton.focus(); await publicPage.keyboard.press("Enter"); await expect(publicPage.getByRole("dialog")).toBeVisible();
     await expect(publicPage.getByRole("button", { name: "Cerrar fotografías", exact: true })).toBeFocused();
-    await expect(publicPage.getByText("Fotografía 1 de 3", { exact: true })).toBeVisible();
+    await expect(publicPage.locator(".pub-viewer-count")).toHaveText("1 / 3");
     for (let index = 0; index < 3; index++) {
-      await expect.poll(() => publicPage.locator(".pub-full-photo img").evaluateAll((images) => images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0))).toBe(true);
-      expect(await publicPage.locator(".pub-full-photo img").evaluate((image) => getComputedStyle(image).objectFit)).toBe("contain");
+      await expect.poll(() => publicPage.locator(".pub-viewer-photo img").evaluateAll((images) => images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0))).toBe(true);
+      expect(await publicPage.locator(".pub-viewer-photo img").evaluate((image) => getComputedStyle(image).objectFit)).toBe("contain");
       await publicPage.screenshot({ path: testInfo.outputPath(`public-full-${index + 1}.png`) });
-      if (index < 2) await publicPage.getByRole("button", { name: "Siguiente →", exact: true }).click();
+      if (index < 2) await publicPage.getByRole("button", { name: "Fotografía siguiente", exact: true }).click();
     }
-    await audit(publicPage); await publicPage.keyboard.press("ArrowLeft"); await expect(publicPage.getByText("Fotografía 2 de 3", { exact: true })).toBeVisible();
+    await audit(publicPage); await publicPage.keyboard.press("ArrowLeft"); await expect(publicPage.locator(".pub-viewer-count")).toHaveText("2 / 3");
     await publicPage.keyboard.press("Escape"); await expect(publicPage.getByRole("dialog")).not.toBeVisible(); await expect(photoButton).toBeFocused();
     const result = await anon.rpc("list_public_jobs"); const publicJob = result.data.find((job: { id: string }) => job.id === jobId);
     expect(Object.keys(publicJob).sort()).toEqual(["id", "job_date", "media", "name"]);

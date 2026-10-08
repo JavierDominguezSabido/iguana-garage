@@ -10,7 +10,7 @@ test("muro: cada foto abre el visor en esa misma imagen", async ({ page }) => {
   await tile.getByRole("button", { name: /^Ampliar .+, fotografía \d+$/ }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
-  expect(new URL((await dialog.locator(".pub-full-photo img").getAttribute("src"))!, page.url()).pathname).toBe(expected);
+  expect(new URL((await dialog.locator(".pub-viewer-photo img").getAttribute("src"))!, page.url()).pathname).toBe(expected);
   await page.keyboard.press("Escape");
 });
 
@@ -19,6 +19,8 @@ test("escaparate: bandas por trabajo, visor, accesibilidad y contacto", async ({
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
+  // axe mide el contraste con la opacidad real: se audita con las animaciones de entrada ya terminadas (el brillo de carga es infinito y no cuenta).
+  await page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== "running" || animation.effect?.getComputedTiming().iterations === Infinity));
   await page.evaluate((source) => {
     const script = document.createElement("script");
     script.nonce = document.querySelector<HTMLScriptElement>("script[nonce]")?.nonce ?? "";
@@ -45,8 +47,8 @@ test("escaparate: bandas por trabajo, visor, accesibilidad y contacto", async ({
   await opener.focus(); await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
-  const thumbnails = dialog.locator(".pub-thumbnails button");
-  const photo = dialog.locator(".pub-full-photo img");
+  const thumbnails = dialog.locator(".pub-viewer-thumbs button");
+  const photo = dialog.locator(".pub-viewer-photo img");
   await expect.poll(() => photo.evaluate((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0)).toBe(true);
   const geometry = await dialog.evaluate((element) => {
     const bounds = element.getBoundingClientRect();
@@ -54,14 +56,14 @@ test("escaparate: bandas por trabajo, visor, accesibilidad y contacto", async ({
   });
   expect(geometry.x).toBeLessThan(1); expect(geometry.y).toBeLessThan(1); expect(geometry.overflow).toBe(false);
   await expect(photo).toHaveCSS("object-fit", "contain");
-  await expect(dialog.getByText(`Fotografía 1 de ${totalPhotos}`, { exact: true })).toBeVisible();
+  await expect(dialog.locator(".pub-viewer-count")).toHaveText(`1 / ${totalPhotos}`);
   if (totalPhotos > 1) {
-    await dialog.getByRole("button", { name: "Siguiente →", exact: true }).click();
-    await expect(dialog.getByText(`Fotografía 2 de ${totalPhotos}`, { exact: true })).toBeVisible();
+    await dialog.getByRole("button", { name: "Fotografía siguiente", exact: true }).click();
+    await expect(dialog.locator(".pub-viewer-count")).toHaveText(`2 / ${totalPhotos}`);
     await page.keyboard.press("ArrowLeft");
-    await expect(dialog.getByText(`Fotografía 1 de ${totalPhotos}`, { exact: true })).toBeVisible();
+    await expect(dialog.locator(".pub-viewer-count")).toHaveText(`1 / ${totalPhotos}`);
     await page.keyboard.press("ArrowLeft");
-    await expect(dialog.getByText(`Fotografía ${totalPhotos} de ${totalPhotos}`, { exact: true })).toBeVisible();
+    await expect(dialog.locator(".pub-viewer-count")).toHaveText(`${totalPhotos} / ${totalPhotos}`);
     await thumbnails.last().click();
     await expect.poll(() => thumbnails.locator("img").evaluateAll((images) => images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0))).toBe(true);
   }

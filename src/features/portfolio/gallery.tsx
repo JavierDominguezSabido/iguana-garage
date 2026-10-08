@@ -24,13 +24,12 @@ export function PublicGallery({ job }: { job: PublicJob }) {
     {job.media.length === 0 ? <div className="pub-no-photo" data-reveal><span>Fotografías próximamente</span></div>
       : <div className="pub-wall">{job.media.map((photo, index) => {
         const { span, wide } = layout[index];
-        // data-paint: al entrar en pantalla una franja verde recorre la foto y la descubre (ver RevealOnScroll y portfolio.css).
-        return <div key={photo.id} className={`pub-tile${wide ? " pub-tile-wide" : ""}`} style={{ "--s": span, "--rv": index % 4 } as CSSProperties} data-paint>
-          <div className="pub-paint"><div className="pub-paint-photo">
+        // El hueco reservado (Metal) es el recuadro; la foto vive en su capa y sube/aparece cuando está lista (ver RevealOnScroll).
+        return <div key={photo.id} className={`pub-tile${wide ? " pub-tile-wide" : ""}`} style={{ "--s": span, "--rv": index % 4 } as CSSProperties} data-wall-photo>
+          <div className="pub-tile-photo">
             <PublicPhoto jobId={job.id} mediaId={photo.id} alt={`${job.name}, fotografía ${index + 1}`} sizes={tileSizes(span, wide)} preview focal={photo} onOpen={() => setSelectedPhoto(photo.id)} label={`Ampliar ${job.name}, fotografía ${index + 1}`} />
             {job.media.length > 1 && <span className="pub-tile-idx" aria-hidden="true">{index + 1}/{job.media.length}</span>}
-          </div></div>
-          <span className="pub-paint-stripe" aria-hidden="true" />
+          </div>
         </div>;
       })}</div>}
     {selectedPhoto && <PublicViewer job={job} initialMediaId={selectedPhoto} onClose={() => setSelectedPhoto(undefined)} />}

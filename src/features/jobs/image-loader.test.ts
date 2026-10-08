@@ -12,7 +12,8 @@ it.each(["https://remote/photo","/api/portfolio/photos/id","/app/api/photos/../o
 });
 it("sizes conserva las limitaciones CSS reales sin usar originales",()=>{
   expect(mainImageSizes(1080,1440)).toContain("435px");expect(mainImageSizes(1600,900)).toContain("1031.111");
-  expect(privateViewerSizes(1080,1440)).toBe("min(calc(100vw - 54px), 1050px, 54dvh)");
+  expect(privateViewerSizes(1080,1440)).toBe("(min-width: 900px) min(calc(100vw - 176px), calc((100dvh - 148px) * 0.75)), min(100vw, calc((100dvh - 148px) * 0.75))");
+  expect(privateViewerSizes(null,null)).toContain("* 0.8)");
   expect(mainImageSizes(null,null)).toContain("464px");
 });
 it.each([0,-1,NaN,1.5])("no admite anchos inválidos %s en ningún loader",width=>{

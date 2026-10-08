@@ -80,15 +80,22 @@ Imagen Open Graph **estática y solo de marca**: logo oficial completo, a su pro
 
 - **Título:** al cargar, sus dos líneas suben escalonadas (0,38 em y fundido, 0,75 s, la segunda con 0,12 s de retardo), una sola vez y solo con CSS.
 - **Entrada al hacer scroll** en titulares, bandas y contacto: aparición con ligero desplazamiento vertical (18 px, 0,45 s). Solo se oculta lo que queda bajo la primera pantalla, y solo con JavaScript (`RevealOnScroll`); sin JS todo es visible.
-- **Pasada de pintura** en las fotos del muro (sustituye al fundido de entrada, no se suma): al entrar en pantalla, una franja en Iguana Green (28 % del ancho de la foto) la recorre de izquierda a derecha y va descubriéndola, 0,62 s lineales, una sola vez, con 70 ms de escalonado entre fotos de una fila. Solo anima `transform` y `opacity` (la ventana avanza, la foto contra-avanza y la franja corre aparte) y espera, hasta 0,7 s, a que la foto esté cargada para descubrir imagen y no un hueco. Estado final sin transformaciones residuales.
+- **Entrada de las fotos del muro:** cada foto sube y aparece (24 px y de opacidad 0 a 1, 0,5 s, escalonado de 60 ms entre fotos de una fila), una sola vez, y **no empieza hasta que la imagen está cargada y decodificada** (evento `load` + `decode()`, no un temporizador). Mientras carga, el hueco ya reservado (4:5, sin saltos de maquetación) muestra Metal con un brillo de carga sutil. Si la foto termina de cargar cuando ya está en pantalla aparece solo con fundido, sin desplazamiento. Solo anima `transform` y `opacity`; se mueve la capa de la foto, no el hueco. Estados `data-wall` = `loading` | `queued` | `rise` | `fade` (lógica pura en `photo-entry.ts`, gestión en `RevealOnScroll`); el atributo se retira al terminar. Si `decode()` de una imagen ya cargada no resolviera, se libera tras 1,5 s para que ninguna foto quede invisible. Un recorrido muy rápido puede saltarse un recuadro: espera en cola y sube al acercarse de nuevo.
 - Zoom muy leve (1,03) al pasar el ratón sobre una foto del muro.
-- Con `prefers-reduced-motion: reduce` no hay título animado, ni entrada, ni pasada de pintura, ni zoom, ni pista del comparador; todo se ve desde el principio.
+- Con `prefers-reduced-motion: reduce` no hay título animado, ni entrada animada, ni brillo de carga, ni zoom, ni pista del comparador, ni transiciones del visor o del botón fijo: la foto aparece directamente al cargar y todo se ve desde el principio.
 
-### Reglas técnicas del visor y las imágenes
+### Visores de fotos (público y privado)
 
-- Las vistas previas pueden recortar con `cover` y punto focal; al ampliar se muestra la imagen completa con `contain`, sin deformar.
-- El visor (dialog nativo) va centrado respecto al viewport con `fixed/inset/margin:auto`, independiente del layout de la home, con contador, miniaturas, anterior/siguiente, cierre, Escape/flechas y retorno de foco. En táctil se cambia de foto deslizando a izquierda o derecha (recorrido de al menos 48 px y claramente horizontal; `touch-action: pan-y` conserva el scroll vertical), además de botones y teclado; el ratón no desliza.
-- Reservar espacio de imágenes y ajustar `sizes` al ancho realmente pintado (por foto del muro y para el comparador).
+Los dos visores comparten estilo, estructura y comportamiento, pero cada uno conserva su piel. El componente base es `PhotoViewer` (`src/features/viewer/`): dialog nativo modal, teclado, deslizar, foco y miniaturas; quien lo usa pinta la foto y las miniaturas con sus propios loaders y variantes, y trae su propio CSS por prefijo (`pub-viewer` en `portfolio.css`, `app-viewer` en `globals.css`). Los estilos no se comparten: se comprueban por separado.
+
+- **Estilo común:** pantalla completa (dialog `fixed`, `inset: 0`, `margin: auto`, 100 % × 100dvh, centrado respecto al viewport e independiente del layout de la página), fondo casi opaco (≈95 %) y sin panel ni borde; el scroll de la página queda bloqueado mientras está abierto. La foto, con `contain`, ocupa todo el escenario (sin recortar ni deformar).
+- **Cabecera:** título del trabajo a la izquierda, contador «2 / 3» y cierre arriba a la derecha (48 px, sin anillo; con teclado muestra foco visible en tono hueso/texto, nunca verde). Un `role="status"` oculto anuncia «Fotografía 2 de 3».
+- **Flechas anterior/siguiente:** en escritorio (≥ 900 px), grandes (64 px) en columnas laterales a los lados de la foto; en móvil y tablet, compactas (44 px) sobre la foto. Además, en táctil se desliza a izquierda o derecha (recorrido de al menos 48 px y claramente horizontal; `touch-action: pan-y` conserva el scroll vertical y un toque no cambia de foto; el ratón no desliza). La lógica es `swipe.ts`. También flechas del teclado; Escape cierra y el foco vuelve al elemento que lo abrió.
+- **Miniaturas** centradas debajo (56 px móvil, 64 px escritorio), con recorte `cover` y punto focal; la activa lleva borde verde y opacidad completa, las demás se atenúan (`aria-pressed`). Con una sola foto no hay flechas ni miniaturas.
+- **Público (`pub-viewer`):** nombre del trabajo en Barlow Condensed (mayúsculas), tokens del portfolio, loaders y variantes del portfolio; el botón fijo de WhatsApp queda oculto con el visor abierto.
+- **Privado (`app-viewer`):** tipografía Arial y tokens de `globals.css` (`--text`, `--muted`, `--lime`), sus loaders y rutas `/app/api/photos`, sin Barlow ni estilos del portfolio. Hoy no ofrece acceso al original desde el visor (el endpoint `?original=1` existe, pero no se enlaza).
+- **Imágenes:** `sizes` sale de `viewerStageSizes` (alto disponible × proporción, restando cabecera, miniaturas y las columnas de flechas en escritorio). Con `prefers-reduced-motion` no hay fundido entre fotos.
+- Las vistas previas fuera del visor pueden recortar con `cover` y punto focal; al ampliar siempre se muestra la imagen completa. Reservar espacio de imágenes y ajustar `sizes` al ancho realmente pintado (muro, comparador y visores).
 
 ## Gestión privada
 
@@ -96,7 +103,7 @@ Compacta, funcional y mobile-first, priorizando operación cotidiana desde telé
 
 No introducir rediseños decorativos que reduzcan legibilidad, espacio de fotos, acceso a botones o rapidez de uso. Verde para acciones principales; borrados identificados con texto y confirmación, sin depender solo del color. El login comparte la identidad privada sin mostrar el marco de gestión antes de autenticar. El rediseño público no se aplica al privado.
 
-El visor privado mantiene centrado robusto de dialog respecto al viewport (`fixed`, `inset:0`, `margin:auto`), fotografías `contain`, proporción real y controles accesibles. No acoplar cambios de su presentación al visor público sin comprobar ambos.
+El visor privado usa el mismo componente base que el público (ver «Visores de fotos») con su propia piel `app-viewer`: dialog centrado respecto al viewport (`fixed`, `inset:0`, `margin:auto`), fotografías `contain`, proporción real y controles accesibles. Un cambio en el componente base o en una piel exige comprobar ambos visores por separado.
 
 ## Responsive y accesibilidad
 

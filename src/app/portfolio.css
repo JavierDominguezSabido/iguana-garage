@@ -107,44 +107,62 @@
 }
 @keyframes pub-rise { from { opacity: 0; transform: translateY(.38em); } }
 
-/* Fotos del muro: una franja verde las recorre y las descubre, como una pasada de pintura (sustituye al fundido de las fotos).
-   Solo transform y opacity: la ventana avanza y la foto contra-avanza para quedarse quieta bajo ella; la franja corre aparte
-   hasta salir por el borde. Todo lineal y de la misma duración, de modo que la franja y el borde descubierto coinciden. */
-.pub-paint, .pub-paint-photo { position: absolute; inset: 0; }
-.pub-paint { overflow: hidden; }
-.pub-paint-stripe { position: absolute; z-index: 2; top: 0; bottom: 0; left: 0; width: 28%; background: var(--pub-green); opacity: 0; pointer-events: none; }
+/* Fotos del muro: el hueco reservado (Metal) muestra un brillo de carga hasta que la foto está cargada y decodificada;
+   entonces sube y aparece, o solo funde si termina de cargar cuando ya está en pantalla. Solo transform y opacity.
+   RevealOnScroll marca cada recuadro con data-wall (loading | queued | rise | fade); sin JS o con movimiento reducido no se aplica nada. */
+.pub-tile-photo { position: absolute; inset: 0; }
 @media (prefers-reduced-motion: no-preference) {
-  [data-paint][data-hidden] .pub-paint { transform: translateX(-100%); }
-  [data-paint][data-hidden] .pub-paint-photo { transform: translateX(100%); }
-  [data-paint][data-sweep] .pub-paint { animation: pub-paint-window .62s linear calc(var(--rv, 0) * 70ms) backwards; }
-  [data-paint][data-sweep] .pub-paint-photo { animation: pub-paint-photo .62s linear calc(var(--rv, 0) * 70ms) backwards; }
-  [data-paint][data-sweep] .pub-paint-stripe { animation: pub-paint-stripe .62s linear calc(var(--rv, 0) * 70ms) backwards; }
+  .pub-tile[data-wall="loading"]::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(100deg, transparent 25%, color-mix(in srgb, var(--pub-bone) 9%, transparent) 50%, transparent 75%); animation: pub-shimmer 1.5s ease-in-out infinite; }
+  .pub-tile[data-wall="loading"] .pub-tile-photo { opacity: 0; }
+  .pub-tile[data-wall="queued"] .pub-tile-photo { opacity: 0; transform: translateY(24px); }
+  .pub-tile[data-wall="rise"] .pub-tile-photo { animation: pub-rise-in .5s cubic-bezier(.2, .7, .2, 1) calc(var(--rv, 0) * 60ms) backwards; }
+  .pub-tile[data-wall="fade"] .pub-tile-photo { animation: pub-fade-in .45s ease-out backwards; }
 }
-@keyframes pub-paint-window { 0% { transform: translateX(-100%); } 78.125% { transform: translateX(0); } 100% { transform: translateX(0); } }
-@keyframes pub-paint-photo { 0% { transform: translateX(100%); } 78.125% { transform: translateX(0); } 100% { transform: translateX(0); } }
-@keyframes pub-paint-stripe { from { transform: translateX(-100%); opacity: 1; } to { transform: translateX(357.14%); opacity: 1; } }
+@keyframes pub-shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@keyframes pub-rise-in { from { opacity: 0; transform: translateY(24px); } }
+@keyframes pub-fade-in { from { opacity: 0; } }
 
 /* Botón fijo de WhatsApp (solo móvil): aparece al salir el título; se oculta en contacto, pie y con el visor abierto. */
 .pub-sticky { position: fixed; z-index: 20; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding: 0 18px; background: var(--pub-green); color: var(--pub-carbon); border-radius: 2px; font: 600 .8rem var(--pub-text); letter-spacing: .12em; text-transform: uppercase; box-shadow: 0 10px 30px #000a; visibility: hidden; opacity: 0; transform: translateY(16px); transition: opacity .22s ease, transform .22s ease, visibility 0s linear .22s; }
 .pub-sticky[data-visible="true"] { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
-body:has(dialog.pub-dialog[open]) .pub-sticky { visibility: hidden; }
+body:has(dialog.pub-viewer[open]) .pub-sticky { visibility: hidden; }
 @media (min-width: 700px) { .pub-sticky { display: none; } }
 @media (prefers-reduced-motion: reduce) { .pub-sticky { transition: none; transform: none; } }
 
-/* Visor: dialog nativo centrado respecto al viewport (Tailwind Preflight elimina su margen automático). */
-.pub-dialog { position: fixed; inset: 0; margin: auto; width: min(1140px, calc(100vw - 20px)); max-width: calc(100vw - 20px); max-height: calc(100dvh - 20px); padding: 14px; background: var(--pub-carbon); color: var(--pub-bone); border: 1px solid var(--pub-metal); border-radius: 8px; }
-.pub-dialog::backdrop { background: #020705ef; }
-.pub-dialog-head { display: flex; justify-content: space-between; gap: 20px; align-items: start; margin-bottom: 12px; }
-.pub-dialog-head p { font-size: .9rem; overflow-wrap: anywhere; }
-.pub-dialog-head span { font-size: .75rem; color: var(--pub-muted); }
-.pub-close { min-width: 44px; min-height: 44px; border: 1px solid var(--pub-muted); border-radius: 4px; background: transparent; font-size: 1.7rem; }
-.pub-full-photo { height: min(60dvh, 720px); touch-action: pan-y; }
-.pub-gallery-controls { display: flex; justify-content: space-between; gap: 16px; margin-top: 12px; }
-.pub-gallery-controls button { min-height: 44px; border: 0; background: transparent; padding: 8px 4px; font-size: .85rem; }
-.pub-thumbnails { display: flex; gap: 10px; overflow-x: auto; margin-top: 12px; padding: 2px; }
-.pub-thumbnails button { position: relative; width: 64px; height: 64px; flex-shrink: 0; padding: 0; background: var(--pub-carbon); border: 2px solid var(--pub-muted); border-radius: 3px; overflow: hidden; }
-.pub-thumbnails button[aria-pressed="true"] { border-color: var(--pub-green); }
-.pub-thumbnails img { object-fit: cover; }
+/* Visor a pantalla completa (dialog nativo modal): fondo Carbon casi opaco y sin panel. Centrado respecto al viewport con
+   fixed/inset/margin:auto (Tailwind Preflight elimina el margen automático del dialog). Piel pública: Barlow y tokens del portfolio. */
+.pub-viewer { position: fixed; inset: 0; margin: auto; width: 100%; max-width: none; height: 100dvh; max-height: none; padding: 0; border: 0; background: #0e1110f2; color: var(--pub-bone); overflow: hidden; }
+.pub-viewer[open] { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+.pub-viewer::backdrop { background: #0e1110; }
+html:has(dialog.pub-viewer[open]) { overflow: hidden; }
+.pub-viewer :focus-visible { outline: 2px solid var(--pub-bone); outline-offset: 2px; }
+.pub-viewer-head { display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 6px 8px 6px 18px; }
+.pub-viewer-title { flex: 1; min-width: 0; font: 700 1.3rem / 1 var(--pub-display); text-transform: uppercase; letter-spacing: .005em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pub-viewer-count { font: 500 .9rem var(--pub-text); letter-spacing: .08em; font-variant-numeric: tabular-nums; color: var(--pub-muted); }
+.pub-viewer-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.pub-viewer-close { width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--pub-bone); cursor: pointer; }
+.pub-viewer-close:hover { background: color-mix(in srgb, var(--pub-bone) 12%, transparent); }
+.pub-viewer-stage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-height: 0; touch-action: pan-y; }
+.pub-viewer-photo { position: relative; grid-column: 1; min-width: 0; min-height: 0; }
+.pub-viewer-arrow { position: absolute; z-index: 2; top: 50%; width: 44px; height: 44px; margin-top: -22px; display: grid; place-items: center; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--pub-carbon) 70%, transparent); color: var(--pub-bone); cursor: pointer; }
+.pub-viewer-prev { left: 8px; }
+.pub-viewer-next { right: 8px; }
+.pub-viewer-thumbs { display: flex; justify-content: safe center; gap: 8px; overflow-x: auto; padding: 10px 14px calc(14px + env(safe-area-inset-bottom)); }
+.pub-viewer-thumbs button { position: relative; flex: 0 0 auto; width: 56px; height: 56px; padding: 0; border: 2px solid transparent; border-radius: 3px; overflow: hidden; background: var(--pub-metal); opacity: .55; cursor: pointer; }
+.pub-viewer-thumbs button.active { border-color: var(--pub-green); opacity: 1; }
+.pub-viewer-thumbs img { object-fit: cover; }
+@media (prefers-reduced-motion: no-preference) { .pub-viewer-photo .pub-photo { animation: pub-fade-in .18s ease-out; } }
+@media (min-width: 900px) {
+  .pub-viewer-head { min-height: 64px; padding-inline: 28px 20px; }
+  .pub-viewer-title { font-size: 1.7rem; }
+  .pub-viewer-stage { grid-template-columns: 88px minmax(0, 1fr) 88px; }
+  .pub-viewer-photo { grid-column: 2; grid-row: 1; }
+  .pub-viewer-arrow { position: static; margin: 0; width: 64px; height: 64px; align-self: center; justify-self: center; border: 1px solid color-mix(in srgb, var(--pub-bone) 18%, transparent); background: color-mix(in srgb, var(--pub-bone) 10%, transparent); }
+  .pub-viewer-prev { grid-column: 1; grid-row: 1; }
+  .pub-viewer-next { grid-column: 3; grid-row: 1; }
+  .pub-viewer-arrow:hover { background: color-mix(in srgb, var(--pub-bone) 20%, transparent); }
+  .pub-viewer-thumbs button { width: 64px; height: 64px; }
+}
 .pub-loading { min-height: 80dvh; display: grid; place-items: center; background: #0e1110; color: #f8f4da; }
 
 @media (min-width: 700px) {

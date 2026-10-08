@@ -31,6 +31,14 @@ async function scrollThrough(page: Page) {
   }
 }
 
+async function scrollBack(page: Page) {
+  for (let step = 0; step < 80; step++) {
+    const done = await page.evaluate(() => { scrollBy(0, -innerHeight * 0.5); return scrollY <= 2; });
+    await page.waitForTimeout(140);
+    if (done) break;
+  }
+}
+
 test("móvil: el botón fijo de WhatsApp aparece al salir el título y no tapa el final ni el visor", async ({ page, isMobile }) => {
   await page.goto("/");
   const sticky = page.locator(".pub-sticky");
@@ -66,21 +74,21 @@ test("móvil: en el visor, deslizar a izquierda y derecha cambia de foto sin rom
   const total = await work.locator(".pub-tile").count();
   await work.locator(".pub-tile").first().getByRole("button").click();
   const dialog = page.getByRole("dialog"); await expect(dialog).toBeVisible();
-  const photo = (await dialog.locator(".pub-full-photo").boundingBox())!;
+  const photo = (await dialog.locator(".pub-viewer-photo").boundingBox())!;
   const x = photo.x + photo.width / 2, y = photo.y + photo.height / 2;
-  await expect(dialog.getByText(`Fotografía 1 de ${total}`, { exact: true })).toBeVisible();
+  await expect(dialog.locator(".pub-viewer-count")).toHaveText(`1 / ${total}`);
   await swipe(page, { x: x + 90, y }, { x: x - 90, y: y + 6 });
-  await expect(dialog.getByText(`Fotografía 2 de ${total}`, { exact: true })).toBeVisible();
+  await expect(dialog.locator(".pub-viewer-count")).toHaveText(`2 / ${total}`);
   await swipe(page, { x: x - 90, y }, { x: x + 90, y: y - 6 });
-  await expect(dialog.getByText(`Fotografía 1 de ${total}`, { exact: true })).toBeVisible();
+  await expect(dialog.locator(".pub-viewer-count")).toHaveText(`1 / ${total}`);
   await swipe(page, { x: x - 90, y }, { x: x + 90, y });
-  await expect(dialog.getByText(`Fotografía ${total} de ${total}`, { exact: true })).toBeVisible();
+  await expect(dialog.locator(".pub-viewer-count")).toHaveText(`${total} / ${total}`);
   await swipe(page, { x, y: y + 80 }, { x: x + 10, y: y - 80 }); // gesto vertical: no cambia
-  await expect(dialog.getByText(`Fotografía ${total} de ${total}`, { exact: true })).toBeVisible();
+  await expect(dialog.locator(".pub-viewer-count")).toHaveText(`${total} / ${total}`);
   await swipe(page, { x: x + 20, y }, { x: x - 10, y }); // recorrido corto: no cambia
-  await expect(dialog.getByText(`Fotografía ${total} de ${total}`, { exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "Siguiente →", exact: true }).click(); // los botones siguen funcionando
-  await expect(dialog.getByText(`Fotografía 1 de ${total}`, { exact: true })).toBeVisible();
+  await expect(dialog.locator(".pub-viewer-count")).toHaveText(`${total} / ${total}`);
+  await dialog.getByRole("button", { name: "Fotografía siguiente", exact: true }).click(); // los botones siguen funcionando
+  await expect(dialog.locator(".pub-viewer-count")).toHaveText(`1 / ${total}`);
 });
 
 test("compartir: imagen Open Graph estática de marca, 1200×630, enlazada con URL absoluta", async ({ page }) => {
@@ -116,35 +124,85 @@ test.describe("con movimiento reducido", () => {
     await recordAnimations(page);
     await page.goto("/");
     await scrollThrough(page);
-    for (const name of ["pub-rise", "pub-paint-window", "pub-paint-photo", "pub-paint-stripe"]) expect(await starts(page, name)).toBe(0);
-    await expect(page.locator("[data-hidden]")).toHaveCount(0);
+    for (const name of ["pub-rise", "pub-rise-in", "pub-fade-in", "pub-shimmer"]) expect(await starts(page, name)).toBe(0);
+    await expect(page.locator("[data-hidden], [data-wall]")).toHaveCount(0);
   });
 });
 
-test("fotos del muro: una franja verde las recorre y las descubre una sola vez, sin fundido", async ({ page }) => {
-  await recordAnimations(page);
+// Registra cada animación de entrada de una foto y si su imagen ya estaba cargada y decodificada al empezar.
+async function recordWallEntries(page: Page) {
+  await page.addInitScript(() => {
+    type Entry = { name: string; ready: boolean; translates: boolean; detail: string };
+    const entries: Entry[] = []; (window as unknown as { __entries: Entry[] }).__entries = entries;
+    document.addEventListener("animationstart", (event) => {
+      const name = (event as AnimationEvent).animationName;
+      if (name !== "pub-rise-in" && name !== "pub-fade-in") return;
+      const target = event.target as HTMLElement, image = target.closest(".pub-tile")?.querySelector("img");
+      const effect = target.getAnimations().find((animation) => (animation as CSSAnimation).animationName === name)?.effect as KeyframeEffect | null | undefined;
+      const keyframes = effect?.getKeyframes() ?? [];
+      // «Lista» = cargada y decodificada, o la foto ha fallado y el recuadro ya enseña su aviso (la imagen deja de existir).
+      const failed = !!target.closest(".pub-tile")?.querySelector(".pub-photo-failed");
+      entries.push({ name, ready: failed || (!!image && image.complete && image.naturalWidth > 0), translates: keyframes.some((frame) => "transform" in frame), detail: JSON.stringify({ hasImg: !!image, complete: image?.complete, width: image?.naturalWidth, failedUi: failed, src: (image?.currentSrc ?? "").slice(-48) }) });
+    }, true);
+  });
+}
+const wallEntries = (page: Page) => page.evaluate(() => (window as unknown as { __entries: { name: string; ready: boolean; translates: boolean; detail: string }[] }).__entries);
+
+test("fotos del muro: suben y aparecen una sola vez, y solo cuando la imagen está cargada y decodificada", async ({ page }) => {
+  await recordWallEntries(page);
   await page.goto("/");
   await expect(page.locator(".pub-tile").first()).toBeAttached();
-  await expect(page.locator(".pub-tile[data-reveal]")).toHaveCount(0); // sustituye a la entrada anterior, no se suma
-  await expect.poll(() => page.locator(".pub-tile[data-hidden]").count()).toBeGreaterThan(0); // tras hidratar
-  const hidden = await page.locator(".pub-tile[data-hidden]").count();
-  await scrollThrough(page);
-  await expect.poll(() => page.locator(".pub-tile[data-hidden]").count(), { timeout: 5000 }).toBe(0);
-  await page.waitForTimeout(1200);
-  const swept = await page.locator(".pub-tile[data-sweep]").count();
-  expect(swept).toBe(hidden);
-  expect(await starts(page, "pub-paint-window")).toBe(swept);
-  expect(await starts(page, "pub-paint-photo")).toBe(swept);
-  expect(await starts(page, "pub-paint-stripe")).toBe(swept);
-  // Estado final: foto en su sitio, sin transformaciones residuales y sin franja visible.
+  await expect(page.locator(".pub-tile[data-reveal]")).toHaveCount(0); // sin fundido genérico de recuadro: la foto tiene su propia entrada
+  await expect.poll(() => page.locator(".pub-tile[data-wall]").count()).toBeGreaterThan(0); // tras hidratar
+  await scrollThrough(page); await scrollBack(page);
+  // Todas han terminado; si no, el mensaje de fallo dice en qué estado se quedó cada recuadro pendiente.
+  await expect.poll(() => page.locator(".pub-tile[data-wall]").evaluateAll((tiles) => tiles.map((tile) => tile.getAttribute("data-wall")).join(",")), { timeout: 8000 }).toBe("");
+  const entries = await wallEntries(page);
+  expect(entries.length).toBeGreaterThan(0);
+  for (const entry of entries) {
+    expect(entry.ready, entry.name + " " + entry.detail).toBe(true); // nunca antes de cargar y decodificar
+    expect(entry.translates).toBe(entry.name === "pub-rise-in"); // el fundido no desplaza; la subida sí
+  }
+  expect(entries.some((entry) => entry.name === "pub-rise-in")).toBe(true);
+  // Estado final: la foto en su sitio, opaca y sin transformaciones residuales.
   const final = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>(".pub-tile")].map((tile) => {
-    const tileBox = tile.getBoundingClientRect(), photo = tile.querySelector<HTMLElement>(".pub-paint-photo")!.getBoundingClientRect();
-    return { aligned: Math.abs(tileBox.x - photo.x) < 1 && Math.abs(tileBox.width - photo.width) < 1, windowTransform: getComputedStyle(tile.querySelector(".pub-paint")!).transform, photoTransform: getComputedStyle(tile.querySelector(".pub-paint-photo")!).transform, stripe: getComputedStyle(tile.querySelector(".pub-paint-stripe")!).opacity };
+    const layer = tile.querySelector<HTMLElement>(".pub-tile-photo")!, box = tile.getBoundingClientRect(), photo = layer.getBoundingClientRect();
+    return { aligned: Math.abs(box.x - photo.x) < 1 && Math.abs(box.y - photo.y) < 1 && Math.abs(box.height - photo.height) < 1, transform: getComputedStyle(layer).transform, opacity: getComputedStyle(layer).opacity };
   }));
-  for (const tile of final) { expect(tile.aligned).toBe(true); expect(tile.windowTransform).toBe("none"); expect(tile.photoTransform).toBe("none"); expect(tile.stripe).toBe("0"); }
+  for (const tile of final) { expect(tile.aligned).toBe(true); expect(tile.transform).toBe("none"); expect(tile.opacity).toBe("1"); }
   // Una sola vez: volver a pasar no la repite.
-  await page.evaluate(() => scrollTo(0, 0)); await scrollThrough(page);
-  expect(await starts(page, "pub-paint-window")).toBe(swept);
+  const before = (await wallEntries(page)).length;
+  await scrollThrough(page); await scrollBack(page);
+  expect((await wallEntries(page)).length).toBe(before);
+});
+
+test("red 4G lenta: el hueco muestra el brillo de carga y la foto aparece solo con fundido al terminar de cargar ya en pantalla", async ({ page }) => {
+  await recordWallEntries(page);
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Network.enable"); await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
+  await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 150, downloadThroughput: (1.6 * 1024 * 1024) / 8, uploadThroughput: (750 * 1024) / 8 });
+  // Además de la red lenta, las fotos tardan 1,5 s más: así los recuadros que quedan en pantalla siguen cargando de forma determinista.
+  await page.route("**/api/portfolio/photos/**", async (route) => { await new Promise((resolve) => setTimeout(resolve, 1500)); await route.continue(); });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.locator(".pub-tile").first()).toBeAttached();
+  await expect.poll(() => page.locator(".pub-tile[data-wall]").count()).toBeGreaterThan(0);
+  await page.locator(".pub-wall").first().scrollIntoViewIfNeeded();
+  // Mientras carga: hueco Metal reservado, brillo de carga activo y foto aún invisible.
+  let state: { shimmer: string; layerOpacity: string; background: string; height: number } | null = null;
+  await expect.poll(async () => {
+    state = await page.evaluate(() => {
+      const tile = document.querySelector<HTMLElement>(".pub-tile[data-wall='loading']");
+      if (!tile) return null;
+      return { shimmer: getComputedStyle(tile, "::after").animationName, layerOpacity: getComputedStyle(tile.querySelector(".pub-tile-photo")!).opacity, background: getComputedStyle(tile).backgroundColor, height: tile.getBoundingClientRect().height };
+    });
+    return state !== null;
+  }, { timeout: 8000 }).toBe(true);
+  expect(state).toEqual({ shimmer: "pub-shimmer", layerOpacity: "0", background: "rgb(42, 45, 43)", height: expect.any(Number) });
+  expect(state!.height).toBeGreaterThan(100);
+  await page.screenshot({ path: test.info().outputPath("wall-loading.png") });
+  // Al terminar de cargar estando en pantalla: solo fundido, sin desplazamiento, y nunca antes de decodificar.
+  await expect.poll(async () => (await wallEntries(page)).some((entry) => entry.name === "pub-fade-in"), { timeout: 30000 }).toBe(true);
+  for (const entry of await wallEntries(page)) { expect(entry.ready, entry.name + " " + entry.detail).toBe(true); if (entry.name === "pub-fade-in") expect(entry.translates).toBe(false); }
 });
 
 test("«Ver fotos» no sugiere un enlace externo: lleva un icono de fotos y no la flecha ↗", async ({ page }) => {

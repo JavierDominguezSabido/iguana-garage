@@ -138,10 +138,40 @@ dialog::backdrop { background: #020705dd; }
 .confirm-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
 .danger { background: #a63025; color: white; }
 .danger:hover { background: #ba392d; }
-.image-dialog { position: fixed; inset: 0; margin: auto; max-width: calc(100vw - 24px); width: 1080px; padding: 14px; max-height: calc(100dvh - 24px); }
-.image-dialog > img { width: 100%; height: auto; max-height: 72dvh; object-fit: contain; }
-.dialog-toolbar { display: flex; justify-content: space-between; align-items: center; font-size: .8rem; color: var(--muted); margin-bottom: 12px; }
-.dialog-navigation { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; }
+/* Visor a pantalla completa del área privada (dialog nativo modal): mismas reglas de estructura que el público pero con la
+   tipografía y los tokens de esta hoja (Arial, --text, --muted, --lime). Centrado con fixed/inset/margin:auto. */
+.app-viewer { position: fixed; inset: 0; margin: auto; width: 100%; max-width: none; height: 100dvh; max-height: none; padding: 0; border: 0; background: #101513f2; color: var(--text); overflow: hidden; }
+.app-viewer[open] { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+.app-viewer::backdrop { background: #101513; }
+html:has(dialog.app-viewer[open]) { overflow: hidden; }
+.app-viewer :focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.app-viewer-head { display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 6px 8px 6px 18px; }
+.app-viewer-title { flex: 1; min-width: 0; font-size: 1rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-viewer-count { font-size: .85rem; letter-spacing: .04em; font-variant-numeric: tabular-nums; color: var(--muted); }
+.app-viewer-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.app-viewer-close { width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--text); cursor: pointer; }
+.app-viewer-close:hover { background: #ffffff1f; }
+.app-viewer-stage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-height: 0; touch-action: pan-y; }
+.app-viewer-photo { position: relative; grid-column: 1; min-width: 0; min-height: 0; }
+.app-viewer-photo img { object-fit: contain; }
+.app-viewer-arrow { position: absolute; z-index: 2; top: 50%; width: 44px; height: 44px; margin-top: -22px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #101513b3; color: var(--text); cursor: pointer; }
+.app-viewer-prev { left: 8px; }
+.app-viewer-next { right: 8px; }
+.app-viewer-thumbs { display: flex; justify-content: safe center; gap: 8px; overflow-x: auto; padding: 10px 14px calc(14px + env(safe-area-inset-bottom)); }
+.app-viewer-thumbs button { position: relative; flex: 0 0 auto; width: 56px; height: 56px; padding: 0; border: 2px solid transparent; border-radius: 7px; overflow: hidden; background: var(--surface); opacity: .55; cursor: pointer; }
+.app-viewer-thumbs button.active { border-color: var(--lime); opacity: 1; }
+.app-viewer-thumbs img { object-fit: cover; }
+@media (min-width: 900px) {
+  .app-viewer-head { min-height: 64px; padding-inline: 28px 20px; }
+  .app-viewer-title { font-size: 1.25rem; }
+  .app-viewer-stage { grid-template-columns: 88px minmax(0, 1fr) 88px; }
+  .app-viewer-photo { grid-column: 2; grid-row: 1; }
+  .app-viewer-arrow { position: static; margin: 0; width: 64px; height: 64px; align-self: center; justify-self: center; border: 1px solid #ffffff2e; background: #ffffff1a; }
+  .app-viewer-prev { grid-column: 1; grid-row: 1; }
+  .app-viewer-next { grid-column: 3; grid-row: 1; }
+  .app-viewer-arrow:hover { background: #ffffff33; }
+  .app-viewer-thumbs button { width: 64px; height: 64px; }
+}
 .login-page { min-height: 100dvh; display: grid; place-items: center; padding: 32px 20px; background: radial-gradient(ellipse at 70% 10%, #2b3b2a 0, transparent 55%), #101513; }
 .login-panel { width: min(440px, 100%); }
 .login-panel .brand { width: 280px; max-width: 100%; margin: 0 auto 22px; }
