@@ -11,8 +11,8 @@ Web de taller de chapa y pintura desplegada en Render: portfolio fotográfico p�
 | Ruta/superficie | Comportamiento |
 | --- | --- |
 | `/` | Una sola home pública que contiene: trabajos publicados con galería, transformación destacada cuando está disponible y contacto por WhatsApp. Estructura, orden y presentación los decide [DESIGN.md](DESIGN.md). Sin login visible ni páginas públicas individuales por trabajo. |
-| Transformación | Pareja Antes/Después seleccionada explícitamente del mismo trabajo publicado. No se infiere por posición/nombre de archivo; se oculta si el trabajo o alguna foto no están en el contrato público disponible. No hay editor de destacados. |
-| Trabajos y galería | Solo `is_public=true`; orden por fecha/UUID, paginación de 12 trabajos, fotos ampliables con contador, miniaturas, anterior/siguiente, cierre y teclado. |
+| Transformación | Pareja Antes/Después seleccionada explícitamente del mismo trabajo publicado, presentada como comparador de una sola imagen con barra arrastrable (ratón, táctil y teclado) y un botón «Ver fotos» que abre el visor. No se infiere por posición/nombre de archivo; se oculta (y la portada queda solo con el título) si el trabajo o alguna foto no están en el contrato público disponible. No hay editor de destacados. |
+| Trabajos y galería | Solo `is_public=true`; orden por fecha/UUID, paginación de 12 trabajos. Cada trabajo es una banda (nombre, fecha, número de fotos y descripción si existe) con todas sus fotos en un muro; cada foto abre el visor en esa imagen, con contador, miniaturas, anterior/siguiente, cierre y teclado. |
 | WhatsApp | CTA construido desde `IGUANA_WHATSAPP_NUMBER` válido en formato E.164; sin valor válido muestra contacto pendiente. No inventar números ni datos comerciales. |
 | `/api/portfolio/photos/[jobId]/[mediaId]` | Descarga same-origin de derivados permitidos, reautorizada mediante RLS en cada petición; nunca entrega originales. |
 

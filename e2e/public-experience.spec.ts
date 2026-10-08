@@ -1,24 +1,21 @@
 import { expect, test } from "@playwright/test";
 import axe from "axe-core";
 
-test("preview: última foto publicada y apertura de esa misma imagen", async ({ page }) => {
+test("muro: cada foto abre el visor en esa misma imagen", async ({ page }) => {
   await page.goto("/");
   const work = page.locator("article.pub-work").first();
-  await work.getByRole("button", { name: /^Ver galería de / }).click();
+  const tile = work.locator(".pub-tile").last();
+  await tile.scrollIntoViewIfNeeded();
+  const expected = new URL((await tile.locator("img").getAttribute("src"))!, page.url()).pathname;
+  await tile.getByRole("button", { name: /^Ampliar .+, fotografía \d+$/ }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
-  const thumbnails = dialog.locator(".pub-thumbnails img");
-  if (await thumbnails.count() > 1) {
-    const last = new URL((await thumbnails.last().getAttribute("src"))!, page.url()).pathname;
-    const preview = new URL((await work.locator(".pub-work-photo img").getAttribute("src"))!, page.url()).pathname;
-    const opened = new URL((await dialog.locator(".pub-full-photo img").getAttribute("src"))!, page.url()).pathname;
-    expect(preview).toBe(last); expect(opened).toBe(preview);
-  }
+  expect(new URL((await dialog.locator(".pub-full-photo img").getAttribute("src"))!, page.url()).pathname).toBe(expected);
   await page.keyboard.press("Escape");
 });
 
 // Lecturas públicas únicamente: este recorrido no crea ni elimina fixtures en Supabase.
-test("escaparate: acceso desde el pie de foto, visor y contacto", async ({ page }) => {
+test("escaparate: bandas por trabajo, visor, accesibilidad y contacto", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
@@ -27,27 +24,28 @@ test("escaparate: acceso desde el pie de foto, visor y contacto", async ({ page 
     script.nonce = document.querySelector<HTMLScriptElement>("script[nonce]")?.nonce ?? "";
     script.textContent = source; document.head.append(script);
   }, axe.source);
-  const accessibleNames = await page.evaluate(async () => {
-    const scanner = window as unknown as { axe: { run: (options: unknown) => Promise<{ violations: { id: string }[] }> } };
-    const result = await scanner.axe.run({ runOnly: { type: "rule", values: ["label-content-name-mismatch"] } });
-    return result.violations.map((violation) => violation.id);
+  const violations = await page.evaluate(async () => {
+    const scanner = window as unknown as { axe: { run: (options: unknown) => Promise<{ violations: { id: string; nodes: { target: unknown }[] }[] }> } };
+    const result = await scanner.axe.run({ runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } });
+    return result.violations.map((violation) => `${violation.id}: ${violation.nodes.map((node) => String(node.target)).join(" | ")}`);
   });
-  expect(accessibleNames).toEqual([]);
+  expect(violations).toEqual([]);
   const works = page.locator("article.pub-work");
   expect(await works.count()).toBeGreaterThan(0);
-  const opener = works.first().getByRole("button", { name: /^\d+ fotografías?\s*Ver galería de / });
+  await expect(page.getByRole("heading", { level: 2, name: "Trabajos realizados" })).toBeVisible();
+  const band = works.first().locator(".pub-band");
+  await expect(band.getByRole("heading", { level: 3 })).toBeVisible();
+  await expect(band.locator("time")).toBeVisible();
+  const tiles = works.first().locator(".pub-tile");
+  const totalPhotos = await tiles.count();
+  expect(totalPhotos).toBeGreaterThan(0);
+  const opener = tiles.first().getByRole("button", { name: /^Ampliar .+, fotografía 1$/ });
+  await opener.scrollIntoViewIfNeeded();
   await expect(opener).toBeVisible();
   await opener.focus(); await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
-  const preview = works.first().locator(".pub-work-photo img");
   const thumbnails = dialog.locator(".pub-thumbnails button");
-  const totalPhotos = await thumbnails.count();
-  if (totalPhotos > 1) {
-    const lastSource = await thumbnails.last().locator("img").getAttribute("src");
-    const previewSource = await preview.getAttribute("src");
-    expect(new URL(previewSource!, page.url()).pathname).toBe(new URL(lastSource!, page.url()).pathname);
-  }
   const photo = dialog.locator(".pub-full-photo img");
   await expect.poll(() => photo.evaluate((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0)).toBe(true);
   const geometry = await dialog.evaluate((element) => {
@@ -56,9 +54,12 @@ test("escaparate: acceso desde el pie de foto, visor y contacto", async ({ page 
   });
   expect(geometry.x).toBeLessThan(1); expect(geometry.y).toBeLessThan(1); expect(geometry.overflow).toBe(false);
   await expect(photo).toHaveCSS("object-fit", "contain");
+  await expect(dialog.getByText(`Fotografía 1 de ${totalPhotos}`, { exact: true })).toBeVisible();
   if (totalPhotos > 1) {
     await dialog.getByRole("button", { name: "Siguiente →", exact: true }).click();
-    await expect(dialog.getByText(/^Fotografía 1 de /)).toBeVisible();
+    await expect(dialog.getByText(`Fotografía 2 de ${totalPhotos}`, { exact: true })).toBeVisible();
+    await page.keyboard.press("ArrowLeft");
+    await expect(dialog.getByText(`Fotografía 1 de ${totalPhotos}`, { exact: true })).toBeVisible();
     await page.keyboard.press("ArrowLeft");
     await expect(dialog.getByText(`Fotografía ${totalPhotos} de ${totalPhotos}`, { exact: true })).toBeVisible();
     await thumbnails.last().click();

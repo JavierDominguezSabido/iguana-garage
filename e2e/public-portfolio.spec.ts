@@ -43,7 +43,7 @@ test("V1: portfolio anónimo, proporciones, publicación/retirada y limpieza", a
   const auth = await owner.auth.signInWithPassword({ email: process.env.SUPABASE_TEST_USER_A_EMAIL!, password: process.env.SUPABASE_TEST_USER_A_PASSWORD! });
   if (auth.error || !auth.data.user) throw new Error("Cuenta temporal no disponible; no se registran valores.");
   const anon = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-  const context = await browser.newContext({ viewport: testInfo.project.use.viewport, deviceScaleFactor: 1, isMobile: Boolean(testInfo.project.use.isMobile), hasTouch: Boolean(testInfo.project.use.hasTouch) });
+  const context = await browser.newContext({ viewport: testInfo.project.use.viewport, deviceScaleFactor: 1, reducedMotion: "reduce", isMobile: Boolean(testInfo.project.use.isMobile), hasTouch: Boolean(testInfo.project.use.hasTouch) });
   const publicPage = await context.newPage();
   await publicPage.addInitScript(() => {
     (window as unknown as { cspViolations: string[] }).cspViolations = [];
@@ -90,27 +90,27 @@ test("V1: portfolio anónimo, proporciones, publicación/retirada y limpieza", a
     // Hero de texto: la fotografía aparece una sola vez, dentro del portfolio.
     await expect(publicPage.locator(".pub-hero-figure")).toHaveCount(0);
     await expect(publicPage.locator(".pub-hero-figure .pub-photo")).toHaveCount(0);
-    await publicPage.locator(".pub-work-photo").first().scrollIntoViewIfNeeded();
-    await expect.poll(() => publicPage.locator(".pub-work-photo img").first().evaluate((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0)).toBe(true);
+    await publicPage.locator(".pub-tile").first().scrollIntoViewIfNeeded();
+    await expect.poll(() => publicPage.locator(".pub-tile .pub-photo img").first().evaluate((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0)).toBe(true);
     await publicPage.evaluate(() => scrollTo(0, 0));
-    await publicPage.locator(".pub-hero-figure .pub-photo img,.pub-work-photo img").evaluateAll(async (images) => { await Promise.all(images.map((image) => (image as HTMLImageElement).decode())); });
+    await publicPage.locator(".pub-tile .pub-photo img").evaluateAll(async (images) => { await Promise.all(images.map((image) => (image as HTMLImageElement).decode())); });
     await publicPage.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-    await testInfo.attach("public-image-layout", { body: JSON.stringify(await publicPage.locator(".pub-hero-figure .pub-photo img,.pub-work-photo img").evaluateAll((images) => images.map((image) => { const el = image as HTMLImageElement; const rect = el.getBoundingClientRect(); const css = getComputedStyle(el); const parent = el.parentElement!.getBoundingClientRect(); return { natural: [el.naturalWidth, el.naturalHeight], box: [rect.x, rect.y, rect.width, rect.height], parent: [parent.x, parent.y, parent.width, parent.height], visibility: css.visibility, opacity: css.opacity, objectFit: css.objectFit }; }))), contentType: "application/json" });
+    await testInfo.attach("public-image-layout", { body: JSON.stringify(await publicPage.locator(".pub-tile .pub-photo img").evaluateAll((images) => images.map((image) => { const el = image as HTMLImageElement; const rect = el.getBoundingClientRect(); const css = getComputedStyle(el); const parent = el.parentElement!.getBoundingClientRect(); return { natural: [el.naturalWidth, el.naturalHeight], box: [rect.x, rect.y, rect.width, rect.height], parent: [parent.x, parent.y, parent.width, parent.height], visibility: css.visibility, opacity: css.opacity, objectFit: css.objectFit }; }))), contentType: "application/json" });
     await publicPage.screenshot({ path: testInfo.outputPath("public-viewport.png") });
     await audit(publicPage); await publicPage.screenshot({ path: testInfo.outputPath("public-published.png"), fullPage: true });
     const metrics = await publicPage.evaluate(() => ({ ...(window as unknown as { iguanaMetrics: { cls: number; lcp: number } }).iguanaMetrics, javascriptBytes: performance.getEntriesByType("resource").filter((entry) => entry.name.endsWith(".js")).reduce((total, entry) => total + (entry as PerformanceResourceTiming).encodedBodySize, 0) }));
     expect(metrics.cls).toBeLessThan(0.1); await testInfo.attach("public-performance", { body: JSON.stringify(metrics), contentType: "application/json" });
-    const photoButton = publicPage.getByRole("button", { name: `Ver galería de ${name} editado`, exact: true });
+    const photoButton = publicPage.getByRole("button", { name: `Ampliar ${name} editado, fotografía 1`, exact: true });
     await photoButton.focus(); await publicPage.keyboard.press("Enter"); await expect(publicPage.getByRole("dialog")).toBeVisible();
     await expect(publicPage.getByRole("button", { name: "Cerrar fotografías", exact: true })).toBeFocused();
-    await expect(publicPage.getByText("Fotografía 3 de 3", { exact: true })).toBeVisible();
+    await expect(publicPage.getByText("Fotografía 1 de 3", { exact: true })).toBeVisible();
     for (let index = 0; index < 3; index++) {
       await expect.poll(() => publicPage.locator(".pub-full-photo img").evaluateAll((images) => images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0))).toBe(true);
       expect(await publicPage.locator(".pub-full-photo img").evaluate((image) => getComputedStyle(image).objectFit)).toBe("contain");
       await publicPage.screenshot({ path: testInfo.outputPath(`public-full-${index + 1}.png`) });
       if (index < 2) await publicPage.getByRole("button", { name: "Siguiente →", exact: true }).click();
     }
-    await audit(publicPage); await publicPage.keyboard.press("ArrowLeft"); await expect(publicPage.getByText("Fotografía 1 de 3", { exact: true })).toBeVisible();
+    await audit(publicPage); await publicPage.keyboard.press("ArrowLeft"); await expect(publicPage.getByText("Fotografía 2 de 3", { exact: true })).toBeVisible();
     await publicPage.keyboard.press("Escape"); await expect(publicPage.getByRole("dialog")).not.toBeVisible(); await expect(photoButton).toBeFocused();
     const result = await anon.rpc("list_public_jobs"); const publicJob = result.data.find((job: { id: string }) => job.id === jobId);
     expect(Object.keys(publicJob).sort()).toEqual(["id", "job_date", "media", "name"]);
@@ -133,24 +133,18 @@ test("V1: portfolio anónimo, proporciones, publicación/retirada y limpieza", a
       await page.goto("/app/new"); await page.getByLabel("Vehículo o trabajo").fill(`${name} sin fotos`); await page.getByLabel("Fecha del trabajo").fill("2026-10-06"); await page.getByRole("checkbox", { name: /Publicar en portfolio/ }).check(); await save();
       const noPhotoId = jobId;
       await publicPage.goto("http://127.0.0.1:3100/"); await expect(publicPage.locator("article.pub-work")).toHaveCount(2); await expect(publicPage.getByText("Fotografías próximamente")).toBeVisible();
-      const composition = await publicPage.evaluate(() => {
-        const grid = document.querySelector(".pub-work-grid")!; const works = [...grid.children];
-        const firstId = works[0].querySelector("h3")!.id.slice(4);
-        const hero = document.querySelector<HTMLImageElement>(".pub-hero-figure .pub-photo img");
-        return { width: innerWidth, gridWidth: grid.getBoundingClientRect().width, lastWidth: works.at(-1)!.getBoundingClientRect().width, firstId, heroSrc: hero?.src ?? "", photoRatios: works.map((work) => { const box = work.querySelector(".pub-work-photo")!.getBoundingClientRect(); return box.width / box.height; }) };
-      });
-      expect(composition.heroSrc).not.toContain(`/photos/${composition.firstId}/`);
-      if (composition.width < 700) expect(Math.abs(composition.lastWidth - composition.gridWidth)).toBeLessThan(1);
-      else expect(composition.lastWidth).toBeLessThan(composition.gridWidth / 2);
-      for (const ratio of composition.photoRatios) expect(ratio).toBeCloseTo(composition.width >= 1200 ? 3 / 2 : 4 / 3, 2);
+      const composition = await publicPage.evaluate(() => ({ width: innerWidth, overflowX: document.documentElement.scrollWidth > innerWidth, tileRatios: [...document.querySelectorAll(".pub-tile")].map((tile) => { const box = tile.getBoundingClientRect(); return box.width / box.height; }) }));
+      expect(composition.overflowX).toBe(false);
+      for (const ratio of composition.tileRatios) expect(ratio).toBeCloseTo(4 / 5, 1);
       await testInfo.attach("public-editorial-composition", { body: JSON.stringify(composition), contentType: "application/json" });
       await publicPage.screenshot({ path: testInfo.outputPath("public-multiple.png"), fullPage: true });
       expect(await page.evaluate(async (id) => (await fetch(`/app/api/jobs/${id}`, { method: "DELETE" })).status, noPhotoId)).toBe(200); pending.delete(noPhotoId); jobId = mainId;
       await page.goto(`/app/jobs/${jobId}`);
       await publicPage.route("**/api/portfolio/photos/**", (route) => route.fulfill({ status: 503, body: "Unavailable", contentType: "text/plain" })); await publicPage.goto("http://127.0.0.1:3100/");
       await expect(publicPage.getByText("Fotografía no disponible.", { exact: true }).first()).toBeVisible(); await publicPage.unroute("**/api/portfolio/photos/**");
-      await publicPage.getByRole("button", { name: "Reintentar foto", exact: true }).first().click();
-      await expect.poll(() => publicPage.locator(".pub-work-photo img").evaluateAll((images) => images.length === 1 && images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0))).toBe(true);
+      const retry = publicPage.getByRole("button", { name: "Reintentar foto", exact: true });
+      for (let failed = await retry.count(); failed > 0; failed = await retry.count()) await retry.first().click();
+      await expect.poll(() => publicPage.locator(".pub-tile .pub-photo img").evaluateAll((images) => images.length === 3 && images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0))).toBe(true);
       await publicPage.goto("http://127.0.0.1:3100/");
     }
     await togglePublication(false);

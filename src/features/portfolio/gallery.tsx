@@ -1,18 +1,34 @@
 "use client";
 import { useState } from "react";
+import type { CSSProperties } from "react";
 import type { PublicJob } from "./contract";
+import { publicDate } from "./delivery";
 import { PublicPhoto } from "./photo";
 import { PublicViewer } from "./viewer";
+import { wallLayout } from "./wall";
 
-export function PublicGallery({ job, sizes, preload = false }: { job: PublicJob; sizes: string; preload?: boolean }) {
+const photoCount = (count: number) => `${count} ${count === 1 ? "fotografía" : "fotografías"}`;
+// Ancho pintado por foto: 2 columnas en móvil/tablet (la primera, a todo el ancho si es impar) y 12 columnas desde 900 px.
+const tileSizes = (span: number, wide: boolean) => `(min-width: 900px) ${(span / 12 * 100).toFixed(2)}vw, ${wide ? "100vw" : "50vw"}`;
+
+// Un trabajo = una banda con nombre y fecha + su muro de fotos. Cada foto abre el visor en esa misma imagen.
+export function PublicGallery({ job }: { job: PublicJob }) {
   const [selectedPhoto, setSelectedPhoto] = useState<string>();
-  if (!job.media.length) return <><div className="pub-work-photo pub-no-photo"><span>Fotografías próximamente</span></div><div className="pub-work-caption"><h3 id={`job-${job.id}`}>{job.name}</h3></div></>;
-  // Regla de presentación común: última foto publicada, sin atribuirle un estado.
-  const previewIndex = job.media.length - 1;
-  const preview = job.media[previewIndex];
-  return <>
-    <div className="pub-work-photo"><PublicPhoto jobId={job.id} mediaId={preview.id} alt={`${job.name}, fotografía ${previewIndex + 1}`} sizes={sizes} preload={preload} preview focal={preview} onOpen={() => setSelectedPhoto(preview.id)} label={`Ver galería de ${job.name}`} /></div>
-    <div className="pub-work-caption"><h3 id={`job-${job.id}`}>{job.name}</h3><button type="button" className="pub-gallery-open" onClick={() => setSelectedPhoto(preview.id)} aria-haspopup="dialog"><span className="pub-work-count">{job.media.length} {job.media.length === 1 ? "fotografía" : "fotografías"}</span><span>Ver galería<span className="pub-sr-only"> de {job.name}</span> <span aria-hidden="true">↗</span></span></button></div>
+  const layout = wallLayout(job.media.length);
+  return <article className="pub-work" aria-labelledby={`job-${job.id}`}>
+    <header className="pub-band" data-reveal>
+      <h3 id={`job-${job.id}`}>{job.name}</h3>
+      <p className="pub-band-meta"><time dateTime={job.job_date}>{publicDate(job.job_date)}</time>{job.media.length > 0 && <> · {photoCount(job.media.length)}</>}</p>
+      {job.description && <p className="pub-band-desc">{job.description}</p>}
+    </header>
+    {job.media.length === 0 ? <div className="pub-no-photo" data-reveal><span>Fotografías próximamente</span></div>
+      : <div className="pub-wall">{job.media.map((photo, index) => {
+        const { span, wide } = layout[index];
+        return <div key={photo.id} className={`pub-tile${wide ? " pub-tile-wide" : ""}`} style={{ "--s": span, "--rv": index % 4 } as CSSProperties} data-reveal>
+          <PublicPhoto jobId={job.id} mediaId={photo.id} alt={`${job.name}, fotografía ${index + 1}`} sizes={tileSizes(span, wide)} preview focal={photo} onOpen={() => setSelectedPhoto(photo.id)} label={`Ampliar ${job.name}, fotografía ${index + 1}`} />
+          {job.media.length > 1 && <span className="pub-tile-idx" aria-hidden="true">{index + 1}/{job.media.length}</span>}
+        </div>;
+      })}</div>}
     {selectedPhoto && <PublicViewer job={job} initialMediaId={selectedPhoto} onClose={() => setSelectedPhoto(undefined)} />}
-  </>;
+  </article>;
 }

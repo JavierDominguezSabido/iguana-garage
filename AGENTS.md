@@ -54,4 +54,4 @@ Nunca imprimir credenciales, cookies, JWT, contraseñas o claves privadas en cha
 
 ## Identidad y materiales
 
-Preservar íntegro `assets/brand/`: no mover, borrar, sobrescribir, redibujar, reinterpretar ni recolorear la iguana o la tipografía oficial. Derivados técnicos autorizados van separados; favicon e iconos PWA usan el símbolo oficial. No reconstruir demos eliminadas ni sustituir fotografías reales por stock/IA. La home pública está abierta a rediseño completo (ver [DESIGN.md](DESIGN.md)): su presentación anterior no es un contrato; la identidad y los contratos funcionales sí se mantienen.
+Preservar íntegro `assets/brand/`: no mover, borrar, sobrescribir, redibujar, reinterpretar ni recolorear la iguana o la tipografía oficial. Derivados técnicos autorizados van separados; favicon e iconos PWA usan el símbolo oficial. No reconstruir demos eliminadas ni sustituir fotografías reales por stock/IA. El diseño final de la home pública (portada con comparador, muro por trabajos y tipografía propia) está en [DESIGN.md](DESIGN.md); cambiar su estructura o estilo requiere autorización de diseño, y la identidad y los contratos funcionales se mantienen.
