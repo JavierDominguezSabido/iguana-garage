@@ -152,8 +152,23 @@ html:has(dialog.app-viewer[open]) { overflow: hidden; }
 .app-viewer-close { width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--text); cursor: pointer; }
 .app-viewer-close:hover { background: #ffffff1f; }
 .app-viewer-stage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-height: 0; touch-action: pan-y; }
-.app-viewer-photo { position: relative; grid-column: 1; min-width: 0; min-height: 0; }
-.app-viewer-photo img { object-fit: contain; }
+.app-viewer-photo { position: relative; grid-column: 1; min-width: 0; min-height: 0; overflow: hidden; }
+/* Tira: la foto actual y sus dos vecinas, a ±100 % y desplazadas por --dx (sigue al dedo durante el gesto). */
+.app-viewer-track { position: absolute; inset: 0; --dx: 0px; }
+.app-viewer-slide { position: absolute; inset: 0; transform: translate3d(calc(var(--o) * 100% + var(--dx)), 0, 0); }
+.app-viewer-ph, .app-viewer-full { position: absolute; inset: 0; }
+.app-viewer-full img, .app-viewer-ph img { object-fit: contain; }
+/* Marcador: la miniatura ya cargada, ampliada y difuminada, hasta que la foto buena está cargada y decodificada. */
+.app-viewer-ph img { object-position: 50% 50% !important; filter: blur(12px); transform: scale(1.02); }
+.app-viewer-full { opacity: 0; }
+.app-viewer-slide[data-state="ready"] .app-viewer-full { opacity: 1; }
+.app-viewer-slide[data-state="ready"] .app-viewer-ph { opacity: 0; }
+.app-viewer-failed { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px; text-align: center; background: #10151388; color: var(--muted); }
+.app-viewer-failed button { min-height: 44px; padding: 0 18px; border: 1px solid var(--text); border-radius: 8px; background: transparent; color: var(--text); font-weight: 700; font-size: .85rem; cursor: pointer; }
+@media (prefers-reduced-motion: no-preference) {
+  .app-viewer-track[data-animating] .app-viewer-slide { transition: transform .22s cubic-bezier(.2, .7, .2, 1); }
+  .app-viewer-full, .app-viewer-ph { transition: opacity .25s ease; }
+}
 .app-viewer-arrow { position: absolute; z-index: 2; top: 50%; width: 44px; height: 44px; margin-top: -22px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #101513b3; color: var(--text); cursor: pointer; }
 .app-viewer-prev { left: 8px; }
 .app-viewer-next { right: 8px; }

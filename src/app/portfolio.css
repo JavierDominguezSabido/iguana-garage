@@ -143,7 +143,22 @@ html:has(dialog.pub-viewer[open]) { overflow: hidden; }
 .pub-viewer-close { width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--pub-bone); cursor: pointer; }
 .pub-viewer-close:hover { background: color-mix(in srgb, var(--pub-bone) 12%, transparent); }
 .pub-viewer-stage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-height: 0; touch-action: pan-y; }
-.pub-viewer-photo { position: relative; grid-column: 1; min-width: 0; min-height: 0; }
+.pub-viewer-photo { position: relative; grid-column: 1; min-width: 0; min-height: 0; overflow: hidden; }
+/* Tira: la foto actual y sus dos vecinas, a ±100 % y desplazadas por --dx (sigue al dedo durante el gesto). */
+.pub-viewer-track { position: absolute; inset: 0; --dx: 0px; }
+.pub-viewer-slide { position: absolute; inset: 0; transform: translate3d(calc(var(--o) * 100% + var(--dx)), 0, 0); }
+.pub-viewer-ph, .pub-viewer-full { position: absolute; inset: 0; }
+/* Marcador: la miniatura ya cargada, ampliada y difuminada, hasta que la foto buena está cargada y decodificada. */
+.pub-viewer-ph img { object-fit: contain !important; object-position: 50% 50% !important; filter: blur(12px); transform: scale(1.02); }
+.pub-viewer-full { opacity: 0; }
+.pub-viewer-slide[data-state="ready"] .pub-viewer-full { opacity: 1; }
+.pub-viewer-slide[data-state="ready"] .pub-viewer-ph { opacity: 0; }
+.pub-viewer-failed { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px; text-align: center; background: color-mix(in srgb, var(--pub-carbon) 55%, transparent); color: var(--pub-muted); }
+.pub-viewer-failed button { min-height: 44px; padding: 0 18px; border: 1px solid var(--pub-bone); border-radius: 2px; background: transparent; color: var(--pub-bone); font: 600 .8rem var(--pub-text); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+@media (prefers-reduced-motion: no-preference) {
+  .pub-viewer-track[data-animating] .pub-viewer-slide { transition: transform .22s cubic-bezier(.2, .7, .2, 1); }
+  .pub-viewer-full, .pub-viewer-ph { transition: opacity .25s ease; }
+}
 .pub-viewer-arrow { position: absolute; z-index: 2; top: 50%; width: 44px; height: 44px; margin-top: -22px; display: grid; place-items: center; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--pub-carbon) 70%, transparent); color: var(--pub-bone); cursor: pointer; }
 .pub-viewer-prev { left: 8px; }
 .pub-viewer-next { right: 8px; }
@@ -151,7 +166,6 @@ html:has(dialog.pub-viewer[open]) { overflow: hidden; }
 .pub-viewer-thumbs button { position: relative; flex: 0 0 auto; width: 56px; height: 56px; padding: 0; border: 2px solid transparent; border-radius: 3px; overflow: hidden; background: var(--pub-metal); opacity: .55; cursor: pointer; }
 .pub-viewer-thumbs button.active { border-color: var(--pub-green); opacity: 1; }
 .pub-viewer-thumbs img { object-fit: cover; }
-@media (prefers-reduced-motion: no-preference) { .pub-viewer-photo .pub-photo { animation: pub-fade-in .18s ease-out; } }
 @media (min-width: 900px) {
   .pub-viewer-head { min-height: 64px; padding-inline: 28px 20px; }
   .pub-viewer-title { font-size: 1.7rem; }

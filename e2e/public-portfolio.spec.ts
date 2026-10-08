@@ -105,8 +105,8 @@ test("V1: portfolio anónimo, proporciones, publicación/retirada y limpieza", a
     await expect(publicPage.getByRole("button", { name: "Cerrar fotografías", exact: true })).toBeFocused();
     await expect(publicPage.locator(".pub-viewer-count")).toHaveText("1 / 3");
     for (let index = 0; index < 3; index++) {
-      await expect.poll(() => publicPage.locator(".pub-viewer-photo img").evaluateAll((images) => images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0))).toBe(true);
-      expect(await publicPage.locator(".pub-viewer-photo img").evaluate((image) => getComputedStyle(image).objectFit)).toBe("contain");
+      await expect.poll(() => publicPage.locator(".pub-viewer-slide[data-current] .pub-viewer-full img").evaluateAll((images) => images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0))).toBe(true);
+      expect(await publicPage.locator(".pub-viewer-slide[data-current] .pub-viewer-full img").evaluate((image) => getComputedStyle(image).objectFit)).toBe("contain");
       await publicPage.screenshot({ path: testInfo.outputPath(`public-full-${index + 1}.png`) });
       if (index < 2) await publicPage.getByRole("button", { name: "Fotografía siguiente", exact: true }).click();
     }

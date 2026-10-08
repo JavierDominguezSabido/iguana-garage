@@ -10,7 +10,7 @@ test("muro: cada foto abre el visor en esa misma imagen", async ({ page }) => {
   await tile.getByRole("button", { name: /^Ampliar .+, fotografía \d+$/ }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
-  expect(new URL((await dialog.locator(".pub-viewer-photo img").getAttribute("src"))!, page.url()).pathname).toBe(expected);
+  expect(new URL((await dialog.locator(".pub-viewer-slide[data-current] .pub-viewer-full img").getAttribute("src"))!, page.url()).pathname).toBe(expected);
   await page.keyboard.press("Escape");
 });
 
@@ -48,7 +48,7 @@ test("escaparate: bandas por trabajo, visor, accesibilidad y contacto", async ({
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
   const thumbnails = dialog.locator(".pub-viewer-thumbs button");
-  const photo = dialog.locator(".pub-viewer-photo img");
+  const photo = dialog.locator(".pub-viewer-slide[data-current] .pub-viewer-full img");
   await expect.poll(() => photo.evaluate((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0)).toBe(true);
   const geometry = await dialog.evaluate((element) => {
     const bounds = element.getBoundingClientRect();

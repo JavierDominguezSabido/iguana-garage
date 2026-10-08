@@ -57,7 +57,7 @@ test("«Ver fotos» abre el visor del trabajo, centrado y con las fotos completa
   await opener.focus(); await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog", { name: /^Fotografías de / });
   await expect(dialog).toBeVisible();
-  const photo = dialog.locator(".pub-viewer-photo img");
+  const photo = dialog.locator(".pub-viewer-slide[data-current] .pub-viewer-full img");
   await expect.poll(() => photo.evaluate(image => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0)).toBe(true);
   await expect(photo).toHaveCSS("object-fit", "contain");
   const geometry = await dialog.evaluate(element => {
