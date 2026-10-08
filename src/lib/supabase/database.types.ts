@@ -22,6 +22,7 @@ export type Database = {
           focal_x: number
           focal_y: number
           height: number | null
+          hidden_from_home: boolean
           id: string
           job_id: string
           mime_type: string
@@ -35,6 +36,7 @@ export type Database = {
           focal_x?: number
           focal_y?: number
           height?: number | null
+          hidden_from_home?: boolean
           id?: string
           job_id: string
           mime_type: string
@@ -48,6 +50,7 @@ export type Database = {
           focal_x?: number
           focal_y?: number
           height?: number | null
+          hidden_from_home?: boolean
           id?: string
           job_id?: string
           mime_type?: string
@@ -104,11 +107,79 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_settings: {
+        Row: {
+          featured_after_id: string | null
+          featured_before_id: string | null
+          featured_job_id: string | null
+          owner_id: string
+          pinned_job_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          featured_after_id?: string | null
+          featured_before_id?: string | null
+          featured_job_id?: string | null
+          owner_id: string
+          pinned_job_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          featured_after_id?: string | null
+          featured_before_id?: string | null
+          featured_job_id?: string | null
+          owner_id?: string
+          pinned_job_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_settings_before_fk"
+            columns: ["featured_job_id", "featured_before_id"]
+            isOneToOne: false
+            referencedRelation: "job_media"
+            referencedColumns: ["job_id", "id"]
+          },
+          {
+            foreignKeyName: "portfolio_settings_after_fk"
+            columns: ["featured_job_id", "featured_after_id"]
+            isOneToOne: false
+            referencedRelation: "job_media"
+            referencedColumns: ["job_id", "id"]
+          },
+          {
+            foreignKeyName: "portfolio_settings_featured_job_id_fkey"
+            columns: ["featured_job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_settings_pinned_job_id_fkey"
+            columns: ["pinned_job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_featured_transformation: {
+        Args: never
+        Returns: {
+          after_id: string
+          before_id: string
+          description: string
+          id: string
+          job_date: string
+          media: Json
+          name: string
+        }[]
+      }
       list_public_jobs: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: {

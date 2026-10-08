@@ -133,12 +133,69 @@ do $$ begin
   assert (select count(*) = 0 from storage.objects where bucket_id = 'portfolio-derivatives'), 'Despublicación no revocó el derivado';
 end $$;
 
+-- Portada: trabajo fijado, fotos ocultas y transformación destacada.
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
+update public.jobs set is_public = true where id = '22222222-2222-4222-8222-222222222222';
+insert into public.job_media (id, job_id, storage_path, mime_type, position, width, height, byte_size) values
+ ('77777777-7777-4777-8777-777777777777', '22222222-2222-4222-8222-222222222222', '11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222/77777777-7777-4777-8777-777777777777.png', 'image/png', 2, 1, 1, 100);
+insert into storage.objects (bucket_id, name) values ('portfolio-derivatives', '22222222-2222-4222-8222-222222222222/77777777-7777-4777-8777-777777777777.webp');
+insert into public.portfolio_settings (owner_id, pinned_job_id, featured_job_id, featured_before_id, featured_after_id) values
+ ('11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222', '22222222-2222-4222-8222-222222222222', '33333333-3333-4333-8333-333333333333', '77777777-7777-4777-8777-777777777777');
+do $$ begin
+  assert (select count(*) = 1 from public.portfolio_settings), 'A debe leer sus ajustes de portada';
+  begin update public.portfolio_settings set featured_after_id = featured_before_id; raise exception 'Antes y Después iguales aceptados';
+  exception when check_violation then null; end;
+  begin update public.portfolio_settings set owner_id = '44444444-4444-4444-8444-444444444444'; raise exception 'Transferir ajustes aceptado';
+  exception when insufficient_privilege then null; end;
+end $$;
+select set_config('request.jwt.claims', '{"sub":"44444444-4444-4444-8444-444444444444","role":"authenticated"}', true);
+do $$ declare affected integer; begin
+  assert (select count(*) = 0 from public.portfolio_settings), 'B no debe leer los ajustes de A';
+  update public.portfolio_settings set pinned_job_id = null; get diagnostics affected = row_count;
+  assert affected = 0, 'B no debe modificar los ajustes de A';
+  delete from public.portfolio_settings; get diagnostics affected = row_count;
+  assert affected = 0, 'B no debe eliminar los ajustes de A';
+  begin insert into public.portfolio_settings (owner_id, pinned_job_id) values ('44444444-4444-4444-8444-444444444444', '22222222-2222-4222-8222-222222222222'); raise exception 'B pudo fijar el trabajo de A';
+  exception when insufficient_privilege then null; end;
+  update public.job_media set hidden_from_home = true; get diagnostics affected = row_count;
+  assert affected = 0, 'B no debe ocultar fotos de A';
+end $$;
+set local role anon;
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+select set_config('storage.operation', 'object.get_authenticated', true);
+do $$ begin
+  begin perform 1 from public.portfolio_settings; raise exception 'Lectura anónima de ajustes permitida';
+  exception when insufficient_privilege then null; end;
+  assert (select id = '22222222-2222-4222-8222-222222222222' from public.list_public_jobs() limit 1), 'Trabajo fijado ausente';
+  assert (select before_id = '33333333-3333-4333-8333-333333333333' and after_id = '77777777-7777-4777-8777-777777777777' and jsonb_array_length(media) = 2 from public.get_featured_transformation()), 'Transformación destacada ausente';
+  assert not (select to_jsonb(f) ? 'owner_id' from public.get_featured_transformation() f), 'Transformación reveló el propietario';
+  assert (select count(*) = 2 from storage.objects where bucket_id = 'portfolio-derivatives'), 'Derivados publicados no descargables';
+end $$;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
+update public.job_media set hidden_from_home = true where id = '77777777-7777-4777-8777-777777777777';
+set local role anon;
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+do $$ begin
+  assert (select count(*) = 0 from public.get_featured_transformation()), 'Foto oculta siguió en la portada';
+  assert (select jsonb_array_length(media) = 1 from public.list_public_jobs() limit 1), 'Foto oculta siguió en la proyección';
+  assert (select count(*) = 1 from storage.objects where bucket_id = 'portfolio-derivatives'), 'Foto oculta siguió descargable';
+end $$;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
+update public.job_media set hidden_from_home = false where id = '77777777-7777-4777-8777-777777777777';
+update public.jobs set is_public = false;
+set local role anon;
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+do $$ begin assert (select count(*) = 0 from public.get_featured_transformation()), 'Despublicar no retiró la portada'; end $$;
+
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
 do $$ declare affected integer; begin
   -- El borrado de bytes/objetos se comprueba en la suite HTTP, no eludiendo storage.protect_delete().
   delete from public.job_media; get diagnostics affected = row_count;
-  assert affected = 1, 'A debe eliminar su medio';
+  assert affected = 2, 'A debe eliminar sus medios';
   delete from public.jobs; get diagnostics affected = row_count;
   assert affected = 1, 'A debe eliminar su trabajo';
 end $$;

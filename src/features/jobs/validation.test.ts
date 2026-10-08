@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildOriginalPath, parseWorkHours, validateFocalPoint, validateJob, validateMediaMetadata, validateImageBytes } from "./validation";
+import { buildOriginalPath, parseWorkHours, validateFocalPoint, validateJob, validateMediaMetadata, validateImageBytes, validatePhotoVisibility, validatePortfolioPatch } from "./validation";
 
 const owner = "11111111-1111-4111-8111-111111111111";
 const job = "22222222-2222-4222-8222-222222222222";
@@ -84,5 +84,29 @@ describe("medios privados", () => {
     expect(() => validateImageBytes(new TextEncoder().encode("<svg/>"), "image/png")).toThrow();
     expect(() => validateImageBytes(new Uint8Array(), "image/png")).toThrow();
     expect(() => validateImageBytes(new Uint8Array(10 * 1024 * 1024 + 1), "image/png")).toThrow();
+  });
+});
+
+describe("visibilidad de fotos y ajustes de portada", () => {
+  const other = "44444444-4444-4444-8444-444444444444";
+  it("la visibilidad es un booleano y nada más", () => {
+    expect(validatePhotoVisibility({ hidden: true })).toEqual({ hidden: true });
+    expect(validatePhotoVisibility({ hidden: false })).toEqual({ hidden: false });
+    for (const input of [null, [], {}, { hidden: "true" }, { hidden: 1 }, { hidden: true, focal_x: 1 }]) expect(() => validatePhotoVisibility(input)).toThrow();
+  });
+  it("fijar un trabajo acepta un UUID o null", () => {
+    expect(validatePortfolioPatch({ pinned_job_id: job })).toEqual({ pinned_job_id: job });
+    expect(validatePortfolioPatch({ pinned_job_id: null })).toEqual({ pinned_job_id: null });
+    for (const input of [{ pinned_job_id: "x" }, { pinned_job_id: undefined }, { pinned_job_id: 3 }]) expect(() => validatePortfolioPatch(input)).toThrow();
+  });
+  it("la transformación exige trabajo y dos fotos distintas, o null para quitarla", () => {
+    expect(validatePortfolioPatch({ featured: { job_id: job, before_id: media, after_id: other } })).toEqual({ featured: { job_id: job, before_id: media, after_id: other } });
+    expect(validatePortfolioPatch({ featured: null })).toEqual({ featured: null });
+    for (const featured of [{ job_id: job, before_id: media, after_id: media }, { job_id: job, before_id: media }, { job_id: "x", before_id: media, after_id: other }, { job_id: job, before_id: media, after_id: other, extra: 1 }, [], "x"]) {
+      expect(() => validatePortfolioPatch({ featured })).toThrow();
+    }
+  });
+  it("solo admite un ajuste por petición y ningún campo desconocido", () => {
+    for (const input of [null, [], {}, { pinned_job_id: null, featured: null }, { owner_id: owner }, { pinned_job_id: job, owner_id: owner }]) expect(() => validatePortfolioPatch(input)).toThrow();
   });
 });

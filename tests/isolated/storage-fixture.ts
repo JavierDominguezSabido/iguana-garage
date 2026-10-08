@@ -56,9 +56,13 @@ export async function storageFixture({port=0}:{port?:number}={}) {
         const result=await asRole<Record<string,unknown>>(db,role,uid,"","select * from public.list_public_jobs($1,$2)",[input.p_limit??50,input.p_offset??0]);
         return reply(200,result.rows.map(row=>({...row,job_date:row.job_date instanceof Date?row.job_date.toISOString().slice(0,10):row.job_date})));
       }
+      if(url.pathname==="/rest/v1/rpc/get_featured_transformation"){
+        const result=await asRole<Record<string,unknown>>(db,role,uid,"","select * from public.get_featured_transformation()");
+        return reply(200,result.rows.map(row=>({...row,job_date:row.job_date instanceof Date?row.job_date.toISOString().slice(0,10):row.job_date})));
+      }
       const table=url.pathname.slice("/rest/v1/".length);
-      if(!["jobs","job_media"].includes(table))return reply(404,{});
-      const allowed=["id","owner_id","job_id","name","job_date","paint_code","work_hours","description","is_public","position","storage_path","mime_type","width","height","byte_size","focal_x","focal_y"];
+      if(!["jobs","job_media","portfolio_settings"].includes(table))return reply(404,{});
+      const allowed=["id","owner_id","job_id","name","job_date","paint_code","work_hours","description","is_public","position","storage_path","mime_type","width","height","byte_size","focal_x","focal_y","hidden_from_home","pinned_job_id","featured_job_id","featured_before_id","featured_after_id"];
       const filters:string[]=[];const values:unknown[]=[];
       for(const [key,value] of url.searchParams){if(allowed.includes(key)&&value.startsWith("eq.")){values.push(value.slice(3));filters.push(`${key}=$${values.length}`);}}
       const where=filters.length?` where ${filters.join(" and ")}`:"";

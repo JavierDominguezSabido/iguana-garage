@@ -13,6 +13,8 @@ Aplicadas en este orden el 8 de octubre de 2026, únicamente a `atibisongftmspwt
 
 Revisar también esta correspondencia antes de sincronizar mediante CLI; no reaplicar estos archivos ni las migraciones históricas. Horas nullable con CHECK explícito 0–999,99 (incluye denegación de `NaN`); descripción nullable de 1–500 caracteres normalizados; focales `smallint` 0–100 con default 50/50. Se verificaron RPC, grants, aislamiento por propietario y conservación de datos, policies y objetos Storage. Estas migraciones no cambian Auth, buckets ni políticas RLS.
 
+**Pendiente de aplicar (no está en producción):** `20261010120000_portfolio_curation.sql` — control de la portada desde `/app` (ver «Portada y muro» más abajo). Aditiva y compatible hacia atrás: `list_public_jobs` conserva firma y forma. Aplicar solo con autorización explícita, tras copia/exportación de `jobs` y `job_media`, y registrar aquí la versión remota que asigne el conector. Rollback manual en la cabecera del archivo; quitar `hidden_from_home` vuelve a publicar las fotos ocultas, así que es el último recurso.
+
 ## Modelo y permisos
 
 `jobs`: UUID, propietario Auth obligatorio, nombre, fecha de calendario, código de pintura nullable, `is_public=false`, timestamps. Nombre no vacío/normalizado (máximo técnico 200 caracteres), código normalizado (máximo 80), fecha entre años 0001 y 9999. Índices por propietario/fecha y parcial por fecha para publicación. `updated_at` se actualiza mediante trigger; los clientes no pueden escribir timestamps, IDs en UPDATE ni transferir propietarios.
@@ -20,6 +22,14 @@ Revisar también esta correspondencia antes de sincronizar mediante CLI; no reap
 `job_media`: UUID, FK de trabajo, ruta única, MIME, posición no negativa y única por trabajo, dimensiones positivas si presentes, tamaño positivo hasta 10 MiB si presente y timestamp. Las FK usan RESTRICT: borrar un usuario/trabajo no borra silenciosamente medios ni bytes. No hay perfiles, roles de aplicación ni propiedades editoriales.
 
 RLS activado en ambas tablas. Autenticados solo pueden SELECT/INSERT/UPDATE/DELETE sobre sus trabajos y medios de trabajos propios; INSERT/UPDATE verifican también el nuevo estado. `anon` carece de privilegios sobre las tablas, incluso para trabajos publicados. Se conceden explícitamente privilegios mínimos, sin depender de los defaults del proyecto.
+
+## Portada y muro (curación)
+
+- `job_media.hidden_from_home boolean not null default false`: la foto no sale de la proyección pública ni es descargable por anon (`private.is_public_derivative` la excluye en los cinco nombres de derivado). El propietario la sigue leyendo por `owns_derivative`. Grant de UPDATE solo sobre esa columna. `UNIQUE (job_id, id)` permite la FK compuesta de la portada.
+- `portfolio_settings`: una fila por propietario (PK `owner_id`) con `pinned_job_id` y la transformación destacada (`featured_job_id`, `featured_before_id`, `featured_after_id`). FKs con `ON DELETE SET NULL` (borrar un trabajo o una foto limpia la selección sin bloquear el borrado) y FK compuesta `(featured_job_id, foto) → job_media(job_id, id)`; CHECK de dos fotos distintas y de foto solo junto con su trabajo. RLS por propietario (lectura, alta, edición y borrado propios; los trabajos referenciados deben ser propios); `anon` sin privilegios; grants por columna.
+- La home es anónima: `private.active_portfolio_settings()` toma la fila con `updated_at` más reciente (hoy hay un único propietario; con varios mandaría el último en guardar). Sin variables de entorno ni UUID fijo en el código.
+- `private.public_job_media(job)` agrega las fotos visibles (derivado existente y no ocultas). `list_public_jobs` ordena primero el trabajo fijado y luego por fecha/UUID, así la paginación no repite ni pierde trabajos.
+- `get_featured_transformation()` (SECURITY INVOKER sobre una función privada SECURITY DEFINER) devuelve `{ id, name, job_date, media, description, before_id, after_id }` solo si el trabajo está publicado y las dos fotos son distintas, visibles y con derivado; si no, ninguna fila y la portada queda con el título solo. La selección no se borra al despublicar: queda dormida y reaparece al republicar. No expone `owner_id`, fotos ocultas ni la fila de ajustes.
 
 ## Originales y entrega pública
 

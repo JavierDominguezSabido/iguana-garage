@@ -49,6 +49,9 @@ export async function isolatedDatabase() {
   for (const name of (await readdir("supabase/migrations")).filter(name => name.endsWith("_media_focal_point.sql")).sort()) {
     await db.exec(await readFile(`supabase/migrations/${name}`, "utf8"));
   }
+  for (const name of (await readdir("supabase/migrations")).filter(name => name.endsWith("_portfolio_curation.sql")).sort()) {
+    await db.exec(await readFile(`supabase/migrations/${name}`, "utf8"));
+  }
   await db.query("insert into auth.users(id) values ($1),($2)", [ownerA,ownerB]);
   await db.query("insert into public.jobs(id,owner_id,name,job_date) values ($1,$2,'Fixture A','2026-10-07'),($3,$4,'Fixture B','2026-10-07')",[jobA,ownerA,jobB,ownerB]);
   await db.query("insert into public.job_media(id,job_id,storage_path,mime_type,position,width,height,byte_size) values ($1,$2,$3,'image/png',0,1,1,1),($4,$5,$6,'image/png',0,1,1,1)", [mediaA,jobA,`${ownerA}/${jobA}/${mediaA}.png`,mediaB,jobB,`${ownerB}/${jobB}/${mediaB}.png`]);

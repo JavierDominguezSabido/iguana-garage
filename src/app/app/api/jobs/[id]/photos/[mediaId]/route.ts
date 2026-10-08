@@ -1,6 +1,7 @@
 import { mutation } from "@/features/jobs/http";
 import { deletePhoto, JobError, setFocalPoint, uploadPhoto } from "@/features/jobs/data";
-import { MAX_IMAGE_BYTES } from "@/features/jobs/validation";
+import { setPhotoHidden } from "@/features/jobs/curation";
+import { MAX_IMAGE_BYTES, validatePhotoVisibility } from "@/features/jobs/validation";
 import { readBoundedBody } from "@/features/jobs/upload-body";
 type Context = { params: Promise<{ id: string; mediaId: string }> };
 export const runtime = "nodejs";
@@ -15,7 +16,10 @@ export async function POST(request: Request, context: Context) {
 }
 export async function PATCH(request: Request, context: Context) {
   return mutation(request, async ({ supabase, user }) => {
-    const { id, mediaId } = await context.params; await setFocalPoint(supabase, user.id, id, mediaId, await request.json());
+    const { id, mediaId } = await context.params; const body: unknown = await request.json();
+    // Mismo recurso, dos ajustes independientes de presentación: visibilidad en la home o punto focal.
+    if (body && typeof body === "object" && "hidden" in body) { await setPhotoHidden(supabase, user.id, id, mediaId, validatePhotoVisibility(body).hidden); return; }
+    await setFocalPoint(supabase, user.id, id, mediaId, body);
   });
 }
 export async function DELETE(request: Request, context: Context) {

@@ -7,7 +7,7 @@ import { derivativePaths } from "@/features/portfolio/variants";
 import { JobError, checkId, ownedJob, jobMedia, objectExists, putObject, putDerivatives, removeObject } from "./server/media";
 import type { Client } from "./server/media";
 export { JobError, ownedJob, jobMedia, prepareLegacyVariants } from "./server/media";
-export type { Job, Media } from "./server/media";
+export type { Client, Job, Media } from "./server/media";
 
 export async function prepareJob(db: Client, owner: string, id: string, input: unknown, create: boolean) {
   checkId(id); const fields = validateJob(input);
