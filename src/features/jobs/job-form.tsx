@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Icon } from "@/components/icon";
+import { send } from "./api-client";
 import { FocalEditor } from "./focal-editor";
 import type { Focal } from "./focal-editor";
 import { MAX_DESCRIPTION, MAX_IMAGE_BYTES, parseWorkHours, validateJob } from "./validation";
@@ -12,13 +13,6 @@ import { saveDraft } from "./workflow";
 import type { DraftPhoto, SaveDraft } from "./workflow";
 import type { Job, Media } from "./data";
 
-async function send(url: string, method: string, body?: unknown) {
-  let response;
-  try { response = await fetch(url, { method, ...(body instanceof FormData ? { body } : body ? { body: JSON.stringify(body), headers: { "content-type": "application/json" } } : {}) }); }
-  catch { throw new Error("No hay conexión. Conserva el formulario y reintenta."); }
-  let result: { error?: string }; try { result = await response.json(); } catch { throw new Error("La sesión ha terminado o no hay conexión. Reintenta."); }
-  if (!response.ok) throw new Error(result.error || "No se pudo completar la operación");
-}
 export function JobForm({ initial, media = [] }: { initial?: Job; media?: Media[] }) {
   const router = useRouter(); const [id] = useState(() => initial?.id ?? crypto.randomUUID());
   const [exists, setExists] = useState(!!initial); const [photos, setPhotos] = useState<DraftPhoto[]>(media.map((photo) => ({ id: photo.id, saved: true, url: `/app/api/photos/${photo.id}` })));

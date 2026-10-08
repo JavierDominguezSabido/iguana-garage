@@ -52,6 +52,7 @@ Contenedor máximo de 1760 px, centrado; márgenes laterales de 20 px (móvil), 
 ### Comparador Antes/Después
 
 - Una sola imagen con barra deslizante: la foto «Después» completa y la «Antes» recortada por `clip-path`; chips «Antes» y «Después» en las esquinas. Ambas con `cover` y su punto focal.
+- La pareja la elige el propietario en `/app` (ver «Gestión privada»); sin selección válida, la portada queda con el título solo.
 - Es un `role="slider"` con nombre «Comparador Antes y Después: {trabajo}», `aria-valuenow/min/max` y `aria-valuetext` («Antes 58 %, Después 42 %»). Teclado: flechas ±4 (Mayús ±10), Re Pág/Av Pág ±10, Inicio y Fin.
 - **Solo se arrastra, no se toca para abrir.** Debajo, un botón visible «Ver fotos» abre el visor del trabajo. Lleva un icono de fotos y no la flecha ↗, que sugiere un enlace externo (solo los enlaces a WhatsApp la llevan). No hay umbral arrastre/toque.
 - `touch-action: pan-y`: el scroll vertical de la página funciona siempre, también empezando sobre la foto; solo se captura el gesto horizontal. En táctil el arrastre es relativo (sin saltos); con ratón la barra sigue al puntero.
@@ -63,7 +64,8 @@ Contenedor máximo de 1760 px, centrado; márgenes laterales de 20 px (móvil), 
 
 - Cada trabajo es un `article` con una **banda** (borde superior verde de 3 px, nombre en mayúsculas, fecha larga y «N fotografías», y la descripción si existe) y todas sus fotos a la vista. Una foto abre el visor en esa misma imagen.
 - Fotos en recuadros 4:5 con `cover` y punto focal, separados 2 px, con contador `n/N`. Móvil/tablet (<900): dos columnas y, si el número de fotos es impar, la primera a todo el ancho. Desde 900: 12 columnas con filas de hasta cuatro fotos (4 por fila → 3 columnas cada una, 3 → 4, 2 → 6; una sola foto no se estira; nunca queda una foto sola en una fila; ver `wall.ts`).
-- Trabajo sin fotos: bloque «Fotografías próximamente».
+- El trabajo fijado desde `/app` (como mucho uno) va el primero del muro, sin insignia ni cambio visual. Las fotos ocultas desde `/app` no se pintan ni cuentan en «N fotografías».
+- Trabajo sin fotos (o con todas ocultas): bloque «Fotografías próximamente».
 - Estados de error, vacío y paginación conservan el contrato de [PRODUCT.md](PRODUCT.md) con la misma tipografía.
 
 ### Botón fijo de WhatsApp (móvil)
@@ -104,6 +106,8 @@ Los dos visores comparten estilo, estructura y comportamiento, pero cada uno con
 Compacta, funcional y mobile-first, priorizando operación cotidiana desde teléfono. Tipografía de interfaz Arial/Helvetica/sans-serif. Formularios con etiquetas visibles, errores útiles, progreso y reintento; los datos confirmados no deben perderse ni comunicar un guardado incompleto como éxito.
 
 No introducir rediseños decorativos que reduzcan legibilidad, espacio de fotos, acceso a botones o rapidez de uso. Verde para acciones principales; borrados identificados con texto y confirmación, sin depender solo del color. El login comparte la identidad privada sin mostrar el marco de gestión antes de autenticar. El rediseño público no se aplica al privado.
+
+La ficha `/app/jobs/[id]` incluye «Portada y muro»: tarjeta con tres bloques (fijar arriba, transformación Antes/Después con selector de fotos en diálogo nativo, y cuadrícula «Fotos en la web»). Guardado inmediato con estados de carga/error visibles; objetivos táctiles ≥ 44 px; 3 columnas de fotos en móvil y dos bloques en columnas desde 768 px. Fotos ocultas o en la portada se distinguen con texto («Oculta», «En portada»), no solo con color.
 
 El visor privado usa el mismo componente base que el público (ver «Visores de fotos») con su propia piel `app-viewer`: dialog centrado respecto al viewport (`fixed`, `inset:0`, `margin:auto`), fotografías `contain`, proporción real y controles accesibles. Un cambio en el componente base o en una piel exige comprobar ambos visores por separado.
 

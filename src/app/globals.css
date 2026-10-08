@@ -209,3 +209,35 @@ html:has(dialog.app-viewer[open]) { overflow: hidden; }
 @media (min-width: 768px) { .workspace { padding: 48px 32px 80px; } .header-inner { padding: 0 32px; min-height: 96px; } .header-caption, .logout-button span { display: block; } .brand { width: 230px; } .form-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 48px; } .job-form { padding: 36px; } .form-photos { margin: 0; padding: 0; border: 0; } .form-actions { justify-content: end; } .form-actions > * { flex: 0 1 auto; min-width: 170px; } .login-panel { background: var(--surface); padding: 44px 36px; border: 1px solid var(--line); border-radius: 16px; width: 480px; } .detail-grid { grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr); } }
 @media (min-width: 1100px) { .jobs-grid, .skeleton-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .workspace { padding-left: 20px; padding-right: 20px; } .header-inner { padding: 0 20px; } .photo-previews { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition: none !important; } }
+/* Portada y muro (ficha del trabajo). Guardado inmediato; objetivos táctiles ≥ 44 px. */
+.curation { margin-top: 40px; padding: 24px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.curation-head h2 { font-size: 1.25rem; }
+.curation-head p { margin-top: 6px; font-size: .85rem; line-height: 1.5; }
+.curation-private { margin: 16px 0 0; }
+.curation-blocks { display: grid; gap: 28px; margin-top: 20px; }
+.curation-block h3 { font-size: 1rem; margin-bottom: 12px; }
+.curation-block h3 .muted { font-size: .8rem; font-weight: 400; }
+.curation-block .publish-control { padding: 0; }
+.curation-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.curation-slot { position: relative; aspect-ratio: 1; min-height: 120px; padding: 0; overflow: hidden; border: 1px dashed #6e7f70; border-radius: 8px; background: #0b100d; display: grid; place-items: center; }
+.curation-slot:disabled { opacity: .55; }
+.curation-slot:focus-visible, .curation-photo:focus-visible, .picker-photo:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+.curation-slot img, .curation-photo img, .picker-photo img { width: 100%; height: 100%; object-fit: cover; }
+.slot-empty { font-size: .85rem; color: var(--muted); }
+.slot-label, .photo-state, .picker-note { position: absolute; left: 8px; bottom: 8px; padding: 4px 9px; border-radius: 4px; background: #101513ec; font-size: .75rem; font-weight: 700; }
+.curation-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.curation-actions .button { flex: 1 1 180px; }
+.curation-photos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.curation-photo { position: relative; display: block; width: 100%; aspect-ratio: 1; min-height: 44px; padding: 0; overflow: hidden; border: 2px solid var(--lime); border-radius: 8px; background: #0b100d; }
+.is-hidden .curation-photo { border-color: #6e7f70; border-style: dashed; }
+.is-hidden .curation-photo img { opacity: .35; filter: grayscale(1); }
+.curation-photo:disabled { cursor: not-allowed; }
+.curation-ok { color: var(--lime); font-size: .85rem; margin-top: 16px; }
+.picker-dialog { position: fixed; inset: 0; margin: auto; width: min(560px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 20px; overflow-y: auto; }
+.picker-dialog h2 { font-size: 1.2rem; }
+.picker-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0 16px; }
+.picker-photo { position: relative; aspect-ratio: 1; min-height: 44px; padding: 0; overflow: hidden; border: 2px solid transparent; border-radius: 8px; background: #0b100d; }
+.picker-photo:disabled { opacity: .45; cursor: not-allowed; }
+.picker-actions { display: flex; justify-content: flex-end; }
+.picker-actions .button { width: 100%; }
+@media (min-width: 768px) { .curation { padding: 32px; } .curation-blocks { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px 40px; } .curation-wide { grid-column: 1 / -1; } .curation-slots { max-width: 420px; } .curation-photos { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); } .picker-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .picker-actions .button { width: auto; } }
