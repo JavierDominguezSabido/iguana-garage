@@ -238,6 +238,33 @@ select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-1111111
 update public.job_media set hidden_from_home = false where id = '77777777-7777-4777-8777-777777777777';
 update public.jobs set is_public = false;
 
+-- Orden manual de los trabajos en el muro.
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
+update public.jobs set is_public = true, wall_position = null where id = '22222222-2222-4222-8222-222222222222';
+do $$ begin
+  assert (select wall_position is not null from public.jobs where id = '22222222-2222-4222-8222-222222222222'), 'Publicar no asignó posición en el muro';
+  perform public.move_wall_job('22222222-2222-4222-8222-222222222222', 0);
+  assert (select wall_position = 0 from public.jobs where id = '22222222-2222-4222-8222-222222222222'), 'Mover no aplicó la posición';
+  begin perform public.move_wall_job('22222222-2222-4222-8222-222222222222', 5); raise exception 'Posición inexistente aceptada';
+  exception when sqlstate '22023' then null; end;
+end $$;
+select set_config('request.jwt.claims', '{"sub":"44444444-4444-4444-8444-444444444444","role":"authenticated"}', true);
+do $$ begin
+  begin perform public.move_wall_job('22222222-2222-4222-8222-222222222222', 0); raise exception 'B ordenó un trabajo de A';
+  exception when sqlstate 'P0002' then null; end;
+end $$;
+set local role anon;
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+do $$ begin
+  begin perform public.move_wall_job('22222222-2222-4222-8222-222222222222', 0); raise exception 'anon pudo ordenar el muro';
+  exception when insufficient_privilege then null; end;
+  assert (select count(*) = 1 from public.list_public_jobs()), 'El trabajo publicado dejó de listarse';
+end $$;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
+update public.jobs set is_public = false, wall_position = null;
+
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
 do $$ declare affected integer; begin

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
-import { portadaJobs, reorderPhotos, setFeaturedTransformation, setPhotoHidden, setPinnedJob, setPublished } from "@/features/jobs/curation";
+import { portadaJobs, reorderPhotos, setFeaturedTransformation, setPhotoHidden, setPublished } from "@/features/jobs/curation";
 import { asRole, jobA, jobB, mediaA, mediaB, ownerA, ownerB } from "./database";
 import { storageFixture } from "./storage-fixture";
 
@@ -38,7 +38,7 @@ beforeAll(async () => {
   await q("delete from public.job_media where job_id=$1", [jobA]);
 });
 afterAll(async () => { await fixture?.close(); });
-beforeEach(async () => { await resetJobA(); await q("update public.jobs set is_public=false"); await q("update public.job_media set hidden_from_home=false"); });
+beforeEach(async () => { await resetJobA(); await q("update public.jobs set is_public=false, wall_position=null"); await q("update public.job_media set hidden_from_home=false"); });
 
 describe("reordenar fotos de forma atómica (reorder_job_media)", () => {
   const client = () => fixture.client(ownerA);
@@ -100,6 +100,7 @@ describe("reordenar fotos de forma atómica (reorder_job_media)", () => {
 describe("muro: un trabajo sin ninguna foto visible no tiene banda", () => {
   it("excluye trabajos con todas las fotos ocultas o sin fotos, y la paginación no deja huecos", async () => {
     await q("update public.jobs set is_public=true where id in ($1,$2,$3)", [jobA, jobC, jobD]);
+    await q("update public.jobs set wall_position = case id when $1 then 0 when $2 then 1 else 2 end where id in ($1,$2,$3)", [jobC, jobA, jobD]);
     expect((await listed()).map(job => job.id)).toEqual([jobC, jobA, jobD]);
     await q("update public.job_media set hidden_from_home=true where job_id=$1", [jobA]);
     expect((await listed()).map(job => job.id)).toEqual([jobC, jobD]);
@@ -110,9 +111,9 @@ describe("muro: un trabajo sin ninguna foto visible no tiene banda", () => {
     await q("delete from public.job_media where job_id=$1", [jobA]);
     expect((await listed()).map(job => job.id)).toEqual([jobC, jobD]);
   });
-  it("el fijado sin fotos visibles tampoco aparece", async () => {
+  it("una banda sin foto visible no se lista aunque vaya la primera", async () => {
     await q("update public.jobs set is_public=true where id in ($1,$2)", [jobA, jobC]);
-    await setPinnedJob(fixture.client(ownerA), ownerA, jobA);
+    await q("update public.jobs set wall_position = case id when $1 then 0 else 1 end where id in ($1,$2)", [jobA, jobC]);
     expect((await listed()).map(job => job.id)).toEqual([jobA, jobC]);
     await q("update public.job_media set hidden_from_home=true where job_id=$1", [jobA]);
     expect((await listed()).map(job => job.id)).toEqual([jobC]);
@@ -193,15 +194,14 @@ describe("publicar desde la pantalla «Portada» y orden de la pantalla", () => 
     expect((await q("select is_public from public.jobs where id=$1", [jobA])).rows[0].is_public).toBe(false);
     await q("insert into storage.objects(bucket_id,name) values ('portfolio-derivatives',$1) on conflict do nothing", [`${jobA}/${mediaA2}.webp`]);
   });
-  it("lista publicados (fijado primero, fecha y UUID) y privados al final, con paginación", async () => {
-    await q("update public.jobs set is_public=true where id in ($1,$2)", [jobA, jobC]);
-    await setPinnedJob(client(), ownerA, jobA);
+  it("lista los publicados en el orden manual del muro y los privados al final, con paginación", async () => {
+    await setPublished(client(), ownerA, jobA, true);
+    await setPublished(client(), ownerA, jobC, true);
     const page = await portadaJobs(client(), ownerA, 1);
-    expect(page.jobs.map(entry => entry.job.id)).toEqual([jobA, jobC, jobD]);
+    expect(page.jobs.map(entry => entry.job.id)).toEqual([jobC, jobA, jobD]);
     expect(page.jobs.map(entry => entry.job.is_public)).toEqual([true, true, false]);
-    expect(page.jobs[0].media.map(photo => photo.id)).toEqual([mediaA, mediaA2, mediaA3]);
+    expect(page.jobs[1].media.map(photo => photo.id)).toEqual([mediaA, mediaA2, mediaA3]);
     expect(page.hasNext).toBe(false);
-    expect(page.settings?.pinned_job_id).toBe(jobA);
     expect((await portadaJobs(client(), ownerA, 2)).jobs).toEqual([]);
     expect((await portadaJobs(fixture.client(ownerB), ownerB, 1)).jobs.map(entry => entry.job.id)).toEqual([jobB]);
   });

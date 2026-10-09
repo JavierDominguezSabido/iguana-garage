@@ -8,7 +8,7 @@ export const jobB = "55555555-5555-4555-8555-555555555555";
 export const mediaA = "33333333-3333-4333-8333-333333333333";
 export const mediaB = "66666666-6666-4666-8666-666666666666";
 
-export async function isolatedDatabase() {
+export async function isolatedDatabase({ withWallOrder = true }: { withWallOrder?: boolean } = {}) {
   const db = new PGlite();
   // Sustrato mínimo de plataforma. Las políticas y funciones del producto se
   // ejecutan desde las migraciones reales, con RLS PostgreSQL y roles no privilegiados.
@@ -49,7 +49,7 @@ export async function isolatedDatabase() {
   for (const name of (await readdir("supabase/migrations")).filter(name => name.endsWith("_media_focal_point.sql")).sort()) {
     await db.exec(await readFile(`supabase/migrations/${name}`, "utf8"));
   }
-  for (const name of (await readdir("supabase/migrations")).filter(name => name.endsWith("_portfolio_curation.sql") || name.endsWith("_portfolio_order_cover_only.sql")).sort()) {
+  for (const name of (await readdir("supabase/migrations")).filter(name => name.endsWith("_portfolio_curation.sql") || name.endsWith("_portfolio_order_cover_only.sql") || (withWallOrder && name.endsWith("_wall_job_order.sql"))).sort()) {
     await db.exec(await readFile(`supabase/migrations/${name}`, "utf8"));
   }
   await db.query("insert into auth.users(id) values ($1),($2)", [ownerA,ownerB]);

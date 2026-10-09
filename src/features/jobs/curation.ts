@@ -2,7 +2,7 @@ import "server-only";
 import { finishJob, JobError, jobMedia, ownedJob } from "./data";
 import type { Client, Job, Media } from "./data";
 import { isUuid } from "./validation";
-import { sortPortadaJobs } from "./portada-order";
+import { sortByWall } from "./portada-order";
 import type { FeaturedSelection, PortfolioPatch } from "./validation";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -92,6 +92,16 @@ export async function reorderPhotos(db: Client, owner: string, jobId: string, or
   throw new JobError("No se pudo guardar el orden. Reintenta.", 503);
 }
 
+// Mueve un trabajo publicado a la posición absoluta `to` del muro (0 = primero) de forma atómica (RPC move_wall_job).
+export async function moveWallJob(db: Client, owner: string, jobId: string, to: number) {
+  await ownedJob(db, owner, jobId);
+  const result = await db.rpc("move_wall_job", { p_job: jobId, p_to: to });
+  if (!result.error) return;
+  if (result.error.code === "22023") throw new JobError("El orden ha cambiado desde que abriste la pantalla. Recarga para ver el orden actual.", 409);
+  if (result.error.code === "P0002") throw new JobError("Solo se pueden ordenar trabajos publicados.", 409);
+  throw new JobError("No se pudo guardar el orden. Reintenta.", 503);
+}
+
 export const PORTADA_PAGE_SIZE = 12;
 export type PortadaJob = { job: Job; media: Media[] };
 // Publicar/despublicar sin entrar en la ficha. Misma ruta segura que el formulario (finishJob): al publicar comprueba o
@@ -102,15 +112,14 @@ export async function setPublished(db: Client, owner: string, jobId: string, pub
   await finishJob(db, owner, jobId, { name: job.name, job_date: job.job_date, paint_code: job.paint_code, work_hours: job.work_hours, description: job.description, is_public: published });
 }
 
-// Trabajos en el orden de la web: primero los publicados (el fijado el primero, luego fecha descendente y UUID ascendente)
-// y al final los privados con el mismo criterio. Incluye los publicados que no salen en el muro (sin fotos visibles) para
+// Trabajos en el orden de la web: primero los publicados en su orden manual del muro (`wall_position`) y al final los
+// privados por fecha. Incluye los publicados que no salen en el muro (sin fotos visibles) para
 // poder arreglarlos; la pantalla los marca.
 export async function portadaJobs(db: Client, owner: string, page: number): Promise<{ jobs: PortadaJob[]; hasNext: boolean; settings: PortfolioSettings | null }> {
   const settings = await portfolioSettings(db, owner);
   const all = await db.from("jobs").select("*").eq("owner_id", owner);
   if (all.error) throw new JobError("No se pudieron cargar los trabajos. Reintenta.", 503);
-  const pinned = settings?.pinned_job_id;
-  const ordered = sortPortadaJobs(all.data, pinned);
+  const ordered = sortByWall(all.data);
   const start = (Math.max(1, page) - 1) * PORTADA_PAGE_SIZE;
   const slice = ordered.slice(start, start + PORTADA_PAGE_SIZE);
   const jobs = await Promise.all(slice.map(async (job) => ({ job, media: await jobMedia(db, job.id) })));

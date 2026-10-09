@@ -41,7 +41,9 @@ export async function finishJob(db: Client, owner: string, id: string, input: un
       if (updated.error || updated.data?.length !== 1) throw new JobError("No se pudo ordenar las fotografías. Reintenta.", 503);
     }
   }
-  const result = await db.from("jobs").update(fields).eq("id", id).eq("owner_id", owner).select("id");
+  // Despublicar de verdad (is_public=false aquí; la despublicación temporal de prepareJob no pasa por finishJob) saca el
+  // trabajo del orden del muro: al volver a publicarlo entra arriba. Editar un trabajo publicado conserva su posición.
+  const result = await db.from("jobs").update(fields.is_public ? fields : { ...fields, wall_position: null }).eq("id", id).eq("owner_id", owner).select("id");
   if (result.error || result.data?.length !== 1) throw new JobError("No se pudo finalizar el guardado. Reintenta.", 503);
 }
 export async function uploadPhoto(db: Client, owner: string, jobId: string, mediaId: string, file: File) {

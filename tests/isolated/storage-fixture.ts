@@ -60,6 +60,11 @@ export async function storageFixture({port=0}:{port?:number}={}) {
         const result=await asRole<Record<string,unknown>>(db,role,uid,"","select * from public.get_featured_transformation()");
         return reply(200,result.rows.map(row=>({...row,job_date:row.job_date instanceof Date?row.job_date.toISOString().slice(0,10):row.job_date})));
       }
+      if(url.pathname==="/rest/v1/rpc/move_wall_job"){
+        const input=JSON.parse(body.toString()||"{}");
+        try{await asRole(db,role,uid,"","select public.move_wall_job($1,$2)",[input.p_job,input.p_to]);return reply(200,null);}
+        catch(e){const code=(e as {code?:string}).code;return reply(code==="42501"?403:400,{message:(e as Error).message,code});}
+      }
       if(url.pathname==="/rest/v1/rpc/reorder_job_media"){
         const input=JSON.parse(body.toString()||"{}");
         try{await asRole(db,role,uid,"","select public.reorder_job_media($1,$2::uuid[])",[input.p_job,input.p_order]);return reply(200,null);}
@@ -67,7 +72,7 @@ export async function storageFixture({port=0}:{port?:number}={}) {
       }
       const table=url.pathname.slice("/rest/v1/".length);
       if(!["jobs","job_media","portfolio_settings"].includes(table))return reply(404,{});
-      const allowed=["id","owner_id","job_id","name","job_date","paint_code","work_hours","description","is_public","position","storage_path","mime_type","width","height","byte_size","focal_x","focal_y","hidden_from_home","pinned_job_id","featured_job_id","featured_before_id","featured_after_id"];
+      const allowed=["id","owner_id","job_id","name","job_date","paint_code","work_hours","description","is_public","position","storage_path","mime_type","width","height","byte_size","focal_x","focal_y","hidden_from_home","wall_position","pinned_job_id","featured_job_id","featured_before_id","featured_after_id"];
       const filters:string[]=[];const values:unknown[]=[];
       for(const [key,value] of url.searchParams){if(allowed.includes(key)&&value.startsWith("eq.")){values.push(value.slice(3));filters.push(`${key}=$${values.length}`);}}
       const where=filters.length?` where ${filters.join(" and ")}`:"";

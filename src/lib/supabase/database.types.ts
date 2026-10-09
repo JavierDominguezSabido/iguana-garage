@@ -79,6 +79,7 @@ export type Database = {
           owner_id: string
           paint_code: string | null
           updated_at: string
+          wall_position: number | null
           work_hours: number | null
         }
         Insert: {
@@ -91,6 +92,7 @@ export type Database = {
           owner_id: string
           paint_code?: string | null
           updated_at?: string
+          wall_position?: number | null
           work_hours?: number | null
         }
         Update: {
@@ -103,6 +105,7 @@ export type Database = {
           owner_id?: string
           paint_code?: string | null
           updated_at?: string
+          wall_position?: number | null
           work_hours?: number | null
         }
         Relationships: []
@@ -189,6 +192,10 @@ export type Database = {
           media: Json
           name: string
         }[]
+      }
+      move_wall_job: {
+        Args: { p_job: string; p_to: number }
+        Returns: undefined
       }
       reorder_job_media: {
         Args: { p_job: string; p_order: string[] }

@@ -82,6 +82,14 @@ export function validatePhotoOrder(input: unknown): { order: string[] } {
   return { order: [...order] };
 }
 
+// Posición absoluta de un trabajo en el muro (0 = primero).
+export const MAX_WALL_POSITION = 100000;
+export function validateWallMove(input: unknown): { to: number } {
+  const data = fields(input, ["to"]);
+  if (typeof data.to !== "number" || !Number.isInteger(data.to) || data.to < 0 || data.to > MAX_WALL_POSITION) throw new Error("Posición inválida");
+  return { to: data.to };
+}
+
 // Ajustes de portada: o bien el trabajo fijado (null = ninguno), o bien la transformación destacada (null = quitarla).
 export type FeaturedSelection = { job_id: string; before_id: string; after_id: string };
 export type PortfolioPatch = { pinned_job_id: string | null } | { featured: FeaturedSelection | null };

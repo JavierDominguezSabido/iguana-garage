@@ -63,41 +63,6 @@ describe("migración", () => {
   });
 });
 
-describe("trabajo fijado", () => {
-  beforeEach(async () => { await q("update public.jobs set is_public=true where id in ($1,$2)", [jobA, jobC]); });
-  it("va primero, sin repetirse al paginar, y se puede desfijar", async () => {
-    await setPinnedJob(fixture.client(ownerA), ownerA, jobA);
-    expect((await listed()).map(job => job.id)).toEqual([jobA, jobC]);
-    expect((await listed(1, 0)).map(job => job.id)).toEqual([jobA]);
-    expect((await listed(1, 1)).map(job => job.id)).toEqual([jobC]);
-    await setPinnedJob(fixture.client(ownerA), ownerA, null);
-    expect((await listed()).map(job => job.id)).toEqual([jobC, jobA]);
-  });
-  it("como mucho uno: fijar otro lo sustituye en la misma fila", async () => {
-    const client = fixture.client(ownerA);
-    await setPinnedJob(client, ownerA, jobA); await setPinnedJob(client, ownerA, jobC);
-    expect(await settings()).toMatchObject([{ owner_id: ownerA, pinned_job_id: jobC }]);
-    expect((await listed()).map(job => job.id)).toEqual([jobC, jobA]);
-  });
-  it("un trabajo que deja de estar publicado no aparece, y al republicar vuelve a ir arriba (selección dormida)", async () => {
-    await setPinnedJob(fixture.client(ownerA), ownerA, jobA);
-    await q("update public.jobs set is_public=false where id=$1", [jobA]);
-    expect((await listed()).map(job => job.id)).toEqual([jobC]);
-    await q("update public.jobs set is_public=true where id=$1", [jobA]);
-    expect((await listed()).map(job => job.id)).toEqual([jobA, jobC]);
-  });
-  it("exige un trabajo propio y publicado", async () => {
-    await expect(setPinnedJob(fixture.client(ownerB), ownerB, jobA)).rejects.toMatchObject({ status: 404 });
-    await q("update public.jobs set is_public=false where id=$1", [jobA]);
-    await expect(setPinnedJob(fixture.client(ownerA), ownerA, jobA)).rejects.toMatchObject({ status: 409 });
-    expect(await settings()).toHaveLength(0);
-  });
-  it("desfijar sin ajustes no crea filas", async () => {
-    await setPinnedJob(fixture.client(ownerA), ownerA, null);
-    expect(await settings()).toHaveLength(0);
-  });
-});
-
 describe("fotos ocultas", () => {
   beforeEach(async () => { await q("update public.jobs set is_public=true where id=$1", [jobA]); for (const media of [mediaA, mediaA2, mediaA3]) await q("insert into storage.objects(bucket_id,name) values ('portfolio-derivatives',$1) on conflict do nothing", [`${jobA}/${media}.webp`]); });
   it("salen de la proyección pública y vuelven al mostrarlas", async () => {
@@ -260,13 +225,10 @@ describe("RLS, restricciones y fila activa de portfolio_settings", () => {
     await expect(as("authenticated", ownerA, "update public.portfolio_settings set featured_before_id=$1", [mediaA])).rejects.toMatchObject({ code: "23514" });
   });
   it("con varias filas manda la modificada más recientemente", async () => {
-    await q("update public.jobs set is_public=true where id in ($1,$2)", [jobA, jobB]);
-    await q("insert into storage.objects(bucket_id,name) values ('portfolio-derivatives',$1) on conflict do nothing", [`${jobA}/${mediaA}.webp`]);
-    await q("insert into storage.objects(bucket_id,name) values ('portfolio-derivatives',$1) on conflict do nothing", [`${jobB}/${mediaB}.webp`]);
-    await q("insert into public.portfolio_settings(owner_id,pinned_job_id,updated_at) values ($1,$2,'2026-10-01'),($3,$4,'2026-10-02')", [ownerA, jobA, ownerB, jobB]);
-    expect((await listed())[0].id).toBe(jobB);
-    await q("update public.portfolio_settings set pinned_job_id=$1 where owner_id=$2", [jobA, ownerA]);
-    expect((await listed())[0].id).toBe(jobA);
+    await q("insert into public.portfolio_settings(owner_id,updated_at) values ($1,'2026-10-01'),($2,'2026-10-02')", [ownerA, ownerB]);
+    expect((await q("select owner_id from private.active_portfolio_settings()")).rows[0].owner_id).toBe(ownerB);
+    await q("update public.portfolio_settings set featured_job_id=null where owner_id=$1", [ownerA]);
+    expect((await q("select owner_id from private.active_portfolio_settings()")).rows[0].owner_id).toBe(ownerA);
   });
 });
 

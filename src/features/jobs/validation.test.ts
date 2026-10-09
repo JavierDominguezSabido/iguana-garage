@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildOriginalPath, parseWorkHours, validateFocalPoint, validateJob, validateMediaMetadata, validateImageBytes, validatePhotoOrder, validatePhotoVisibility, validatePortfolioPatch } from "./validation";
+import { buildOriginalPath, parseWorkHours, validateFocalPoint, validateJob, validateMediaMetadata, validateImageBytes, validatePhotoOrder, validatePhotoVisibility, validateWallMove, validatePortfolioPatch } from "./validation";
 
 const owner = "11111111-1111-4111-8111-111111111111";
 const job = "22222222-2222-4222-8222-222222222222";
@@ -121,5 +121,13 @@ describe("orden de las fotos", () => {
   });
   it.each([null, [], {}, { order: [] }, { order: "x" }, { order: ["x"] }, { order: [media, media] }, { order: [media], extra: 1 }, { order: new Array(201).fill(media) }, { order: [1] }])("rechaza %j", (input) => {
     expect(() => validatePhotoOrder(input)).toThrow();
+  });
+});
+
+describe("posición del trabajo en el muro", () => {
+  it("acepta un entero no negativo y nada más", () => {
+    expect(validateWallMove({ to: 0 })).toEqual({ to: 0 });
+    expect(validateWallMove({ to: 27 })).toEqual({ to: 27 });
+    for (const input of [null, [], {}, { to: -1 }, { to: 1.5 }, { to: "1" }, { to: 100001 }, { to: 1, extra: 1 }]) expect(() => validateWallMove(input)).toThrow();
   });
 });
