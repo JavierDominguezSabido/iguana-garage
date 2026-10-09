@@ -116,7 +116,6 @@ export type Database = {
           featured_before_id: string | null
           featured_job_id: string | null
           owner_id: string
-          pinned_job_id: string | null
           updated_at: string
         }
         Insert: {
@@ -124,7 +123,6 @@ export type Database = {
           featured_before_id?: string | null
           featured_job_id?: string | null
           owner_id: string
-          pinned_job_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -132,7 +130,6 @@ export type Database = {
           featured_before_id?: string | null
           featured_job_id?: string | null
           owner_id?: string
-          pinned_job_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -153,13 +150,6 @@ export type Database = {
           {
             foreignKeyName: "portfolio_settings_featured_job_id_fkey"
             columns: ["featured_job_id"]
-            isOneToOne: false
-            referencedRelation: "jobs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "portfolio_settings_pinned_job_id_fkey"
-            columns: ["pinned_job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
