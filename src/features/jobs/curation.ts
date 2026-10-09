@@ -2,7 +2,7 @@ import "server-only";
 import { finishJob, JobError, jobMedia, ownedJob } from "./data";
 import type { Client, Job, Media } from "./data";
 import { isUuid } from "./validation";
-import { sortByWall } from "./portada-order";
+import { PORTADA_PAGE_SIZE, sortByWall } from "./portada-order";
 import type { FeaturedSelection, PortfolioPatch } from "./validation";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -10,7 +10,7 @@ export type PortfolioSettings = Database["public"]["Tables"]["portfolio_settings
 type SettingsUpdate = Database["public"]["Tables"]["portfolio_settings"]["Update"];
 
 // Estado de portada de un trabajo para la línea de estado de la ficha (la gestión vive en la pantalla «Portada»).
-export type CurationState = { pinned: boolean; inCover: boolean };
+export type CurationState = { inCover: boolean };
 
 export async function portfolioSettings(db: Client, owner: string): Promise<PortfolioSettings | null> {
   const result = await db.from("portfolio_settings").select("*").eq("owner_id", owner).maybeSingle();
@@ -32,15 +32,6 @@ async function publishedJob(db: Client, owner: string, jobId: string, message: s
   return job;
 }
 
-export async function setPinnedJob(db: Client, owner: string, jobId: string | null) {
-  if (jobId === null) {
-    if ((await portfolioSettings(db, owner))?.pinned_job_id) await saveSettings(db, owner, { pinned_job_id: null });
-    return;
-  }
-  await publishedJob(db, owner, jobId, "Publica el trabajo antes de fijarlo arriba.");
-  await saveSettings(db, owner, { pinned_job_id: jobId });
-}
-
 export async function setFeaturedTransformation(db: Client, owner: string, selection: FeaturedSelection | null) {
   if (selection === null) {
     const current = await portfolioSettings(db, owner);
@@ -58,7 +49,6 @@ export async function setFeaturedTransformation(db: Client, owner: string, selec
 }
 
 export async function applyPortfolioPatch(db: Client, owner: string, patch: PortfolioPatch) {
-  if ("pinned_job_id" in patch) return setPinnedJob(db, owner, patch.pinned_job_id);
   return setFeaturedTransformation(db, owner, patch.featured);
 }
 
@@ -74,12 +64,12 @@ export async function setPhotoHidden(db: Client, owner: string, jobId: string, m
 
 export async function curationState(db: Client, owner: string, jobId: string): Promise<CurationState> {
   const settings = await portfolioSettings(db, owner);
-  return { pinned: settings?.pinned_job_id === jobId, inCover: settings?.featured_job_id === jobId && !!settings.featured_before_id && !!settings.featured_after_id };
+  return { inCover: settings?.featured_job_id === jobId && !!settings.featured_before_id && !!settings.featured_after_id };
 }
-// Marcas para la lista /app: qué trabajo está fijado y cuál aporta la transformación de la portada.
-export async function curationMarks(db: Client, owner: string): Promise<{ pinnedJobId: string | null; featuredJobId: string | null }> {
+// Marca para la lista /app: qué trabajo aporta la transformación de la portada.
+export async function curationMarks(db: Client, owner: string): Promise<{ featuredJobId: string | null }> {
   const settings = await portfolioSettings(db, owner);
-  return { pinnedJobId: settings?.pinned_job_id ?? null, featuredJobId: settings?.featured_before_id && settings.featured_after_id ? settings.featured_job_id : null };
+  return { featuredJobId: settings?.featured_before_id && settings.featured_after_id ? settings.featured_job_id : null };
 }
 
 // Reordena las fotos de un trabajo de forma atómica (RPC reorder_job_media). Permitido con el trabajo publicado.
@@ -102,7 +92,6 @@ export async function moveWallJob(db: Client, owner: string, jobId: string, to: 
   throw new JobError("No se pudo guardar el orden. Reintenta.", 503);
 }
 
-export const PORTADA_PAGE_SIZE = 12;
 export type PortadaJob = { job: Job; media: Media[] };
 // Publicar/despublicar sin entrar en la ficha. Misma ruta segura que el formulario (finishJob): al publicar comprueba o
 // recupera los derivados de cada foto y normaliza posiciones; si una foto sigue incompleta, el trabajo permanece privado.
@@ -115,7 +104,7 @@ export async function setPublished(db: Client, owner: string, jobId: string, pub
 // Trabajos en el orden de la web: primero los publicados en su orden manual del muro (`wall_position`) y al final los
 // privados por fecha. Incluye los publicados que no salen en el muro (sin fotos visibles) para
 // poder arreglarlos; la pantalla los marca.
-export async function portadaJobs(db: Client, owner: string, page: number): Promise<{ jobs: PortadaJob[]; hasNext: boolean; settings: PortfolioSettings | null }> {
+export async function portadaJobs(db: Client, owner: string, page: number): Promise<{ jobs: PortadaJob[]; hasNext: boolean; settings: PortfolioSettings | null; publishedTotal: number }> {
   const settings = await portfolioSettings(db, owner);
   const all = await db.from("jobs").select("*").eq("owner_id", owner);
   if (all.error) throw new JobError("No se pudieron cargar los trabajos. Reintenta.", 503);
@@ -123,5 +112,5 @@ export async function portadaJobs(db: Client, owner: string, page: number): Prom
   const start = (Math.max(1, page) - 1) * PORTADA_PAGE_SIZE;
   const slice = ordered.slice(start, start + PORTADA_PAGE_SIZE);
   const jobs = await Promise.all(slice.map(async (job) => ({ job, media: await jobMedia(db, job.id) })));
-  return { jobs, hasNext: ordered.length > start + PORTADA_PAGE_SIZE, settings };
+  return { jobs, hasNext: ordered.length > start + PORTADA_PAGE_SIZE, settings, publishedTotal: ordered.filter((job) => job.is_public).length };
 }

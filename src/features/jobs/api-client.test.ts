@@ -7,8 +7,8 @@ afterEach(() => vi.unstubAllGlobals());
 describe("envío a los Route Handlers privados", () => {
   it("serializa JSON con su cabecera y acepta respuestas correctas", async () => {
     respond(200, { ok: true });
-    await send("/app/api/portfolio", "PATCH", { pinned_job_id: null });
-    expect(fetch).toHaveBeenCalledWith("/app/api/portfolio", { method: "PATCH", body: '{"pinned_job_id":null}', headers: { "content-type": "application/json" } });
+    await send("/app/api/portfolio", "PATCH", { featured: null });
+    expect(fetch).toHaveBeenCalledWith("/app/api/portfolio", { method: "PATCH", body: '{"featured":null}', headers: { "content-type": "application/json" } });
   });
   it("envía FormData sin cabecera propia y DELETE sin cuerpo", async () => {
     respond(200, { ok: true });

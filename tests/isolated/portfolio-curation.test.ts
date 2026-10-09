@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import { readFile } from "node:fs/promises";
 vi.mock("server-only", () => ({}));
 import { deletePhoto } from "@/features/jobs/data";
-import { portfolioSettings, setFeaturedTransformation, setPhotoHidden, setPinnedJob, curationState } from "@/features/jobs/curation";
+import { portfolioSettings, setFeaturedTransformation, setPhotoHidden, curationState } from "@/features/jobs/curation";
 import { asRole, jobA, jobB, mediaA, mediaB, ownerA, ownerB } from "./database";
 import { storageFixture } from "./storage-fixture";
 
@@ -58,7 +58,7 @@ describe("migración", () => {
     await q("insert into public.jobs(id,owner_id,name,job_date) values ($1,$2,'Suzuki','2026-10-01')", [seededJob, ownerA]);
     await addMedia(seededJob, ownerA, before, 0); await addMedia(seededJob, ownerA, after, 1);
     await q(sql); await q(sql);
-    expect(await settings()).toMatchObject([{ owner_id: ownerA, featured_job_id: seededJob, featured_before_id: before, featured_after_id: after, pinned_job_id: null }]);
+    expect(await settings()).toMatchObject([{ owner_id: ownerA, featured_job_id: seededJob, featured_before_id: before, featured_after_id: after }]);
     await q("delete from public.portfolio_settings"); await q("delete from public.job_media where job_id=$1", [seededJob]); await q("delete from public.jobs where id=$1", [seededJob]);
   });
 });
@@ -170,12 +170,12 @@ describe("transformación destacada", () => {
   });
   it("borrar una foto o el trabajo limpia la selección por FK sin bloquear el borrado", async () => {
     const client = fixture.client(ownerA);
-    await setFeaturedTransformation(client, ownerA, select); await setPinnedJob(client, ownerA, jobA);
+    await setFeaturedTransformation(client, ownerA, select);
     await q("delete from public.job_media where id=$1", [mediaA2]);
-    expect(await settings()).toMatchObject([{ featured_job_id: jobA, featured_before_id: mediaA, featured_after_id: null, pinned_job_id: jobA }]);
+    expect(await settings()).toMatchObject([{ featured_job_id: jobA, featured_before_id: mediaA, featured_after_id: null }]);
     expect(await featured()).toEqual([]);
     await q("delete from public.job_media where job_id=$1", [jobA]); await q("delete from public.jobs where id=$1", [jobA]);
-    expect(await settings()).toMatchObject([{ pinned_job_id: null, featured_job_id: null, featured_before_id: null, featured_after_id: null }]);
+    expect(await settings()).toMatchObject([{ featured_job_id: null, featured_before_id: null, featured_after_id: null }]);
     await q("insert into public.jobs(id,owner_id,name,job_date) values ($1,$2,'Fixture A','2026-10-07')", [jobA, ownerA]);
     await q("insert into public.job_media(id,job_id,storage_path,mime_type,position,width,height,byte_size) values ($1,$2,$3,'image/png',0,1,1,1)", [mediaA, jobA, `${ownerA}/${jobA}/${mediaA}.png`]);
     await addMedia(jobA, ownerA, mediaA2, 1); await addMedia(jobA, ownerA, mediaA3, 2);
@@ -190,9 +190,9 @@ describe("transformación destacada", () => {
   it("la ficha privada resume su estado de portada", async () => {
     const client = fixture.client(ownerA);
     await q("update public.jobs set is_public=true where id=$1", [jobC]);
-    await setFeaturedTransformation(client, ownerA, select); await setPinnedJob(client, ownerA, jobA);
-    expect(await curationState(client, ownerA, jobA)).toEqual({ pinned: true, inCover: true });
-    expect(await curationState(client, ownerA, jobC)).toEqual({ pinned: false, inCover: false });
+    await setFeaturedTransformation(client, ownerA, select);
+    expect(await curationState(client, ownerA, jobA)).toEqual({ inCover: true });
+    expect(await curationState(client, ownerA, jobC)).toEqual({ inCover: false });
   });
 });
 
@@ -202,18 +202,18 @@ describe("RLS, restricciones y fila activa de portfolio_settings", () => {
     await expect(as("anon", null, "select * from public.portfolio_settings")).rejects.toMatchObject({ code: "42501" });
     await expect(insert("anon", null, "(owner_id) values ($1)", [ownerA])).rejects.toMatchObject({ code: "42501" });
     await q("update public.jobs set is_public=true where id=$1", [jobA]);
-    await setPinnedJob(fixture.client(ownerA), ownerA, jobA);
+    await setFeaturedTransformation(fixture.client(ownerA), ownerA, { job_id: jobA, before_id: mediaA, after_id: mediaA2 });
     expect((await as("authenticated", ownerB, "select * from public.portfolio_settings")).rows).toHaveLength(0);
     expect((await as("authenticated", ownerA, "select * from public.portfolio_settings")).rows).toHaveLength(1);
-    expect((await as("authenticated", ownerB, "update public.portfolio_settings set pinned_job_id=null returning owner_id")).rows).toHaveLength(0);
+    expect((await as("authenticated", ownerB, "update public.portfolio_settings set featured_job_id=null returning owner_id")).rows).toHaveLength(0);
     expect((await as("authenticated", ownerB, "delete from public.portfolio_settings returning owner_id")).rows).toHaveLength(0);
     expect(await portfolioSettings(fixture.client(ownerB), ownerB)).toBeNull();
   });
   it("no se puede escribir a nombre de otro ni referenciar trabajos ajenos", async () => {
     await expect(insert("authenticated", ownerB, "(owner_id) values ($1)", [ownerA])).rejects.toMatchObject({ code: "42501" });
-    await expect(insert("authenticated", ownerB, "(owner_id, pinned_job_id) values ($1,$2)", [ownerB, jobA])).rejects.toMatchObject({ code: "42501" });
+    await expect(insert("authenticated", ownerB, "(owner_id, featured_job_id) values ($1,$2)", [ownerB, jobA])).rejects.toMatchObject({ code: "42501" });
     await insert("authenticated", ownerB, "(owner_id) values ($1)", [ownerB]);
-    await expect(as("authenticated", ownerB, "update public.portfolio_settings set pinned_job_id=$1", [jobA])).rejects.toMatchObject({ code: "42501" });
+    await expect(as("authenticated", ownerB, "update public.portfolio_settings set featured_job_id=$1", [jobA])).rejects.toMatchObject({ code: "42501" });
     await expect(as("authenticated", ownerB, "update public.portfolio_settings set owner_id=$1", [ownerA])).rejects.toMatchObject({ code: "42501" });
     await expect(as("authenticated", ownerB, "update public.portfolio_settings set updated_at=now()")).rejects.toMatchObject({ code: "42501" });
   });
@@ -239,7 +239,7 @@ describe("contrato público", () => {
     const rows = (await as("anon", null, "select * from public.list_public_jobs()")).rows;
     expect(Object.keys(rows[0]).sort()).toEqual(["description", "id", "job_date", "media", "name"]);
     expect(Object.keys((rows[0].media as object[])[0]).sort()).toEqual(["focal_x", "focal_y", "id", "path"]);
-    expect(JSON.stringify(rows)).not.toMatch(/hidden|owner|pinned|featured/);
+    expect(JSON.stringify(rows)).not.toMatch(/hidden|owner|featured/);
   });
   it("las funciones privadas no son invocables por anon ni authenticated; los RPC públicos sí", async () => {
     for (const fn of ["private.public_job_media($1)", "private.active_portfolio_settings()"]) {

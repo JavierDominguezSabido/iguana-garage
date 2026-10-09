@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dropIndex, edgeScrollSpeed, keyboardTarget, moveItem, movedBeyond } from "./reorder";
-import { sortPortadaJobs } from "./portada-order";
+import { sortByWall } from "./portada-order";
 
 describe("mover elementos", () => {
   it("mueve hacia la derecha, hacia la izquierda y no muta la lista", () => {
@@ -59,15 +59,19 @@ describe("teclado y táctil", () => {
   });
 });
 
-describe("orden de la pantalla «Portada»", () => {
-  const job = (id: string, job_date: string, is_public: boolean) => ({ id, job_date, is_public });
-  it("publicados primero (fijado, fecha desc, UUID asc) y privados al final con el mismo criterio", () => {
-    const jobs = [job("c", "2026-01-01", true), job("p2", "2026-05-01", false), job("a", "2026-03-01", true), job("b", "2026-03-01", true), job("p1", "2026-06-01", false)];
-    expect(sortPortadaJobs(jobs, null).map(item => item.id)).toEqual(["a", "b", "c", "p1", "p2"]);
-    expect(sortPortadaJobs(jobs, "c").map(item => item.id)).toEqual(["c", "a", "b", "p1", "p2"]);
+describe("orden de los trabajos del muro", () => {
+  const job = (id: string, job_date: string, is_public: boolean, wall_position: number | null) => ({ id, job_date, is_public, wall_position });
+  it("los publicados siguen su posición manual y los empates, fecha descendente y UUID; los privados van al final por fecha", () => {
+    const jobs = [job("c", "2026-01-01", true, 2), job("p2", "2026-05-01", false, null), job("a", "2026-03-01", true, 0), job("b", "2026-09-01", true, 1), job("p1", "2026-06-01", false, null), job("d", "2026-02-01", true, 2)];
+    expect(sortByWall(jobs).map((item) => item.id)).toEqual(["a", "b", "d", "c", "p1", "p2"]);
   });
-  it("un fijado privado no sube al principio", () => {
-    const jobs = [job("a", "2026-03-01", true), job("p", "2026-06-01", false)];
-    expect(sortPortadaJobs(jobs, "p").map(item => item.id)).toEqual(["a", "p"]);
+  it("una posición negativa (entra arriba) va antes que las demás y un publicado sin posición, al final de los publicados", () => {
+    const jobs = [job("a", "2026-03-01", true, 0), job("n", "2026-01-01", true, -1), job("z", "2026-12-01", true, null)];
+    expect(sortByWall(jobs).map((item) => item.id)).toEqual(["n", "a", "z"]);
+  });
+  it("no muta la lista de entrada", () => {
+    const jobs = [job("b", "2026-01-01", true, 1), job("a", "2026-01-01", true, 0)];
+    sortByWall(jobs);
+    expect(jobs.map((item) => item.id)).toEqual(["b", "a"]);
   });
 });

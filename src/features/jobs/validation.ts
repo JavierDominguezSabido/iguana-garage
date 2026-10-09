@@ -90,16 +90,11 @@ export function validateWallMove(input: unknown): { to: number } {
   return { to: data.to };
 }
 
-// Ajustes de portada: o bien el trabajo fijado (null = ninguno), o bien la transformación destacada (null = quitarla).
+// Ajustes de portada: la transformación destacada (null = quitarla).
 export type FeaturedSelection = { job_id: string; before_id: string; after_id: string };
-export type PortfolioPatch = { pinned_job_id: string | null } | { featured: FeaturedSelection | null };
+export type PortfolioPatch = { featured: FeaturedSelection | null };
 export function validatePortfolioPatch(input: unknown): PortfolioPatch {
-  const data = fields(input, ["pinned_job_id", "featured"]);
-  if (Object.keys(data).length !== 1) throw new Error("Ajuste inválido");
-  if ("pinned_job_id" in data) {
-    if (data.pinned_job_id !== null && !isUuid(data.pinned_job_id)) throw new Error("Trabajo inválido");
-    return { pinned_job_id: data.pinned_job_id };
-  }
+  const data = fields(input, ["featured"]);
   if (data.featured === null) return { featured: null };
   const featured = fields(data.featured, ["job_id", "before_id", "after_id"]);
   if (!isUuid(featured.job_id) || !isUuid(featured.before_id) || !isUuid(featured.after_id) || featured.before_id === featured.after_id) throw new Error("Transformación inválida");

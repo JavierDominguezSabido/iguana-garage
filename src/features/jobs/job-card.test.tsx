@@ -31,9 +31,9 @@ it("la tarjeta enlaza al detalle y conserva nombre, fecha y estado", () => {
   expect(markup).toContain(`href="/app/jobs/${base.id}"`); expect(markup).toContain("Trabajo de prueba"); expect(markup).toContain("Publicado");
 });
 
-it("muestra las marcas de fijado y portada solo cuando se indican", () => {
-  const withMarks = renderToStaticMarkup(createElement(JobCard, { job: { ...base, job_media: [photo(first, 0)] }, marks: { pinned: true, featured: true } }));
-  expect(withMarks).toContain("Fijado"); expect(withMarks).toContain("Portada");
+it("muestra la marca de portada solo cuando se indica", () => {
+  const withMarks = renderToStaticMarkup(createElement(JobCard, { job: { ...base, job_media: [photo(first, 0)] }, marks: { featured: true } }));
+  expect(withMarks).toContain("Portada");
   const plain = render([photo(first, 0)]);
-  expect(plain).not.toContain("Fijado"); expect(plain).not.toContain("Portada");
+  expect(plain).not.toContain("Portada");
 });
