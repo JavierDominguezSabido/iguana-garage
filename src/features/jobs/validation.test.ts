@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildOriginalPath, parseWorkHours, validateFocalPoint, validateJob, validateMediaMetadata, validateImageBytes, validatePhotoVisibility, validatePortfolioPatch } from "./validation";
+import { buildOriginalPath, parseWorkHours, validateFocalPoint, validateJob, validateMediaMetadata, validateImageBytes, validatePhotoOrder, validatePhotoVisibility, validatePortfolioPatch } from "./validation";
 
 const owner = "11111111-1111-4111-8111-111111111111";
 const job = "22222222-2222-4222-8222-222222222222";
@@ -108,5 +108,18 @@ describe("visibilidad de fotos y ajustes de portada", () => {
   });
   it("solo admite un ajuste por petición y ningún campo desconocido", () => {
     for (const input of [null, [], {}, { pinned_job_id: null, featured: null }, { owner_id: owner }, { pinned_job_id: job, owner_id: owner }]) expect(() => validatePortfolioPatch(input)).toThrow();
+  });
+});
+
+describe("orden de las fotos", () => {
+  const other = "44444444-4444-4444-8444-444444444444";
+  it("acepta una lista de UUID distintos y la copia", () => {
+    const input = [media, other];
+    const result = validatePhotoOrder({ order: input });
+    expect(result).toEqual({ order: [media, other] });
+    expect(result.order).not.toBe(input);
+  });
+  it.each([null, [], {}, { order: [] }, { order: "x" }, { order: ["x"] }, { order: [media, media] }, { order: [media], extra: 1 }, { order: new Array(201).fill(media) }, { order: [1] }])("rechaza %j", (input) => {
+    expect(() => validatePhotoOrder(input)).toThrow();
   });
 });

@@ -1,6 +1,6 @@
 import "server-only";
-import { JobError, jobMedia, ownedJob } from "./data";
-import type { Client } from "./data";
+import { finishJob, JobError, jobMedia, ownedJob } from "./data";
+import type { Client, Job, Media } from "./data";
 import { isUuid } from "./validation";
 import type { FeaturedSelection, PortfolioPatch } from "./validation";
 import type { Database } from "@/lib/supabase/database.types";
@@ -56,10 +56,8 @@ export async function setFeaturedTransformation(db: Client, owner: string, selec
   if (selection.before_id === selection.after_id) throw new JobError("Elige dos fotos distintas.");
   await publishedJob(db, owner, selection.job_id, "Publica el trabajo antes de destacarlo en la portada.");
   const media = await jobMedia(db, selection.job_id);
-  const before = media.find((photo) => photo.id === selection.before_id);
-  const after = media.find((photo) => photo.id === selection.after_id);
-  if (!before || !after) throw new JobError("Las fotos deben ser de este trabajo.", 404);
-  if (before.hidden_from_home || after.hidden_from_home) throw new JobError("Una foto oculta no puede estar en la portada. Vuelve a mostrarla primero.", 409);
+  // Una foto oculta del muro SÍ puede ser el Antes o el Después: solo se ve en la portada y mientras esté destacada.
+  if (!media.some((photo) => photo.id === selection.before_id) || !media.some((photo) => photo.id === selection.after_id)) throw new JobError("Las fotos deben ser de este trabajo.", 404);
   await saveSettings(db, owner, { featured_job_id: selection.job_id, featured_before_id: selection.before_id, featured_after_id: selection.after_id });
 }
 
@@ -68,16 +66,11 @@ export async function applyPortfolioPatch(db: Client, owner: string, patch: Port
   return setFeaturedTransformation(db, owner, patch.featured);
 }
 
-// Ocultar/mostrar una foto en la home. No toca originales, master ni sidecars. Una foto de la portada no se puede ocultar.
+// Ocultar/mostrar una foto en el muro. No toca originales, master ni sidecars. Si es el Antes o el Después de la
+// portada, sigue visible en la portada mientras esté destacada.
 export async function setPhotoHidden(db: Client, owner: string, jobId: string, mediaId: string, hidden: boolean) {
   await ownedJob(db, owner, jobId);
   if (!isUuid(mediaId)) throw new JobError("Fotografía no encontrada", 404);
-  if (hidden) {
-    const settings = await portfolioSettings(db, owner);
-    if (settings?.featured_job_id === jobId && (settings.featured_before_id === mediaId || settings.featured_after_id === mediaId)) {
-      throw new JobError("Esta foto está en la portada. Quita la transformación destacada antes de ocultarla.", 409);
-    }
-  }
   const result = await db.from("job_media").update({ hidden_from_home: hidden }).eq("id", mediaId).eq("job_id", jobId).select("id");
   if (result.error) throw new JobError("No se pudo guardar la visibilidad de la foto. Reintenta.", 503);
   if (result.data?.length !== 1) throw new JobError("Fotografía no encontrada", 404);
@@ -104,4 +97,39 @@ export async function curationState(db: Client, owner: string, jobId: string): P
 export async function curationMarks(db: Client, owner: string): Promise<{ pinnedJobId: string | null; featuredJobId: string | null }> {
   const settings = await portfolioSettings(db, owner);
   return { pinnedJobId: settings?.pinned_job_id ?? null, featuredJobId: settings?.featured_before_id && settings.featured_after_id ? settings.featured_job_id : null };
+}
+
+// Reordena las fotos de un trabajo de forma atómica (RPC reorder_job_media). Permitido con el trabajo publicado.
+export async function reorderPhotos(db: Client, owner: string, jobId: string, order: readonly string[]) {
+  await ownedJob(db, owner, jobId);
+  const result = await db.rpc("reorder_job_media", { p_job: jobId, p_order: [...order] });
+  if (!result.error) return;
+  if (result.error.code === "22023") throw new JobError("Las fotos han cambiado desde que abriste la pantalla. Recarga para ver el orden actual.", 409);
+  if (result.error.code === "P0002") throw new JobError("Trabajo no encontrado", 404);
+  throw new JobError("No se pudo guardar el orden. Reintenta.", 503);
+}
+
+export const PORTADA_PAGE_SIZE = 12;
+export type PortadaJob = { job: Job; media: Media[] };
+// Publicar/despublicar sin entrar en la ficha. Misma ruta segura que el formulario (finishJob): al publicar comprueba o
+// recupera los derivados de cada foto y normaliza posiciones; si una foto sigue incompleta, el trabajo permanece privado.
+export async function setPublished(db: Client, owner: string, jobId: string, published: boolean) {
+  const job = await ownedJob(db, owner, jobId);
+  if (job.is_public === published) return;
+  await finishJob(db, owner, jobId, { name: job.name, job_date: job.job_date, paint_code: job.paint_code, work_hours: job.work_hours, description: job.description, is_public: published });
+}
+
+// Trabajos en el orden de la web: primero los publicados (el fijado el primero, luego fecha descendente y UUID ascendente)
+// y al final los privados con el mismo criterio. Incluye los publicados que no salen en el muro (sin fotos visibles) para
+// poder arreglarlos; la pantalla los marca.
+export async function portadaJobs(db: Client, owner: string, page: number): Promise<{ jobs: PortadaJob[]; hasNext: boolean; settings: PortfolioSettings | null }> {
+  const settings = await portfolioSettings(db, owner);
+  const all = await db.from("jobs").select("*").eq("owner_id", owner);
+  if (all.error) throw new JobError("No se pudieron cargar los trabajos. Reintenta.", 503);
+  const pinned = settings?.pinned_job_id;
+  const ordered = [...all.data].sort((a, b) => Number(b.is_public) - Number(a.is_public) || Number(b.is_public && b.id === pinned) - Number(a.is_public && a.id === pinned) || (a.job_date < b.job_date ? 1 : a.job_date > b.job_date ? -1 : 0) || (a.id < b.id ? -1 : 1));
+  const start = (Math.max(1, page) - 1) * PORTADA_PAGE_SIZE;
+  const slice = ordered.slice(start, start + PORTADA_PAGE_SIZE);
+  const jobs = await Promise.all(slice.map(async (job) => ({ job, media: await jobMedia(db, job.id) })));
+  return { jobs, hasNext: ordered.length > start + PORTADA_PAGE_SIZE, settings };
 }

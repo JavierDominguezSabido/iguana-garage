@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { PGlite } from "@electric-sql/pglite";
-import { asRole, isolatedDatabase, jobA, jobB, ownerA, ownerB } from "./database";
+import { asRole, isolatedDatabase, jobA, jobB, mediaA, ownerA, ownerB } from "./database";
 
 // PostgreSQL aislado con las migraciones reales: RLS, grants por columna y proyección pública.
 let db: PGlite;
@@ -62,6 +62,8 @@ describe("privacidad frente a anon y proyección pública",()=>{
     await setFields(ownerA,jobA,12.5,"Descripción pública de prueba.");
     await db.query("update public.jobs set is_public=false where id=$1",[jobA]);
     expect((await as("anon",null,"select * from public.list_public_jobs()")).rows.filter(row=>row.id===jobA)).toHaveLength(0);
+    // Sin ninguna foto visible (con derivado) un trabajo no tiene banda en el muro: se publica una foto en el fixture.
+    await db.query("insert into storage.objects(bucket_id,name) values ('portfolio-derivatives',$1) on conflict do nothing",[`${jobA}/${mediaA}.webp`]);
     await db.query("update public.jobs set is_public=true where id=$1",[jobA]);
     const rows=(await as("anon",null,"select * from public.list_public_jobs()")).rows;
     const row=rows.find(item=>item.id===jobA)!;
@@ -73,6 +75,8 @@ describe("privacidad frente a anon y proyección pública",()=>{
   });
   it("un trabajo publicado sin descripción devuelve null",async()=>{
     await setFields(ownerA,jobA,5,null);
+    // Sin ninguna foto visible (con derivado) un trabajo no tiene banda en el muro: se publica una foto en el fixture.
+    await db.query("insert into storage.objects(bucket_id,name) values ('portfolio-derivatives',$1) on conflict do nothing",[`${jobA}/${mediaA}.webp`]);
     await db.query("update public.jobs set is_public=true where id=$1",[jobA]);
     const row=(await as("anon",null,"select * from public.list_public_jobs()")).rows.find(item=>item.id===jobA)!;
     expect(row.description).toBeNull();

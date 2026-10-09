@@ -49,7 +49,7 @@ export async function isolatedDatabase() {
   for (const name of (await readdir("supabase/migrations")).filter(name => name.endsWith("_media_focal_point.sql")).sort()) {
     await db.exec(await readFile(`supabase/migrations/${name}`, "utf8"));
   }
-  for (const name of (await readdir("supabase/migrations")).filter(name => name.endsWith("_portfolio_curation.sql")).sort()) {
+  for (const name of (await readdir("supabase/migrations")).filter(name => name.endsWith("_portfolio_curation.sql") || name.endsWith("_portfolio_order_cover_only.sql")).sort()) {
     await db.exec(await readFile(`supabase/migrations/${name}`, "utf8"));
   }
   await db.query("insert into auth.users(id) values ($1),($2)", [ownerA,ownerB]);

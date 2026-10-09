@@ -107,9 +107,12 @@ describe("fotos ocultas", () => {
     await setPhotoHidden(client, ownerA, jobA, mediaA2, false);
     expect((await listed())[0].media.map(photo => photo.id)).toEqual([mediaA, mediaA2, mediaA3]);
   });
-  it("un trabajo con todas las fotos ocultas se lista sin fotos", async () => {
+  it("un trabajo sin ninguna foto visible no tiene banda en el muro", async () => {
     for (const media of [mediaA, mediaA2, mediaA3]) await setPhotoHidden(fixture.client(ownerA), ownerA, jobA, media, true);
-    expect((await listed())[0].media).toEqual([]);
+    expect(await listed()).toEqual([]);
+    await setPhotoHidden(fixture.client(ownerA), ownerA, jobA, mediaA2, false);
+    expect((await listed()).map(job => job.id)).toEqual([jobA]);
+    expect((await listed())[0].media.map(photo => photo.id)).toEqual([mediaA2]);
   });
   it("anon deja de descargar la foto oculta (master y sidecars); el propietario la sigue leyendo", async () => {
     const paths = [`${jobA}/${mediaA2}.webp`, ...sidecars(jobA, mediaA2)];
@@ -152,20 +155,23 @@ describe("transformación destacada", () => {
     await q("update public.jobs set is_public=true where id=$1", [jobA]);
     expect(await featured()).toHaveLength(1);
   });
-  it.each([["Antes", "featured_before_id"], ["Después", "featured_after_id"]])("se oculta si la foto %s se oculta o pierde su derivado", async (_label, column) => {
+  it.each([["Antes", "featured_before_id"], ["Después", "featured_after_id"]])("la foto %s sigue en la portada aunque esté oculta del muro, y se retira si pierde su derivado", async (_label, column) => {
     await setFeaturedTransformation(fixture.client(ownerA), ownerA, select);
     const id = (await settings())[0][column] as string;
     await q("update public.job_media set hidden_from_home=true where id=$1", [id]);
-    expect(await featured()).toEqual([]);
-    await q("update public.job_media set hidden_from_home=false where id=$1", [id]);
     expect(await featured()).toHaveLength(1);
+    expect(((await featured())[0].media as { id: string }[]).map(photo => photo.id)).toContain(id);
+    expect((await listed())[0].media.map(photo => photo.id)).not.toContain(id);
+    await q("update public.job_media set hidden_from_home=false where id=$1", [id]);
     await q("delete from storage.objects where name=$1", [`${jobA}/${id}.webp`]);
     expect(await featured()).toEqual([]);
   });
-  it("no se puede elegir una foto oculta, repetida, ajena ni de un trabajo privado o ajeno", async () => {
+  it("no se puede elegir una foto repetida, ajena ni de un trabajo privado o ajeno; una oculta del muro sí", async () => {
     const client = fixture.client(ownerA);
     await q("update public.job_media set hidden_from_home=true where id=$1", [mediaA2]);
-    await expect(setFeaturedTransformation(client, ownerA, select)).rejects.toMatchObject({ status: 409 });
+    await setFeaturedTransformation(client, ownerA, select);
+    expect(await featured()).toHaveLength(1);
+    await setFeaturedTransformation(client, ownerA, null);
     await q("update public.job_media set hidden_from_home=false where id=$1", [mediaA2]);
     await expect(setFeaturedTransformation(client, ownerA, { ...select, after_id: mediaA })).rejects.toThrow();
     await expect(setFeaturedTransformation(client, ownerA, { ...select, after_id: mediaC })).rejects.toMatchObject({ status: 404 });
@@ -173,7 +179,7 @@ describe("transformación destacada", () => {
     await expect(setFeaturedTransformation(fixture.client(ownerB), ownerB, select)).rejects.toMatchObject({ status: 404 });
     await q("update public.jobs set is_public=false where id=$1", [jobA]);
     await expect(setFeaturedTransformation(client, ownerA, select)).rejects.toMatchObject({ status: 409 });
-    expect(await settings()).toHaveLength(0);
+    expect(await settings()).toMatchObject([{ featured_job_id: null, featured_before_id: null, featured_after_id: null }]);
   });
   it("cambiar de trabajo sustituye la selección; quitarla vuelve al título solo", async () => {
     const client = fixture.client(ownerA);
@@ -187,12 +193,15 @@ describe("transformación destacada", () => {
     expect(await settings()).toMatchObject([{ featured_job_id: null, featured_before_id: null, featured_after_id: null }]);
     await q("delete from public.job_media where id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'");
   });
-  it("no se puede ocultar una foto de la portada; el resto sí", async () => {
+  it("se puede ocultar una foto de la portada del muro: sigue en la portada", async () => {
     const client = fixture.client(ownerA);
     await setFeaturedTransformation(client, ownerA, select);
-    await expect(setPhotoHidden(client, ownerA, jobA, mediaA, true)).rejects.toMatchObject({ status: 409 });
-    await expect(setPhotoHidden(client, ownerA, jobA, mediaA2, true)).rejects.toMatchObject({ status: 409 });
+    await setPhotoHidden(client, ownerA, jobA, mediaA, true);
+    await setPhotoHidden(client, ownerA, jobA, mediaA2, true);
     await setPhotoHidden(client, ownerA, jobA, mediaA3, true);
+    expect(await featured()).toHaveLength(1);
+    expect(((await featured())[0].media as { id: string }[]).map(photo => photo.id)).toEqual([mediaA, mediaA2]);
+    expect(await listed()).toEqual([]);
   });
   it("borrar una foto o el trabajo limpia la selección por FK sin bloquear el borrado", async () => {
     const client = fixture.client(ownerA);
@@ -252,6 +261,8 @@ describe("RLS, restricciones y fila activa de portfolio_settings", () => {
   });
   it("con varias filas manda la modificada más recientemente", async () => {
     await q("update public.jobs set is_public=true where id in ($1,$2)", [jobA, jobB]);
+    await q("insert into storage.objects(bucket_id,name) values ('portfolio-derivatives',$1) on conflict do nothing", [`${jobA}/${mediaA}.webp`]);
+    await q("insert into storage.objects(bucket_id,name) values ('portfolio-derivatives',$1) on conflict do nothing", [`${jobB}/${mediaB}.webp`]);
     await q("insert into public.portfolio_settings(owner_id,pinned_job_id,updated_at) values ($1,$2,'2026-10-01'),($3,$4,'2026-10-02')", [ownerA, jobA, ownerB, jobB]);
     expect((await listed())[0].id).toBe(jobB);
     await q("update public.portfolio_settings set pinned_job_id=$1 where owner_id=$2", [jobA, ownerA]);

@@ -178,9 +178,9 @@ update public.job_media set hidden_from_home = true where id = '77777777-7777-47
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 do $$ begin
-  assert (select count(*) = 0 from public.get_featured_transformation()), 'Foto oculta siguió en la portada';
+  assert (select count(*) = 1 from public.get_featured_transformation()), 'La foto oculta del muro debe seguir en la portada';
   assert (select jsonb_array_length(media) = 1 from public.list_public_jobs() limit 1), 'Foto oculta siguió en la proyección';
-  assert (select count(*) = 1 from storage.objects where bucket_id = 'portfolio-derivatives'), 'Foto oculta siguió descargable';
+  assert (select count(*) = 2 from storage.objects where bucket_id = 'portfolio-derivatives'), 'La foto oculta de la portada debe seguir descargable mientras esté destacada';
 end $$;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
@@ -189,6 +189,54 @@ update public.jobs set is_public = false;
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 do $$ begin assert (select count(*) = 0 from public.get_featured_transformation()), 'Despublicar no retiró la portada'; end $$;
+
+-- Orden de fotos (atómico) y fotos solo para la portada.
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
+update public.jobs set is_public = true where id = '22222222-2222-4222-8222-222222222222';
+select public.reorder_job_media('22222222-2222-4222-8222-222222222222', array['77777777-7777-4777-8777-777777777777','33333333-3333-4333-8333-333333333333']::uuid[]);
+do $$ begin
+  assert (select position = 0 from public.job_media where id = '77777777-7777-4777-8777-777777777777') and (select position = 1 from public.job_media where id = '33333333-3333-4333-8333-333333333333'), 'Reordenar no aplicó el orden';
+  begin perform public.reorder_job_media('22222222-2222-4222-8222-222222222222', array['77777777-7777-4777-8777-777777777777']::uuid[]); raise exception 'Orden incompleto aceptado';
+  exception when sqlstate '22023' then null; end;
+  assert (select position = 0 from public.job_media where id = '77777777-7777-4777-8777-777777777777'), 'Un orden inválido cambió posiciones';
+end $$;
+select set_config('request.jwt.claims', '{"sub":"44444444-4444-4444-8444-444444444444","role":"authenticated"}', true);
+do $$ begin
+  begin perform public.reorder_job_media('22222222-2222-4222-8222-222222222222', array['33333333-3333-4333-8333-333333333333','77777777-7777-4777-8777-777777777777']::uuid[]); raise exception 'B reordenó fotos de A';
+  exception when sqlstate 'P0002' then null; end;
+end $$;
+set local role anon;
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+do $$ begin
+  begin perform public.reorder_job_media('22222222-2222-4222-8222-222222222222', array['33333333-3333-4333-8333-333333333333','77777777-7777-4777-8777-777777777777']::uuid[]); raise exception 'anon pudo reordenar';
+  exception when insufficient_privilege then null; end;
+  assert (select (media->0->>'id') = '77777777-7777-4777-8777-777777777777' from public.list_public_jobs() limit 1), 'El muro no sigue el orden';
+end $$;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
+update public.job_media set hidden_from_home = true where id = '77777777-7777-4777-8777-777777777777';
+set local role anon;
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+select set_config('storage.operation', 'object.get_authenticated', true);
+do $$ begin
+  assert (select jsonb_array_length(media) = 2 from public.get_featured_transformation()), 'La foto oculta de la portada no está en el comparador';
+  assert (select jsonb_array_length(media) = 1 from public.list_public_jobs() limit 1), 'La foto oculta salió en el muro';
+  assert (select count(*) = 2 from storage.objects where bucket_id = 'portfolio-derivatives'), 'La foto oculta de la portada no es descargable';
+end $$;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
+update public.portfolio_settings set featured_job_id = null, featured_before_id = null, featured_after_id = null;
+set local role anon;
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+do $$ begin
+  assert (select count(*) = 1 from storage.objects where bucket_id = 'portfolio-derivatives'), 'Quitar de portada no revocó la foto oculta';
+  assert (select count(*) = 0 from public.get_featured_transformation()), 'La portada siguió activa';
+end $$;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
+update public.job_media set hidden_from_home = false where id = '77777777-7777-4777-8777-777777777777';
+update public.jobs set is_public = false;
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);

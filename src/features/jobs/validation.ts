@@ -73,6 +73,15 @@ export function validatePhotoVisibility(input: unknown): { hidden: boolean } {
   return { hidden: data.hidden };
 }
 
+// Orden de las fotos de un trabajo: lista completa de UUID sin repetir. La base de datos comprueba que sea el conjunto exacto.
+export const MAX_ORDER_PHOTOS = 200;
+export function validatePhotoOrder(input: unknown): { order: string[] } {
+  const data = fields(input, ["order"]);
+  const order = data.order;
+  if (!Array.isArray(order) || !order.length || order.length > MAX_ORDER_PHOTOS || !order.every(isUuid) || new Set(order).size !== order.length) throw new Error("Orden inválido");
+  return { order: [...order] };
+}
+
 // Ajustes de portada: o bien el trabajo fijado (null = ninguno), o bien la transformación destacada (null = quitarla).
 export type FeaturedSelection = { job_id: string; before_id: string; after_id: string };
 export type PortfolioPatch = { pinned_job_id: string | null } | { featured: FeaturedSelection | null };

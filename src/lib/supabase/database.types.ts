@@ -168,6 +168,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      reorder_job_media: {
+        Args: { p_job: string; p_order: string[] }
+        Returns: undefined
+      }
       get_featured_transformation: {
         Args: never
         Returns: {
