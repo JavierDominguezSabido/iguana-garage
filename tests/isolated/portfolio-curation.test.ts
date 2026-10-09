@@ -222,12 +222,12 @@ describe("transformación destacada", () => {
     expect(await featured()).toHaveLength(1);
     await addMedia(jobA, ownerA, mediaA3, 2);
   });
-  it("la ficha privada sabe qué sustituiría", async () => {
+  it("la ficha privada resume su estado de portada", async () => {
     const client = fixture.client(ownerA);
     await q("update public.jobs set is_public=true where id=$1", [jobC]);
     await setFeaturedTransformation(client, ownerA, select); await setPinnedJob(client, ownerA, jobA);
-    expect(await curationState(client, ownerA, jobA)).toEqual({ pinned: true, otherPinnedName: null, featured: { beforeId: mediaA, afterId: mediaA2 }, otherFeaturedName: null });
-    expect(await curationState(client, ownerA, jobC)).toEqual({ pinned: false, otherPinnedName: "Fixture A", featured: null, otherFeaturedName: "Fixture A" });
+    expect(await curationState(client, ownerA, jobA)).toEqual({ pinned: true, inCover: true });
+    expect(await curationState(client, ownerA, jobC)).toEqual({ pinned: false, inCover: false });
   });
 });
 

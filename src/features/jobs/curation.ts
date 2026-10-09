@@ -2,19 +2,15 @@ import "server-only";
 import { finishJob, JobError, jobMedia, ownedJob } from "./data";
 import type { Client, Job, Media } from "./data";
 import { isUuid } from "./validation";
+import { sortPortadaJobs } from "./portada-order";
 import type { FeaturedSelection, PortfolioPatch } from "./validation";
 import type { Database } from "@/lib/supabase/database.types";
 
 export type PortfolioSettings = Database["public"]["Tables"]["portfolio_settings"]["Row"];
 type SettingsUpdate = Database["public"]["Tables"]["portfolio_settings"]["Update"];
 
-// Estado de portada de un trabajo, listo para la ficha privada. «other*» nombra lo que se sustituiría al elegir este trabajo.
-export type CurationState = {
-  pinned: boolean;
-  otherPinnedName: string | null;
-  featured: { beforeId: string | null; afterId: string | null } | null;
-  otherFeaturedName: string | null;
-};
+// Estado de portada de un trabajo para la línea de estado de la ficha (la gestión vive en la pantalla «Portada»).
+export type CurationState = { pinned: boolean; inCover: boolean };
 
 export async function portfolioSettings(db: Client, owner: string): Promise<PortfolioSettings | null> {
   const result = await db.from("portfolio_settings").select("*").eq("owner_id", owner).maybeSingle();
@@ -76,22 +72,9 @@ export async function setPhotoHidden(db: Client, owner: string, jobId: string, m
   if (result.data?.length !== 1) throw new JobError("Fotografía no encontrada", 404);
 }
 
-async function jobName(db: Client, owner: string, id: string | null | undefined): Promise<string | null> {
-  if (!id) return null;
-  const result = await db.from("jobs").select("name").eq("id", id).eq("owner_id", owner).maybeSingle();
-  if (result.error) throw new JobError("No se pudo cargar la portada. Reintenta.", 503);
-  return result.data?.name ?? null;
-}
 export async function curationState(db: Client, owner: string, jobId: string): Promise<CurationState> {
   const settings = await portfolioSettings(db, owner);
-  const pinned = settings?.pinned_job_id === jobId;
-  const featuredHere = settings?.featured_job_id === jobId;
-  return {
-    pinned,
-    otherPinnedName: settings?.pinned_job_id && !pinned ? await jobName(db, owner, settings.pinned_job_id) : null,
-    featured: settings && featuredHere ? { beforeId: settings.featured_before_id, afterId: settings.featured_after_id } : null,
-    otherFeaturedName: settings?.featured_job_id && !featuredHere ? await jobName(db, owner, settings.featured_job_id) : null,
-  };
+  return { pinned: settings?.pinned_job_id === jobId, inCover: settings?.featured_job_id === jobId && !!settings.featured_before_id && !!settings.featured_after_id };
 }
 // Marcas para la lista /app: qué trabajo está fijado y cuál aporta la transformación de la portada.
 export async function curationMarks(db: Client, owner: string): Promise<{ pinnedJobId: string | null; featuredJobId: string | null }> {
@@ -127,7 +110,7 @@ export async function portadaJobs(db: Client, owner: string, page: number): Prom
   const all = await db.from("jobs").select("*").eq("owner_id", owner);
   if (all.error) throw new JobError("No se pudieron cargar los trabajos. Reintenta.", 503);
   const pinned = settings?.pinned_job_id;
-  const ordered = [...all.data].sort((a, b) => Number(b.is_public) - Number(a.is_public) || Number(b.is_public && b.id === pinned) - Number(a.is_public && a.id === pinned) || (a.job_date < b.job_date ? 1 : a.job_date > b.job_date ? -1 : 0) || (a.id < b.id ? -1 : 1));
+  const ordered = sortPortadaJobs(all.data, pinned);
   const start = (Math.max(1, page) - 1) * PORTADA_PAGE_SIZE;
   const slice = ordered.slice(start, start + PORTADA_PAGE_SIZE);
   const jobs = await Promise.all(slice.map(async (job) => ({ job, media: await jobMedia(db, job.id) })));
