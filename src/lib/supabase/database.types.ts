@@ -134,15 +134,15 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "portfolio_settings_before_fk"
-            columns: ["featured_job_id", "featured_before_id"]
+            foreignKeyName: "portfolio_settings_after_fk"
+            columns: ["featured_job_id", "featured_after_id"]
             isOneToOne: false
             referencedRelation: "job_media"
             referencedColumns: ["job_id", "id"]
           },
           {
-            foreignKeyName: "portfolio_settings_after_fk"
-            columns: ["featured_job_id", "featured_after_id"]
+            foreignKeyName: "portfolio_settings_before_fk"
+            columns: ["featured_job_id", "featured_before_id"]
             isOneToOne: false
             referencedRelation: "job_media"
             referencedColumns: ["job_id", "id"]

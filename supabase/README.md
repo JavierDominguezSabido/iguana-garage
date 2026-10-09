@@ -10,10 +10,11 @@ Aplicadas en este orden el 8 de octubre de 2026, únicamente a `atibisongftmspwt
 | --- | --- | --- |
 | `20261008120000_job_hours_description.sql` | `20261008165445` | `job_hours_description` |
 | `20261009120000_media_focal_point.sql` | `20261008165516` | `media_focal_point` |
+| `20261010120000_portfolio_curation.sql` | `20261009115638` | `portfolio_curation` |
 
 Revisar también esta correspondencia antes de sincronizar mediante CLI; no reaplicar estos archivos ni las migraciones históricas. Horas nullable con CHECK explícito 0–999,99 (incluye denegación de `NaN`); descripción nullable de 1–500 caracteres normalizados; focales `smallint` 0–100 con default 50/50. Se verificaron RPC, grants, aislamiento por propietario y conservación de datos, policies y objetos Storage. Estas migraciones no cambian Auth, buckets ni políticas RLS.
 
-**Pendiente de aplicar (no está en producción):** `20261010120000_portfolio_curation.sql` — control de la portada desde `/app` (ver «Portada y muro» más abajo). Aditiva y compatible hacia atrás: `list_public_jobs` conserva firma y forma. Aplicar solo con autorización explícita, tras copia/exportación de `jobs` y `job_media`, y registrar aquí la versión remota que asigne el conector. Rollback manual en la cabecera del archivo; quitar `hidden_from_home` vuelve a publicar las fotos ocultas, así que es el último recurso.
+**Aplicada en producción el 9 de octubre de 2026** (autorización explícita, solo `atibisongftmspwtyndv`, mediante el conector): `20261010120000_portfolio_curation.sql` → versión remota `20261009115638`, nombre `portfolio_curation`. Control de la portada desde `/app` (ver «Portada y muro» más abajo). Aditiva y compatible hacia atrás: `list_public_jobs` conserva firma y forma. Antes se hizo una exportación de solo lectura de `jobs`/`job_media` y de las definiciones sustituidas (plan free, sin copia automática; fuera del repositorio). Comprobado tras aplicar: misma huella del RPC público (4 trabajos, 13 fotos), 65 derivados y 13 originales intactos, siembra de la transformación del Suzuki creada, `anon` sin privilegios sobre `portfolio_settings`, 7 policies de Storage sin cambios y avisos de seguridad sin novedades. Rollback manual en la cabecera del archivo; quitar `hidden_from_home` vuelve a publicar las fotos ocultas, así que es el último recurso.
 
 ## Modelo y permisos
 
