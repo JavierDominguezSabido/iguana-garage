@@ -22,9 +22,8 @@ it("la descripción solo se muestra si existe y una sola foto usa singular", () 
   expect(render(work(1, "Reparación de paragolpes"))).toContain("1 fotografía<");
   expect(render(work(2))).not.toContain("pub-band-desc");
 });
-it("un trabajo sin fotos muestra su estado vacío sin muro", () => {
-  const markup = render(work(0));
-  expect(markup).toContain("Fotografías próximamente"); expect(markup).not.toContain("pub-wall");
+it("un trabajo sin ninguna foto visible no pinta banda ni estado vacío", () => {
+  expect(render(work(0))).toBe("");
 });
 it("el ancho pedido a cada foto sigue su columna: 12 columnas en escritorio y 50 % o 100 % en móvil", () => {
   expect(render(work(4))).toContain("(min-width: 900px) 25.00vw, 50vw");

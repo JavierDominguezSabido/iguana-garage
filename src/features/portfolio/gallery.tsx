@@ -12,17 +12,18 @@ const photoCount = (count: number) => `${count} ${count === 1 ? "fotografía" : 
 const tileSizes = (span: number, wide: boolean) => `(min-width: 900px) ${(span / 12 * 100).toFixed(2)}vw, ${wide ? "100vw" : "50vw"}`;
 
 // Un trabajo = una banda con nombre y fecha + su muro de fotos. Cada foto abre el visor en esa misma imagen.
+// Sin ninguna foto visible no hay banda: el contrato público ya no entrega esos trabajos; esto es solo defensa.
 export function PublicGallery({ job }: { job: PublicJob }) {
   const [selectedPhoto, setSelectedPhoto] = useState<string>();
   const layout = wallLayout(job.media.length);
+  if (!job.media.length) return null;
   return <article className="pub-work" aria-labelledby={`job-${job.id}`}>
     <header className="pub-band" data-reveal>
       <h3 id={`job-${job.id}`}>{job.name}</h3>
-      <p className="pub-band-meta"><time dateTime={job.job_date}>{publicDate(job.job_date)}</time>{job.media.length > 0 && <> · {photoCount(job.media.length)}</>}</p>
+      <p className="pub-band-meta"><time dateTime={job.job_date}>{publicDate(job.job_date)}</time> · {photoCount(job.media.length)}</p>
       {job.description && <p className="pub-band-desc">{job.description}</p>}
     </header>
-    {job.media.length === 0 ? <div className="pub-no-photo" data-reveal><span>Fotografías próximamente</span></div>
-      : <div className="pub-wall">{job.media.map((photo, index) => {
+    <div className="pub-wall">{job.media.map((photo, index) => {
         const { span, wide } = layout[index];
         // El hueco reservado (Metal) es el recuadro; la foto vive en su capa y sube/aparece cuando está lista (ver RevealOnScroll).
         return <div key={photo.id} className={`pub-tile${wide ? " pub-tile-wide" : ""}`} style={{ "--s": span, "--rv": index % 4 } as CSSProperties} data-wall-photo>
@@ -31,7 +32,7 @@ export function PublicGallery({ job }: { job: PublicJob }) {
             {job.media.length > 1 && <span className="pub-tile-idx" aria-hidden="true">{index + 1}/{job.media.length}</span>}
           </div>
         </div>;
-      })}</div>}
+      })}</div>
     {selectedPhoto && <PublicViewer job={job} initialMediaId={selectedPhoto} onClose={() => setSelectedPhoto(undefined)} />}
   </article>;
 }

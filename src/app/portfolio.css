@@ -66,7 +66,6 @@
 .pub-tile { position: relative; min-width: 0; aspect-ratio: 4 / 5; background: var(--pub-metal); overflow: hidden; }
 .pub-tile-wide { grid-column: 1 / -1; }
 .pub-tile-idx { position: absolute; right: 8px; bottom: 8px; padding: 3px 7px; border-radius: 2px; background: #0e1110c4; font: 600 .66rem var(--pub-text); letter-spacing: .08em; pointer-events: none; }
-.pub-no-photo { min-height: 160px; background: var(--pub-metal); display: grid; place-items: center; text-align: center; color: var(--pub-muted); padding: 24px; }
 .pub-state { padding: 28px 20px; min-height: 160px; color: var(--pub-muted); line-height: 1.8; }
 .pub-pagination { display: flex; justify-content: space-between; gap: 16px; align-items: center; flex-wrap: wrap; padding: 32px 20px 0; font-size: .8rem; color: var(--pub-muted); }
 
