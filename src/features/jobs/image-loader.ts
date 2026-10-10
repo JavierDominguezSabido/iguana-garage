@@ -15,11 +15,11 @@ export function privateViewerLoader(input:{src:string;width:number}):string {
 function ratio(width:number|null,height:number|null):number {
   return width && height && width>0 && height>0 ? width/height : 1080/1350;
 }
-// Refleja la galería existente: padding, gap, columnas 1.7/1, aside mínimo
-// de 260px y fotografía contain limitada a 580px de alto. No cambia el layout.
+// Refleja la ficha (/app/jobs/[id], app.css): contenido de 1280 px como máximo con márgenes de 16/32/48 px y, desde
+// 1000 px, hoja de datos de 380 px a la derecha con 40 px de separación; foto contain limitada a 580 px de alto.
 export function mainImageSizes(width:number|null,height:number|null):string {
   const cap=580*ratio(width,height);
-  return `(min-width: 1200px) min(710.222px, ${cap}px), (min-width: 1100px) min(calc((100vw - 72px) * 1.7 / 2.7), ${cap}px), (min-width: 768px) min(calc(100vw - 356px), calc((100vw - 96px) * 1.7 / 2.7), ${cap}px), min(calc(100vw - 40px), ${cap}px)`;
+  return `(min-width: 1376px) min(860px, ${cap}px), (min-width: 1200px) min(calc(100vw - 516px), ${cap}px), (min-width: 1000px) min(calc(100vw - 484px), ${cap}px), (min-width: 768px) min(calc(100vw - 64px), ${cap}px), min(calc(100vw - 32px), ${cap}px)`;
 }
 // Visor a pantalla completa: mismo escenario contain que el público (ver @/features/viewer/sizes).
 export function privateViewerSizes(width:number|null,height:number|null):string {

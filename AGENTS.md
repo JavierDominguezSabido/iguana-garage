@@ -46,7 +46,7 @@ Nunca imprimir credenciales, cookies, JWT, contraseñas o claves privadas en cha
 
 ## QA y Git
 
-- Mobile-first: **390 → 768 → 1440**; imágenes verticales/horizontales, overflow, teclado/foco, cierre/navegación del visor y estados de carga/vacío/error. Emulación no demuestra instalación ni uso en un teléfono físico.
+- Home pública, mobile-first: **390 → 768 → 1440**. Área privada: debe funcionar bien desde 390 px hasta escritorio, sin una resolución principal. Ambas: imágenes verticales/horizontales, overflow, teclado/foco, cierre/navegación del visor y estados de carga/vacío/error. Emulación no demuestra instalación ni uso en un teléfono físico.
 - Pruebas proporcionales: `npm test -- <archivos>`; `npm run test:isolated` para DAL/RLS aislados. Integración remota y E2E mutantes solo en un entorno aislado/disposable expresamente autorizado. Los mocks no prueban permisos reales.
 - Algunas suites antiguas usan `assets/demo/`, eliminado intencionadamente. No recrearlo ni ejecutar ciegamente `test:supabase` o todos los E2E por sus flags históricos; revisar destino, fixtures y efectos antes.
 - Cambios de código: tests afectados, `npm run typecheck`, `npm run lint`, build cuando afecte a producción/rutas/configuración y `git diff --check`. Cobertura objetivo/configurada: 80% de lógica comprobable; no inflarla con tests ficticios ni revalidar internamente Supabase sin dependencia propia.

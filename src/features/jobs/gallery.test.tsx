@@ -25,6 +25,12 @@ it("el visor a pantalla completa solo se monta al abrirlo y la foto principal av
 });
 
 it("sin encuadre distinto del centro la miniatura queda centrada", () => {
-  const centered = renderToStaticMarkup(createElement(Gallery, { name: "T", media: [media(a, 0, 50, 50)] }));
-  expect(centered).toContain("object-position:50% 50%");
+  const centered = renderToStaticMarkup(createElement(Gallery, { name: "T", media: [media(a, 0, 50, 50), media(b, 1, 50, 50)] }));
+  expect(centered.slice(centered.indexOf('class="gallery-thumbs"'))).toContain("object-position:50% 50%");
+});
+
+it("con una sola foto no hay tira de miniaturas, como en el visor", () => {
+  const single = renderToStaticMarkup(createElement(Gallery, { name: "T", media: [media(a, 0, 50, 50)] }));
+  expect(single).not.toContain("gallery-thumbs"); expect(single).not.toContain("Ver fotografía 1");
+  expect(single).toContain("Ampliar fotografía");
 });

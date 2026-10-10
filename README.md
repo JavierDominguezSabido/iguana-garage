@@ -3,7 +3,7 @@
 Web de un taller de chapa y pintura con dos partes:
 
 - **Portfolio público** en `/`: trabajos publicados con sus fotos, galería ampliable y contacto por WhatsApp.
-- **Gestión privada** en `/app` (instalable como PWA): el propietario crea, edita, publica y borra trabajos y fotos desde el móvil.
+- **Gestión privada** en `/app` (instalable como PWA): el propietario crea, edita, publica y borra trabajos y fotos desde el móvil o el ordenador.
 
 Producción: <https://iguana-garage.onrender.com> (Render). Cada push a `main` se despliega automáticamente.
 

@@ -1,1 +1,1 @@
-export default function Loading() { return <div role="status" className="loading-state"><span className="spinner" />Cargando el taller…<div className="skeleton-grid"><div /><div /><div /></div></div>; }
+export default function Loading() { return <div className="loading"><p role="status" className="loading-label"><span className="spinner" />Cargando…</p><div className="skeleton" aria-hidden="true"><div /><div /><div /><div /><div /></div></div>; }

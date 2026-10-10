@@ -1,8 +1,9 @@
 "use client";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent, PointerEvent } from "react";
+import { Icon } from "@/components/icon";
 import { send } from "./api-client";
 import { displayDate } from "./format";
 import { focalStyle } from "./focal";
@@ -140,6 +141,8 @@ export function PortadaScreen({ jobs: initialJobs, featured, page, offset, publi
   const [message, setMessage] = useState("");
   const [reordering, setReordering] = useState(false);
   const [jobDrag, setJobDrag] = useState<{ id: string; dy: number; to: number } | null>(null);
+  // Trabajo recién publicado: recibe una pasada de brillo («barniz») una sola vez, como respuesta a la acción.
+  const [gloss, setGloss] = useState<string | null>(null);
   const latest = useRef(jobs);
   useEffect(() => { latest.current = jobs; }, [jobs]);
   const confirmed = useRef(new Map(initialJobs.map((job) => [job.id, job.photos.map((photo) => photo.id)])));
@@ -157,6 +160,12 @@ export function PortadaScreen({ jobs: initialJobs, featured, page, offset, publi
   }
   const idle = busy === null;
   const photoOf = (id: string | null) => { for (const job of jobs) { const photo = job.photos.find((item) => item.id === id); if (photo) return { job, photo, index: job.photos.indexOf(photo) }; } return null; };
+  // La bandeja de acciones flota abajo: la foto elegida se desplaza lo justo para no quedar debajo (scroll-margin en CSS).
+  useEffect(() => {
+    if (!selected) return;
+    const tile = sections.current.get(selected.jobId)?.querySelector<HTMLElement>(".portada-tile.is-selected");
+    tile?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }, [selected]);
   useEffect(() => {
     if (!focusHandle.current) return;
     sections.current.get(focusHandle.current)?.querySelector<HTMLElement>(".portada-handle")?.focus();
@@ -286,6 +295,7 @@ export function PortadaScreen({ jobs: initialJobs, featured, page, offset, publi
       return latest.current;
     });
     setPublishedTotal((total) => total + (next ? 1 : -1));
+    setGloss(next ? job.id : null);
     if (!next && selected?.jobId === job.id) setSelected(null);
     const dormant = !next && saved?.jobId === job.id;
     setMessage(next ? "Publicado: entra arriba del muro." : `Privado.${dormant ? " Su ajuste de portada queda inactivo hasta que lo publiques." : ""}`);
@@ -320,26 +330,29 @@ export function PortadaScreen({ jobs: initialJobs, featured, page, offset, publi
   const savedInactive = !!saved && !!coverJob && !coverJob.is_public;
   const publishedList = jobs.filter((job) => job.is_public);
 
-  return <div className={`portada${reordering ? " is-reordering" : ""}`}>
+  return <div className={`portada${reordering ? " is-reordering" : ""}${selected ? " has-tray" : ""}`}>
     <p id="portada-hint" className="portada-sr">Para cambiar el orden: en una foto, Mayús más flecha izquierda o derecha, o selecciónala y usa los botones Mover. En un trabajo, usa los botones Subir y Bajar, o Mayús más flecha arriba o abajo en su asa. Con pantalla táctil, mantén pulsada el asa o la foto y arrastra.</p>
     <section className="portada-cover" aria-labelledby="portada-cover-title">
-      <h2 id="portada-cover-title">Transformación en portada</h2>
       <div className="portada-slots" role="group" aria-label="Antes y después de la portada">
-        {(["before", "after"] as const).map((slot) => { const found = slotPhoto(slot); return <div key={slot} className="portada-slot">
-          {found ? <Image unoptimized src={`/app/api/photos/${found.photo.id}`} width={208} height={260} alt={`${SLOT_LABEL[slot]}: foto ${found.index + 1} de ${found.job.name}`} style={focalStyle(found.photo)} /> : <span className="slot-empty">Sin elegir</span>}
+        {(["before", "after"] as const).map((slot) => { const found = slotPhoto(slot); return <div key={slot} className={`portada-slot portada-slot-${slot}`}>
+          {found ? <Image unoptimized src={`/app/api/photos/${found.photo.id}`} width={320} height={400} alt={`${SLOT_LABEL[slot]}: foto ${found.index + 1} de ${found.job.name}`} style={focalStyle(found.photo)} /> : <span className="slot-empty">Sin elegir</span>}
           <span className="slot-label">{SLOT_LABEL[slot]}</span>
         </div>; })}
+        <span className="slot-seam" aria-hidden="true"><span /></span>
       </div>
-      <p className="field-help" aria-live="polite">
-        {draft.jobId ? <>Trabajo: <strong>{jobs.find((job) => job.id === draft.jobId)?.name}</strong>. </> : "Elige una foto en un trabajo publicado y púlsala como Antes o Después. "}
-        {saved ? (savedInactive ? "Inactiva: ese trabajo está privado. Volverá a mostrarse al publicarlo." : unchanged ? "En portada ahora mismo." : "Hay cambios sin destacar.") : "Ahora la portada muestra solo el título."}
-      </p>
-      <div className="portada-actions">
-        <button type="button" className="button primary" disabled={!idle || !draftReady || unchanged} onClick={feature}>{busy === "feature" ? "Guardando…" : saved ? "Actualizar portada" : "Destacar en portada"}</button>
-        {saved && <button type="button" className="button secondary" disabled={!idle} onClick={unfeature}>Quitar de portada</button>}
+      <div className="portada-cover-text">
+        <h2 id="portada-cover-title">Transformación en portada</h2>
+        <p className="portada-cover-state" aria-live="polite">
+          {draft.jobId ? <>Trabajo: <strong>{jobs.find((job) => job.id === draft.jobId)?.name}</strong>. </> : "Elige una foto en un trabajo publicado y úsala como Antes o Después. "}
+          {saved ? (savedInactive ? "Inactiva: ese trabajo está privado. Volverá a mostrarse al publicarlo." : unchanged ? "En portada ahora mismo." : "Hay cambios sin destacar.") : "Ahora la portada muestra solo el título."}
+        </p>
+        <div className="portada-actions">
+          <button type="button" className="button primary" disabled={!idle || !draftReady || unchanged} onClick={feature}>{busy === "feature" ? "Guardando…" : saved ? "Actualizar portada" : "Destacar en portada"}</button>
+          {saved && <button type="button" className="button ghost" disabled={!idle} onClick={unfeature}>Quitar de portada</button>}
+        </div>
       </div>
     </section>
-    {jobs.map((job) => {
+    {jobs.map((job, jobIndex) => {
       const visible = job.photos.filter((photo) => !photo.hidden).length;
       const sel = selected?.jobId === job.id ? photoOf(selected.photoId) : null;
       const selIndex = sel?.index ?? -1;
@@ -349,44 +362,52 @@ export function PortadaScreen({ jobs: initialJobs, featured, page, offset, publi
       const lifted = jobDrag?.id === job.id;
       const dropBefore = jobDrag && job.is_public && jobDrag.id !== job.id && publishedList.filter((item) => item.id !== jobDrag.id)[jobDrag.to]?.id === job.id;
       const lastOther = jobDrag && job.is_public && jobDrag.id !== job.id && jobDrag.to >= publishedList.length - 1 && publishedList.filter((item) => item.id !== jobDrag.id).at(-1)?.id === job.id;
-      return <section key={job.id} ref={(element) => { if (element) sections.current.set(job.id, element); else sections.current.delete(job.id); }}
-        className={["portada-job", !job.is_public && "is-private", lifted && "is-lifted", dropBefore && "drop-before", lastOther && "drop-after"].filter(Boolean).join(" ")} style={lifted && jobDrag ? { transform: `translateY(${jobDrag.dy}px)` } : undefined} aria-labelledby={`pj-${job.id}`}>
+      // Cabeceras de grupo: los publicados (el muro, en su orden) y, al final, los privados.
+      const group = jobIndex === 0 || jobs[jobIndex - 1].is_public !== job.is_public
+        ? <h2 className="portada-group">{job.is_public ? <>En el muro<span>{plural(publishedTotal, "trabajo publicado", "trabajos publicados")}</span></> : <>Sin publicar<span>No salen en la web</span></>}</h2> : null;
+      return <Fragment key={job.id}>{group}<section ref={(element) => { if (element) sections.current.set(job.id, element); else sections.current.delete(job.id); }}
+        className={["portada-job", !job.is_public && "is-private", lifted && "is-lifted", dropBefore && "drop-before", lastOther && "drop-after"].filter(Boolean).join(" ")} style={lifted && jobDrag ? { transform: `translateY(${jobDrag.dy}px)` } : undefined} aria-labelledby={`pj-${job.id}`}
+        data-gloss={gloss === job.id ? "" : undefined} onAnimationEnd={(event) => { if (event.animationName === "gloss-pass") setGloss(null); }}>
         <header className="portada-job-head">
           <div className="portada-job-title">
             {job.is_public && <span className="portada-rank" aria-label={`Posición ${absolute + 1} en el muro`}>{absolute + 1}</span>}
-            <div><h2 id={`pj-${job.id}`}>{job.name}</h2>
-              <p className="portada-meta"><time dateTime={job.job_date}>{displayDate(job.job_date)}</time> · {job.is_public ? `${visible} en el muro de ${job.photos.length}` : plural(job.photos.length, "foto", "fotos")}</p>
-              <p className="portada-badges">{!job.is_public && <span className="badge">Privado</span>}{saved?.jobId === job.id && <span className="badge published">En portada</span>}{job.is_public && visible === 0 && <span className="badge">No sale en el muro: sin fotos visibles</span>}</p>
+            <div className="portada-job-name"><h3 id={`pj-${job.id}`}>{job.name}</h3>
+              <p className="portada-meta"><time dateTime={job.job_date}>{displayDate(job.job_date)}</time><span>{job.is_public ? `${visible} en el muro de ${job.photos.length}` : plural(job.photos.length, "foto", "fotos")}</span></p>
+              <p className="portada-badges">{!job.is_public && <span className="tag tag-matte">Privado</span>}{saved?.jobId === job.id && <span className="tag tag-cover">En portada</span>}{job.is_public && visible === 0 && <span className="tag tag-warn">No sale en el muro: sin fotos visibles</span>}</p>
             </div>
           </div>
           <div className="portada-job-controls">
             {job.is_public && <div className="portada-move" role="group" aria-label={`Orden de ${job.name}`}>
-              <button type="button" className="portada-handle" aria-describedby="portada-hint" aria-label={`Mover ${job.name}: mantener pulsado y arrastrar`} onPointerDown={(event) => downHandle(event, job.id, rank)} onPointerMove={moveHandle} onPointerUp={() => finishDrag(true)} onPointerCancel={() => finishDrag(false)} onKeyDown={(event) => keyHandle(event, job.id, rank)} onContextMenu={(event) => event.preventDefault()} onClick={(event) => { if (suppressHandleClick.current) event.preventDefault(); }}>⠿</button>
-              <button type="button" className="button secondary portada-step" disabled={!idle || absolute <= 0} onClick={() => moveJob(job.id, rank - 1)} aria-label={`Subir ${job.name}`}>↑</button>
-              <button type="button" className="button secondary portada-step" disabled={!idle || absolute >= publishedTotal - 1} onClick={() => moveJob(job.id, rank + 1)} aria-label={`Bajar ${job.name}`}>↓</button>
+              <button type="button" className="portada-handle" aria-describedby="portada-hint" aria-label={`Mover ${job.name}: mantener pulsado y arrastrar`} onPointerDown={(event) => downHandle(event, job.id, rank)} onPointerMove={moveHandle} onPointerUp={() => finishDrag(true)} onPointerCancel={() => finishDrag(false)} onKeyDown={(event) => keyHandle(event, job.id, rank)} onContextMenu={(event) => event.preventDefault()} onClick={(event) => { if (suppressHandleClick.current) event.preventDefault(); }}><Icon name="grip" /></button>
+              <button type="button" className="button ghost portada-step" disabled={!idle || absolute <= 0} onClick={() => moveJob(job.id, rank - 1)} aria-label={`Subir ${job.name}`}><Icon name="up" size={20} /></button>
+              <button type="button" className="button ghost portada-step" disabled={!idle || absolute >= publishedTotal - 1} onClick={() => moveJob(job.id, rank + 1)} aria-label={`Bajar ${job.name}`}><Icon name="down" size={20} /></button>
             </div>}
-            <label className="portada-switch"><input type="checkbox" checked={job.is_public} disabled={!idle} onChange={() => togglePublished(job)} /><span>Publicado</span></label>
+            <label className="portada-switch"><input type="checkbox" className="switch" checked={job.is_public} disabled={!idle} onChange={() => togglePublished(job)} /><span>Publicado</span></label>
           </div>
         </header>
         <div className="portada-body">
           <PhotoRow name={job.name} photos={job.photos} interactive={job.is_public} selectedId={sel ? sel.photo.id : null} chipsOf={chipsFor(job)}
             onSelect={(id) => setSelected(id ? { jobId: job.id, photoId: id } : null)} onMove={(from, to) => reorder(job.id, from, to)} />
           {sel && job.is_public && <div className="portada-bar" role="group" aria-label={`Acciones de la foto ${selIndex + 1}`}>
-            <p className="portada-bar-title">Foto {selIndex + 1} de {job.photos.length} · {sel.photo.hidden ? "Oculta en el muro" : "Visible en el muro"}</p>
+            <div className="portada-bar-head">
+              <Image unoptimized src={`/app/api/photos/${sel.photo.id}`} width={48} height={60} alt="" style={focalStyle(sel.photo)} />
+              <p className="portada-bar-title"><strong>Foto {selIndex + 1} de {job.photos.length}</strong><span>{sel.photo.hidden ? "Oculta en el muro" : "Visible en el muro"}</span></p>
+              <button type="button" className="portada-bar-close" aria-label="Cerrar acciones de la foto" onClick={() => setSelected(null)}><Icon name="close" size={20} /></button>
+            </div>
             <div className="portada-bar-buttons">
-              <button type="button" className="button secondary" disabled={selIndex <= 0} onClick={() => reorder(job.id, selIndex, selIndex - 1)} aria-label="Mover a la izquierda">← Mover</button>
-              <button type="button" className="button secondary" disabled={selIndex >= job.photos.length - 1} onClick={() => reorder(job.id, selIndex, selIndex + 1)} aria-label="Mover a la derecha">Mover →</button>
-              <button type="button" className="button secondary" disabled={!idle} onClick={() => toggleHidden(job, sel.photo)}>{sel.photo.hidden ? "Mostrar en el muro" : "Ocultar en el muro"}</button>
-              <button type="button" className="button secondary" aria-pressed={mine && draft.beforeId === sel.photo.id} disabled={!idle} onClick={() => pickSlot(job, sel.photo, "before")}>Usar como Antes</button>
-              <button type="button" className="button secondary" aria-pressed={mine && draft.afterId === sel.photo.id} disabled={!idle} onClick={() => pickSlot(job, sel.photo, "after")}>Usar como Después</button>
+              <button type="button" className="button ghost" disabled={selIndex <= 0} onClick={() => reorder(job.id, selIndex, selIndex - 1)} aria-label="Mover a la izquierda"><Icon name="left" size={20} />Mover</button>
+              <button type="button" className="button ghost" disabled={selIndex >= job.photos.length - 1} onClick={() => reorder(job.id, selIndex, selIndex + 1)} aria-label="Mover a la derecha">Mover<Icon name="right" size={20} /></button>
+              <button type="button" className="button ghost" disabled={!idle} onClick={() => toggleHidden(job, sel.photo)}><Icon name={sel.photo.hidden ? "eye" : "hide"} size={20} />{sel.photo.hidden ? "Mostrar en el muro" : "Ocultar en el muro"}</button>
+              <button type="button" className="button ghost slot-pick" aria-pressed={mine && draft.beforeId === sel.photo.id} disabled={!idle} onClick={() => pickSlot(job, sel.photo, "before")}>Usar como Antes</button>
+              <button type="button" className="button ghost slot-pick" aria-pressed={mine && draft.afterId === sel.photo.id} disabled={!idle} onClick={() => pickSlot(job, sel.photo, "after")}>Usar como Después</button>
               {mine && draftReady && !unchanged && <button type="button" className="button primary" disabled={!idle} onClick={feature}>Destacar en portada</button>}
             </div>
             {sel.photo.hidden && (draft.beforeId === sel.photo.id || draft.afterId === sel.photo.id) && <p className="field-help">Esta foto no sale en el muro: solo se verá en la portada.</p>}
           </div>}
         </div>
-      </section>;
+      </section></Fragment>;
     })}
     <p className="portada-live" aria-live="polite" role="status">{message}</p>
-    <div className="save-feedback">{busy && <p className="save-progress"><span className="spinner" />Guardando…</p>}{!busy && message && <p className="curation-ok">{message}</p>}{error && <p className="alert" role="alert">{error}</p>}</div>
+    <div className="save-feedback">{busy && <p className="save-progress"><span className="spinner" />Guardando…</p>}{!busy && message && <p className="curation-ok" key={message}><Icon name="check" size={18} />{message}</p>}{error && <p className="alert" role="alert"><Icon name="alert" />{error}</p>}</div>
   </div>;
 }

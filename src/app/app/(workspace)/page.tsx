@@ -4,15 +4,25 @@ import { JOB_LIST_SELECT, JobCard } from "@/features/jobs/job-card";
 import { privateContext } from "@/features/jobs/page-data";
 import { curationMarks } from "@/features/jobs/curation";
 export const metadata = { title: "Trabajos · Iguana Garage" };
+const JOBS_PAGE_SIZE = 30;
+const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 export default async function JobsPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const { supabase, user } = await privateContext();
-  const page = Math.max(1, Math.min(10000, Number((await searchParams).page) || 1)); const offset = (Math.floor(page) - 1) * 30;
-  const result = await supabase.from("jobs").select(JOB_LIST_SELECT, { count: "exact" }).eq("owner_id", user.id).order("job_date", { ascending: false }).order("id", { ascending: false }).range(offset, offset + 29);
+  const page = Math.floor(Math.max(1, Math.min(10000, Number((await searchParams).page) || 1))); const offset = (page - 1) * JOBS_PAGE_SIZE;
+  const result = await supabase.from("jobs").select(JOB_LIST_SELECT, { count: "exact" }).eq("owner_id", user.id).order("job_date", { ascending: false }).order("id", { ascending: false }).range(offset, offset + JOBS_PAGE_SIZE - 1);
   if (result.error) throw new Error("No se pudieron cargar los trabajos");
   // Las marcas son informativas: si no se pueden leer, el listado sigue funcionando sin ellas.
-  const marks = await curationMarks(supabase, user.id).catch(() => ({ featuredJobId: null }));
-  return <><div className="page-heading"><div><p className="eyebrow">TU TALLER</p><h1>Trabajos</h1><p className="muted">{result.count ? `${result.count} ${result.count === 1 ? "trabajo terminado" : "trabajos terminados"}` : "Cada reparación tiene su historia."}</p></div><div className="heading-actions"><Link href="/app/portada" className="button secondary">Portada</Link><Link href="/app/new" className="button primary"><Icon name="plus" />Nuevo trabajo</Link></div></div>
-    {!result.data.length ? <section className="empty-state"><div className="empty-icon"><Icon name="photo" /></div><h2>{page > 1 ? "No hay más trabajos" : "Tu próximo trabajo empieza aquí"}</h2><p className="muted">{page > 1 ? "Vuelve a la primera página para ver tus trabajos." : "Guarda el vehículo, la fecha y las fotos de la reparación."}</p><Link className="button secondary" href={page > 1 ? "/app" : "/app/new"}>{page > 1 ? "Ver trabajos" : "Crear mi primer trabajo"}<Icon name="arrow" style={{ transform: "rotate(180deg)" }} /></Link></section> : <div className="jobs-grid">{result.data.map((job) => <JobCard key={job.id} job={job} marks={{ featured: job.id === marks.featuredJobId }} />)}</div>}
-    {(result.count ?? 0) > 30 && <nav className="pagination" aria-label="Páginas de trabajos">{page > 1 && <Link className="button secondary" href={`/app?page=${page - 1}`}>Anterior</Link>}<span>Página {page}</span>{offset + 30 < (result.count ?? 0) && <Link className="button secondary" href={`/app?page=${page + 1}`}>Siguiente</Link>}</nav>}
+  const { featuredJobId } = await curationMarks(supabase, user.id).catch(() => ({ featuredJobId: null }));
+  const jobs = result.data; const count = result.count ?? 0;
+  const pages = Math.ceil(count / JOBS_PAGE_SIZE);
+  return <>
+    <header className="page-head">
+      <h1>Trabajos</h1>
+      <p className="page-sub">{count ? `${plural(count, "reparación terminada", "reparaciones terminadas")}, de la más reciente a la más antigua.` : "Las reparaciones terminadas que guardes aparecerán aquí."}</p>
+    </header>
+    {!jobs.length
+      ? <section className="empty"><Icon name="photo" size={32} /><h2>{page > 1 ? "Esta página está vacía" : "Aún no hay trabajos"}</h2><p>{page > 1 ? "Vuelve a la primera página para ver tus trabajos." : "Crea uno con el nombre, la fecha y las fotos de la reparación."}</p><Link className="button primary" href={page > 1 ? "/app" : "/app/new"}>{page > 1 ? "Ir a la primera página" : "Crear el primer trabajo"}</Link></section>
+      : <ul className="job-grid">{jobs.map((job) => <li key={job.id}><JobCard job={job} marks={{ featured: job.id === featuredJobId }} /></li>)}</ul>}
+    {pages > 1 && <nav className="pager" aria-label="Páginas de trabajos">{page > 1 ? <Link className="button ghost" href={`/app?page=${page - 1}`}><Icon name="left" />Anterior</Link> : <span />}<span className="pager-now">Página {page} de {pages}</span>{page < pages ? <Link className="button ghost" href={`/app?page=${page + 1}`}>Siguiente<Icon name="right" /></Link> : <span />}</nav>}
   </>;
 }

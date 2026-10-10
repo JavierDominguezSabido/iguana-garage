@@ -2,7 +2,7 @@
 
 ## Identidad
 
-Identidad oficial inmutable; interfaz **siempre oscura**, sin azul ni tema claro. [PRODUCT.md](PRODUCT.md) delimita funciones y [AGENTS.md](AGENTS.md) la operación.
+Identidad oficial inmutable; la identidad y la home pública son **siempre oscuras**, sin azul ni tema claro (el área privada se rige por los límites de «Gestión privada»). [PRODUCT.md](PRODUCT.md) delimita funciones y [AGENTS.md](AGENTS.md) la operación.
 
 | Color oficial | Valor |
 | --- | --- |
@@ -11,7 +11,7 @@ Identidad oficial inmutable; interfaz **siempre oscura**, sin azul ni tema claro
 | Bone | `#F8F4DA` |
 | Metal | `#2A2D2B` |
 
-Estos cuatro colores son la base de la marca. El portfolio público puede derivar matices de ellos (opacidades, tonos más claros u oscuros del mismo color) si el diseño lo necesita, sin introducir azul ni colores ajenos a la marca. PWA usa Carbon. El privado conserva tonos operativos aprobados de `globals.css`, incluidas superficies oscuras y un verde de acción más claro (`#C0E878`).
+Estos cuatro colores son la base de la marca. El portfolio público puede derivar matices de ellos (opacidades, tonos más claros u oscuros del mismo color) si el diseño lo necesita, sin introducir azul ni colores ajenos a la marca. PWA usa Carbon. Estas restricciones cromáticas valen para la identidad y la home pública; el área privada se rige por «Gestión privada».
 
 ## Marca
 
@@ -34,7 +34,7 @@ Muro de trabajos de taller con una portada centrada en el comparador Antes/Despu
 
 ### Tipografía
 
-**Barlow Condensed** (600/700/800) para titulares y **Barlow** (400/500/600) para texto y etiquetas, autoalojadas con `next/font` en `page.tsx` (variables `--font-pub-display` y `--font-pub-text`, con Arial como respaldo). Titulares en mayúsculas con interlineado ≈ .84–1; etiquetas pequeñas en mayúsculas con tracking .12em. Contrasta con la geometría ancha del logo en lugar de imitarla. Solo la home pública: la gestión privada sigue en Arial/Helvetica.
+**Barlow Condensed** (600/700/800) para titulares y **Barlow** (400/500/600) para texto y etiquetas, autoalojadas con `next/font` en `page.tsx` (variables `--font-pub-display` y `--font-pub-text`, con Arial como respaldo). Titulares en mayúsculas con interlineado ≈ .84–1; etiquetas pequeñas en mayúsculas con tracking .12em. Contrasta con la geometría ancha del logo en lugar de imitarla. Solo la home pública.
 
 ### Estructura y orden
 
@@ -88,14 +88,14 @@ Imagen Open Graph **estática y solo de marca**: logo oficial completo, a su pro
 
 ### Visores de fotos (público y privado)
 
-Los dos visores comparten estilo, estructura y comportamiento, pero cada uno conserva su piel. El componente base es `PhotoViewer` (`src/features/viewer/`): dialog nativo modal, teclado, tira deslizante, foco y miniaturas; quien lo usa pinta la foto y las miniaturas con sus propios loaders y variantes, y trae su propio CSS por prefijo (`pub-viewer` en `portfolio.css`, `app-viewer` en `globals.css`). Los estilos no se comparten: se comprueban por separado.
+Los dos visores comparten estilo, estructura y comportamiento, pero cada uno conserva su piel. El componente base es `PhotoViewer` (`src/features/viewer/`): dialog nativo modal, teclado, tira deslizante, foco y miniaturas; quien lo usa pinta la foto y las miniaturas con sus propios loaders y variantes, y trae su propio CSS por prefijo (`pub-viewer` en `portfolio.css`, `app-viewer` en `src/app/app/app.css`). Los estilos no se comparten: se comprueban por separado.
 
 - **Estilo común:** pantalla completa (dialog `fixed`, `inset: 0`, `margin: auto`, 100 % × 100dvh, centrado respecto al viewport e independiente del layout de la página), fondo casi opaco (≈95 %) y sin panel ni borde; el scroll de la página queda bloqueado mientras está abierto. La foto, con `contain`, ocupa todo el escenario (sin recortar ni deformar).
 - **Cabecera:** título del trabajo a la izquierda, contador «2 / 3» y cierre arriba a la derecha (48 px, sin anillo; con teclado muestra foco visible en tono hueso/texto, nunca verde). Un `role="status"` oculto anuncia «Fotografía 2 de 3».
 - **Flechas anterior/siguiente:** en escritorio (≥ 900 px), grandes (64 px) en columnas laterales a los lados de la foto; en móvil y tablet, compactas (44 px) sobre la foto. También flechas del teclado; Escape cierra y el foco vuelve al elemento que lo abrió. El deslizamiento se describe en «Tira de fotos».
 - **Miniaturas** centradas debajo (56 px móvil, 64 px escritorio), con recorte `cover` y punto focal; la activa lleva borde verde y opacidad completa, las demás se atenúan (`aria-pressed`). Con una sola foto no hay flechas ni miniaturas.
 - **Público (`pub-viewer`):** nombre del trabajo en Barlow Condensed (mayúsculas), tokens del portfolio, loaders y variantes del portfolio; el botón fijo de WhatsApp queda oculto con el visor abierto.
-- **Privado (`app-viewer`):** tipografía Arial y tokens de `globals.css` (`--text`, `--muted`, `--lime`), sus loaders y rutas `/app/api/photos`, sin Barlow ni estilos del portfolio. Hoy no ofrece acceso al original desde el visor (el endpoint `?original=1` existe, pero no se enlaza).
+- **Privado (`app-viewer`):** tiene su propia piel, con sus loaders y rutas `/app/api/photos`, sin estilos del portfolio. Hoy no ofrece acceso al original desde el visor (el endpoint `?original=1` existe, pero no se enlaza).
 - **Tira de fotos:** el escenario es una tira horizontal con **solo tres fotos montadas** (actual, anterior y siguiente; nunca todas las del trabajo), cada una con el mismo `sizes`/variante que usará al mostrarse, para que al pasar ya estén descargadas y decodificadas. En táctil la tira sigue el dedo (el ratón no arrastra) y al soltar encaja en la vecina si el recorrido supera el umbral (20 % del ancho, entre 48 y 120 px) o hay velocidad de lanzamiento (≥ 0,5 px/ms con al menos 24 px); si no, vuelve a su sitio. Hacia un lado sin foto vecina hay resistencia elástica. `touch-action: pan-y` conserva el scroll vertical y un toque no cambia de foto. Flechas y teclado hacen la misma transición corta (≈ 0,22 s) y durante ella se ignora la entrada nueva. La lógica es `strip.ts` y `swipe.ts`.
 - **Foto aún no lista:** nunca se muestra una foto distinta de la que indica el contador. Mientras la grande no está cargada y decodificada, su miniatura (ya cargada en la tira de miniaturas) se enseña al instante ampliada con `contain` y ligeramente difuminada, y se funde a la foto buena al estar lista. Si falla, aparece «Fotografía no disponible.» sobre la miniatura, con «Reintentar foto» (hasta 3 veces). No cambia la política de caché: las fotos siguen `private, no-store`.
 - **Imágenes:** `sizes` sale de `viewerStageSizes` (alto disponible × proporción, restando cabecera, miniaturas y las columnas de flechas en escritorio). Con `prefers-reduced-motion` el cambio de foto es instantáneo, sin encaje animado ni fundido.
@@ -103,17 +103,46 @@ Los dos visores comparten estilo, estructura y comportamiento, pero cada uno con
 
 ## Gestión privada
 
-Compacta, funcional y mobile-first, priorizando operación cotidiana desde teléfono. Tipografía de interfaz Arial/Helvetica/sans-serif. Formularios con etiquetas visibles, errores útiles, progreso y reintento; los datos confirmados no deben perderse ni comunicar un guardado incompleto como éxito.
+Abierta a rediseño completo, igual que la home pública. Es una app de gestión normal que su propietario usa con calma: sube las fotos cuando las tiene, las ordena y publica. No se optimiza para uso con una mano ni con prisa. Estructura, navegación, composición, tipografía, paleta y movimiento los decide el rediseño; `globals.css` solo guarda la base común con la home pública; los estilos de la gestión viven en `src/app/app/app.css`, todos bajo `.app`.
 
-No introducir rediseños decorativos que reduzcan legibilidad, espacio de fotos, acceso a botones o rapidez de uso. Verde para acciones principales; borrados identificados con texto y confirmación, sin depender solo del color. El login comparte la identidad privada sin mostrar el marco de gestión antes de autenticar. El rediseño público no se aplica al privado.
+### Límites que siguen vigentes
 
-La pantalla `/app/portada` concentra la gestión de la página principal (mobile-first): tarjeta «Transformación en portada» con el Antes y el Después, y una sección por trabajo con su banda (nombre, fecha, «N en el muro de M», una pastilla con su posición absoluta en el muro y marcas de texto «Privado», «En portada», «No sale en el muro»), el interruptor «Publicado» y, en los publicados, el asa de arrastre y los botones ↑/↓ (≥ 44 px) y las fotos en una fila con desplazamiento horizontal (piezas de 104 px en móvil, 128 y 148 px en pantallas mayores). Una foto seleccionada abre debajo una barra con ← Mover, Mover →, Ocultar/Mostrar en el muro y «Usar como Antes/Después». Arrastre: táctil mantener pulsado ~0,4 s y mover (la página sigue desplazándose con el dedo si se mueve antes), ratón arrastrando; marcador verde de destino, desplazamiento automático en los bordes y Mayús + ←/→ con teclado. Hay un anuncio accesible de cada movimiento («Foto movida a la posición 2 de 7»). Los trabajos privados van al final, atenuados y sin acciones de foto. La ficha solo muestra una línea de estado de portada y el enlace «Gestionar en Portada». Fotos ocultas o en la portada se distinguen con texto («Oculta», «Antes», «Después»), no solo con color. Orden de trabajos: arrastre vertical por el asa (táctil: mantener pulsada ~0,4 s; ratón; Mayús + ↑/↓), con desplazamiento automático de la página en los bordes, marcador verde de destino y los cuerpos de los trabajos plegados a cabeceras compactas mientras se arrastra. No hay texto de ayuda visible; las instrucciones las leen los lectores de pantalla (`aria-describedby`).
+- **Marca:** el logo oficial de `assets/brand` no se modifica y debe verse bien y entero sobre el fondo elegido. Paleta: solo los cuatro colores de la marca sobre fondo oscuro (Carbon de fondo, Metal en superficies, Bone para el texto, Iguana Green de acento) y tonos derivados de ellos; sin azul ni colores ajenos, tampoco rojo para borrar.
+- **Funciones:** las de [PRODUCT.md](PRODUCT.md). No inventar funciones ni datos.
+- **Accesibilidad:** objetivos táctiles de al menos 44 × 44 px, contraste, foco visible, etiquetas y nombres accesibles, teclado y `prefers-reduced-motion`.
+- **Formularios y datos:** etiquetas visibles, errores útiles, progreso y reintento. Los datos confirmados no se pierden ni se comunica un guardado incompleto como éxito.
+- **Acciones destructivas:** los borrados se identifican con texto y confirmación, sin depender solo del color. Los estados («Privado», «En portada», «Oculta», «Antes», «Después») se distinguen también con texto.
+- **Login:** comparte la identidad privada sin mostrar el marco de gestión antes de autenticar.
 
-El visor privado usa el mismo componente base que el público (ver «Visores de fotos») con su propia piel `app-viewer`: dialog centrado respecto al viewport (`fixed`, `inset:0`, `margin:auto`), fotografías `contain`, proporción real y controles accesibles. Un cambio en el componente base o en una piel exige comprobar ambos visores por separado.
+### Dirección actual: mate y barniz
+
+En el taller, la última capa es el barniz: lo que da brillo. La gestión usa esa idea como sistema. Implementación en `src/app/app/app.css`, `src/app/app/` y `src/features/workspace/`.
+
+- **Mate y barniz:** el contenido es mate (Carbon de fondo, paneles Metal sin brillo). Todo lo que actúa flota abajo como una capa de barniz translúcida (Carbon con transparencia, desenfoque y un filo de luz arriba): el dock, la barra de guardado de los formularios, la bandeja de la foto seleccionada en Portada y los avisos.
+- **Brillo = sale en la web:** lo publicado lleva verde Iguana y un reflejo especular (etiqueta «Publicado» con punto verde; tarjetas con filo de luz); lo privado es mate («Privado» con punto hueco). Lo oculto o vacío se marca con un rayado fino en tono hueso («Oculta», sin fotos, avisos de error).
+- **Tipografía:** Hubot Sans (técnica, de taller) para titulares, posiciones del muro y código de pintura; Mona Sans para texto e interfaz. Autoalojadas con `next/font` en `src/app/app/layout.tsx`. Sin etiquetas en mayúsculas.
+- **Marco:** cabecera mínima (logo y «Cerrar sesión») y un **dock flotante** abajo y centrado en todas las anchuras: «Trabajos», «Portada» y «Nuevo trabajo». En alta y edición el dock cede su sitio a la barra de guardado («Cancelar» / «Guardar trabajo»), con la misma forma y lugar.
+- **Pantallas:** listado en rejilla continua de fotos 4:5 (2 → 3 → 4 → 5 columnas) con estado sobre la foto; ficha con la foto a la izquierda y la hoja de datos a la derecha desde 1000 px (el código de pintura destaca); formulario en dos paneles (datos y fotografías 4:5); Portada con la transformación como el comparador público (dos fotos unidas por la costura verde con tirador) y el muro como filas numeradas, primero «En el muro» y al final «Sin publicar». El login es una tarjeta sobre Carbon con el formulario.
+- **Botones:** píldoras. Principal en verde; secundario con contorno; borrar es texto subrayado con icono y, en la confirmación, botón hueso con texto explícito.
+- **Movimiento:** solo responde a acciones. Al publicar un trabajo en Portada (y al activar «Publicar en portfolio») pasa una única franja de brillo, como una mano de barniz; el login la tiene una vez al cargar. Con `prefers-reduced-motion` no hay brillo, ni zoom, ni entrada de la bandeja, y los avisos no se retiran solos.
+
+### Contrato funcional de `/app/portada`
+
+- Tarjeta de la transformación en portada (Antes y Después) y una sección por trabajo con su nombre, fecha, «N en el muro de M», su posición en el muro y marcas de texto «Privado», «En portada» y «No sale en el muro».
+- Interruptor «Publicado» por trabajo. Las demás acciones solo existen en los publicados.
+- Orden de los trabajos publicados por arrastre de un asa (táctil: mantener pulsado ~0,4 s y mover; ratón: arrastrar; teclado: Mayús + ↑/↓) y con botones ↑/↓. Marcador de destino y desplazamiento automático en los bordes.
+- Fotos de cada trabajo: reordenar arrastrando, con ←/→ y con Mayús + ←/→; ocultar o mostrar en el muro; usar como Antes o Después.
+- Cada movimiento se anuncia de forma accesible («Foto movida a la posición 2 de 7»). Sin texto de ayuda visible: las instrucciones las leen los lectores de pantalla (`aria-describedby`).
+- Los trabajos privados van al final, atenuados y sin acciones de foto.
+- La ficha del trabajo solo muestra una línea de estado de portada y el enlace «Gestionar en Portada».
+
+### Visor privado
+
+Usa el mismo componente base que el público (ver «Visores de fotos») con su propia piel `app-viewer`: dialog centrado respecto al viewport, fotografías `contain`, proporción real y controles accesibles. Un cambio en el componente base o en una piel exige comprobar ambos visores por separado.
 
 ## Responsive y accesibilidad
 
-Diseñar y verificar en este orden: **390 px principal → 768 px adaptación → 1440 px adaptación**. Los breakpoints reales del CSS responden al contenido. No diseñar desktop primero ni compactar más móvil para imitarlo.
+Home pública: diseñar y verificar en este orden: **390 px principal → 768 px adaptación → 1440 px adaptación**. Los breakpoints reales del CSS responden al contenido. No diseñar desktop primero ni compactar más móvil para imitarlo. Área privada: debe funcionar bien desde 390 px hasta escritorio, sin una resolución principal.
 
 Conservar objetivos táctiles de al menos 44 × 44 px, contraste, foco visible, etiquetas y nombres accesibles; Escape, flechas y retorno de foco del dialog nativo. Respetar reducción de movimiento y comprobar teclado abierto, zoom, overflow, orientación y estados de carga/vacío/error.
 
