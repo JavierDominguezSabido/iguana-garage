@@ -27,15 +27,25 @@ The project is in production with real data and has two parts:
 | --- | --- | --- |
 | <img src="docs/readme/home-mobile-carousel.webp" width="260" alt="Mobile home with the swipeable card carousel"> | <img src="docs/readme/home-mobile-mosaic.webp" width="260" alt="Mobile job band and photo mosaic"> | <img src="docs/readme/home-desktop-hero.webp" width="420" alt="Desktop fan fully open"> |
 
+Full-screen Before/After on mobile (390 px): the section pins and scrolling carries you from one screen to the other.
+
+| Before | After |
+| --- | --- |
+| <img src="docs/readme/home-mobile-before.webp" width="260" alt="Mobile Before screen"> | <img src="docs/readme/home-mobile-after.webp" width="260" alt="Mobile After screen"> |
+
 Link preview image (Open Graph), brand-only by design:
 
 ![Open Graph share image](docs/readme/share-image.png)
 
-### Private app
+### Private app (mobile, installed as a PWA)
 
-| Job list | Home page management ("Portada") |
-| --- | --- |
-| ![Private app job list](docs/readme/app-list.png) | ![Private app home page management](docs/readme/app-portada.png) |
+| | | |
+| --- | --- | --- |
+| <img src="docs/readme/app-list.webp" width="260" alt="Private app job list"><br><sub>Job list with published status and cover marker.</sub> | <img src="docs/readme/app-portada.webp" width="260" alt="Home page management screen"><br><sub>“Portada”: the Before/After pair shown on the home page.</sub> | <img src="docs/readme/app-muro.webp" width="260" alt="Home page wall ordering"><br><sub>The wall: reorder jobs and toggle publishing.</sub> |
+
+| | | |
+| --- | --- | --- |
+| <img src="docs/readme/app-trabajo.webp" width="260" alt="Job detail"><br><sub>Job detail; hours and paint code stay private.</sub> | <img src="docs/readme/app-editar.webp" width="260" alt="Job edit form"><br><sub>Edit form with a sticky save bar.</sub> | <img src="docs/readme/app-encuadre.webp" width="260" alt="Photo focal point editor"><br><sub>Focal point editor for cropped previews.</sub> |
 
 ## Features
 
