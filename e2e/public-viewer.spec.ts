@@ -13,17 +13,22 @@ async function throttle(page: Page, { cpu = 4, slowNetwork = true } = {}) {
     await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 150, downloadThroughput: (1.6 * 1024 * 1024) / 8, uploadThroughput: (750 * 1024) / 8 });
   }
 }
-// Abre el visor desde el primer trabajo con al menos `min` fotos; devuelve los ids de sus fotos y el trabajo.
+// Abre el visor desde el primer trabajo con al menos `min` fotos; devuelve los ids de sus fotos (en el orden del muro) y el trabajo.
+// El mosaico reparte las fotos en dos columnas: el orden del muro sale del número de cada «Ampliar …, fotografía N».
 async function openViewer(page: Page, min = 3) {
   await page.goto("/");
-  const work = page.locator("article.pub-work").filter({ has: page.locator(`.pub-wall > .pub-tile:nth-child(${min})`) }).first();
-  test.skip(await work.count() === 0, `Hace falta un trabajo con al menos ${min} fotos`);
+  const index = await page.locator("article.pub-work").evaluateAll((works, least) => works.findIndex((work) => work.querySelectorAll(".pub-tile").length >= least), min);
+  test.skip(index < 0, `Hace falta un trabajo con al menos ${min} fotos`);
+  const work = page.locator("article.pub-work").nth(index);
   const tiles = work.locator(".pub-tile");
   const total = await tiles.count();
-  const sources = await tiles.locator("img").evaluateAll((images) => images.map((image) => (image as HTMLImageElement).src));
-  const parsed = sources.map((source) => new URL(source).pathname.split("/").slice(-2));
-  await tiles.first().scrollIntoViewIfNeeded();
-  return { total, job: parsed[0][0], media: parsed.map((entry) => entry[1]), open: async () => { await tiles.first().getByRole("button").click(); const dialog = page.getByRole("dialog"); await expect(dialog).toBeVisible(); return dialog; } };
+  const ordered = await tiles.evaluateAll((items) => items.map((tile) => ({ n: Number(/fotografía (\d+)$/.exec(tile.querySelector("button")?.getAttribute("aria-label") ?? "")?.[1]), src: tile.querySelector("img")!.src })).sort((a, b) => a.n - b.n).map((item) => item.src));
+  const parsed = ordered.map((source) => new URL(source).pathname.split("/").slice(-2));
+  const first = work.getByRole("button", { name: /, fotografía 1$/ });
+  await first.scrollIntoViewIfNeeded();
+  // Que las fotos del mosaico ya pedidas (las perezosas cercanas a la pantalla) terminen antes de contar las del visor.
+  await expect.poll(() => work.locator("img").evaluateAll((images) => images.every((image) => (image as HTMLImageElement).complete || image.getBoundingClientRect().top > innerHeight + 3000)), { timeout: 30000 }).toBe(true);
+  return { total, job: parsed[0][0], media: parsed.map((entry) => entry[1]), open: async () => { await first.focus(); await page.keyboard.press("Enter"); const dialog = page.getByRole("dialog"); await expect(dialog).toBeVisible(); return dialog; } };
 }
 const count = (dialog: Locator) => dialog.locator(".pub-viewer-count");
 const ready = (dialog: Locator) => expect.poll(() => dialog.locator(".pub-viewer-slide[data-state=ready]").count(), { timeout: 30000 });

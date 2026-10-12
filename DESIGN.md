@@ -23,68 +23,65 @@ Los 14 demos se eliminaron intencionadamente: `assets/demo/` ya no existe; no re
 
 ## Portfolio público (`/`): diseño final
 
-Muro de trabajos de taller con una portada centrada en el comparador Antes/Después. Siempre oscuro, titulares condensados y fotos verticales de móvil como material principal. Implementación en `src/app/page.tsx`, `src/app/portfolio.css` y `src/features/portfolio/`.
+Home «de competición», elegida por el propietario con un test de gusto: sensación deportiva de competición, titulares en condensada industrial, oscuro con acento verde de marca, trabajos en mosaico, Antes y Después uno tras otro a pantalla completa, movimiento intenso (sin marquesinas ni textos en bucle), composición muy aireada y portada con un abanico de fotos. Composición centrada y movimiento continuo ligado al scroll. Implementación en `src/app/page.tsx`, `src/app/portfolio.css` y `src/features/portfolio/`.
 
 ### Límites que siguen vigentes
 
-- **Marca:** assets oficiales y los cuatro colores base; sin azul ni tema claro.
-- **Fotografía real:** solo las fotos publicadas del contrato público. Son fotos de móvil hechas en el taller (casi todas verticales, calidad y encuadre variables). Nada de stock, IA ni imágenes de relleno.
-- **Datos y copy:** solo existen nombre, fecha, descripción opcional y fotos (con punto focal) por trabajo. No inventar categorías, códigos, teléfonos, redes, presupuestos, servicios ni promesas. Ningún dato ni nombre va fijo en el código: se corrigen desde `/app`.
-- **Funcionalidad pública** de [PRODUCT.md](PRODUCT.md): trabajos paginados, transformación Antes/Después opcional, visor, CTA de WhatsApp con estado pendiente, estados de carga/vacío/error, sin login visible ni PWA.
+- **Marca:** assets oficiales y los cuatro colores base (más derivados: Iguana claro `#8FB04A` para hover y un Carbon más profundo `#080A09` bajo las fotos); sin azul ni tema claro.
+- **Fotografía real:** solo las fotos publicadas del contrato público. Son fotos de móvil hechas en el taller (casi todas verticales, calidad y encuadre variables). Nada de stock, IA ni imágenes de relleno. Se recortan con `cover` y punto focal y se igualan con un etalonaje común (`saturate(.8) contrast(1.08) brightness(.96)`); el visor las muestra tal cual.
+- **Datos y copy:** solo existen nombre, fecha, descripción opcional y fotos (con punto focal) por trabajo. No inventar categorías, códigos, teléfonos, redes, presupuestos, servicios ni promesas. Ningún dato ni nombre va fijo en el código: se corrigen desde `/app`. Los textos nuevos pendientes de aprobación se marcan con `Provisional` («[texto provisional]»).
+- **Funcionalidad pública** de [PRODUCT.md](PRODUCT.md): trabajos paginados, transformación Antes/Después opcional, visor, contacto por WhatsApp con estado pendiente, estados de carga/vacío/error, sin login visible ni PWA.
 
 ### Tipografía
 
-**Barlow Condensed** (600/700/800) para titulares y **Barlow** (400/500/600) para texto y etiquetas, autoalojadas con `next/font` en `page.tsx` (variables `--font-pub-display` y `--font-pub-text`, con Arial como respaldo). Titulares en mayúsculas con interlineado ≈ .84–1; etiquetas pequeñas en mayúsculas con tracking .12em. Contrasta con la geometría ancha del logo en lugar de imitarla. Solo la home pública.
+**Big Shoulders** (900, eje `opsz` a 72) para titulares y **Saira** (normal e itálica) para texto, botones y etiquetas, autoalojadas con `next/font` en `page.tsx` (variables `--font-pub-display` y `--font-pub-text`). Titulares en mayúsculas, interlineado ≈ .8–1 e inclinados con `skewX(-9deg)`, como la rotulación de carreras. Botones y etiquetas en Saira itálica, sin mayúsculas. Solo la home pública.
+
+### Lenguaje visual
+
+- **Paralelogramos:** CTA principal verde con texto Carbon, botones secundarios («Ver fotos», paginación) en Metal y etiquetas de fecha y número de fotos con los lados cortados en diagonal (`clip-path`). El foco se dibuja dentro del botón porque el recorte oculta el contorno.
+- **Librea:** dos franjas verdes inclinadas al 20 % de opacidad detrás del titular de la portada; con movimiento se ensanchan e inclinan al abrir el abanico.
+- **Logo** oficial servido por el optimizador de `next/image` (solo `/_next/static/media/**`) y recortado solo en su margen transparente.
 
 ### Estructura y orden
 
-1. **Cabecera:** logo oficial + botón compacto «WhatsApp» (o «Contacto», que lleva a la sección de contacto, si no hay número válido).
-2. **Portada:** título «Chapa y pintura.» muy grande (punto en verde), la frase «Arrastra para ver el antes y el después» y el comparador.
-   - Móvil (390): título, frase, comparador (con el nombre del trabajo como etiqueta encima) y botón «Ver fotos» caben en la primera pantalla; el CTA de WhatsApp queda justo debajo.
-   - Desde 700 px: título, frase y CTA a la izquierda, centrados verticalmente; comparador a la derecha, en torno al 46 % del ancho y casi toda la altura útil (`100svh − 250px`, proporción 4:5). La portada ocupa la pantalla entera solo en apaisado; en vertical (tablet) se ajusta a su contenido.
-   - Sin transformación disponible: el título va solo, sin foto ni frase, con su CTA.
-   - **Símbolo oficial** de fondo: entero, sin girar, sin recolorear y sin recortar, a ~8 % de opacidad, detrás del título (arriba a la derecha en móvil; abajo a la izquierda en escritorio; arriba a la derecha en la portada sin foto). Es decorativo (`alt=""`) y se sirve redimensionado por el optimizador de `next/image`, permitido solo para `/_next/static/media/**`.
-3. **«Trabajos realizados»:** titular y una banda por trabajo (ver Muro).
-4. **Contacto** («¿Hablamos de tu coche?» + CTA) y pie con logo.
+1. **Cabecera:** logo oficial. Sin número de WhatsApp válido, además, «Contacto ↗», que lleva a la sección de contacto.
+2. **Portada:** titular centrado «Chapa y pintura.» (punto en verde), CTA de WhatsApp y una pista provisional. Debajo, un **abanico de cartas** que nace del borde inferior: una carta por trabajo de la página (su primera foto visible, con el nombre en una banda hueso como una carta de colores); si hay menos de siete trabajos, completan el abanico otras fotos de los mismos trabajos, decorativas (`aria-hidden`, sin foco). Cada carta principal es un enlace a la banda de su trabajo. Sin fotos no hay abanico y el titular se centra.
+3. **Antes y Después** (solo con la pareja elegida en `/app` → Portada y solo en la página 1): dos pantallas completas, una tras otra, con «ANTES» en hueso y «DESPUÉS» en verde, el nombre y la fecha del trabajo y «Ver fotos» (visor abierto en el Después). Sin pareja válida no hay sección.
+4. **«Trabajos realizados»:** titular centrado y una banda por trabajo (ver Mosaico).
+5. **Contacto** («¿Hablamos de tu coche?», «Cuéntanos qué necesitas.» y CTA, o el aviso de contacto pendiente) y pie con logo, «Chapa y pintura.» y «Volver arriba».
 
-Contenedor máximo de 1760 px, centrado; márgenes laterales de 20 px (móvil), 28 px (≥700) y 40 px (≥1100).
+Contenedor máximo de 1760 px. Márgenes laterales de 24 px (móvil), 48 px (≥700) y `clamp(64px, 8.4vw, 136px)` (≥1100). Mucho aire entre bloques: 22svh (26svh desde 1100).
 
-### Comparador Antes/Después
+### Mosaico de trabajos
 
-- Una sola imagen con barra deslizante: la foto «Después» completa y la «Antes» recortada por `clip-path`; chips «Antes» y «Después» en las esquinas. Ambas con `cover` y su punto focal.
-- La pareja la elige el propietario en `/app` (ver «Gestión privada»); sin selección válida, la portada queda con el título solo.
-- Es un `role="slider"` con nombre «Comparador Antes y Después: {trabajo}», `aria-valuenow/min/max` y `aria-valuetext` («Antes 58 %, Después 42 %»). Teclado: flechas ±4 (Mayús ±10), Re Pág/Av Pág ±10, Inicio y Fin.
-- **Solo se arrastra, no se toca para abrir.** Debajo, un botón visible «Ver fotos» abre el visor del trabajo. Lleva un icono de fotos y no la flecha ↗, que sugiere un enlace externo (solo los enlaces a WhatsApp la llevan). No hay umbral arrastre/toque.
-- `touch-action: pan-y`: el scroll vertical de la página funciona siempre, también empezando sobre la foto; solo se captura el gesto horizontal. En táctil el arrastre es relativo (sin saltos); con ratón la barra sigue al puntero.
-- La barra se mantiene entre el 14 % y el 86 % del ancho para no chocar con el gesto de «atrás». Tirador de 52 px, verde con anillo, siempre visible.
-- Pista de uso: al entrar en pantalla la barra se desplaza sola ≈12 puntos y vuelve, una sola vez; se cancela si la persona interactúa. Sin pista con `prefers-reduced-motion`.
-- Las fotos Antes/Después no tienen por qué estar alineadas (distinto ángulo de cámara): es inherente al material y no se recorta ni corrige.
+- Cada trabajo es un `article` anclable (`#trabajo-{id}`) con una **banda**: nombre en grande, fecha y «N fotografías» en paralelogramos (la fecha en verde), descripción si existe y «Ver fotos» (visor en la primera foto).
+- Sus fotos van en **dos columnas escalonadas** (la segunda empieza más abajo) con proporciones alternas 4:5, 1:1, 3:5, 3:4, `cover` y punto focal, contador `n/N`; una sola foto ocupa una columna de 520 px como máximo. Cada foto abre el visor en esa misma imagen.
+- Desde 1100 px la banda va a la izquierda (5/12) y se queda fija (`sticky`) mientras pasan sus fotos a la derecha (7/12).
+- El orden de los trabajos y de sus fotos lo fija el propietario en la pantalla «Portada». Las fotos ocultas no se pintan ni cuentan. Un trabajo sin ninguna foto visible no tiene banda.
+- Estados de error, vacío y paginación conservan el contrato de [PRODUCT.md](PRODUCT.md).
 
-### Muro de trabajos
+### Botón flotante de WhatsApp
 
-- Cada trabajo es un `article` con una **banda** (borde superior verde de 3 px, nombre en mayúsculas, fecha larga y «N fotografías», y la descripción si existe) y todas sus fotos a la vista. Una foto abre el visor en esa misma imagen.
-- Fotos en recuadros 4:5 con `cover` y punto focal, separados 2 px, con contador `n/N`. Móvil/tablet (<900): dos columnas y, si el número de fotos es impar, la primera a todo el ancho. Desde 900: 12 columnas con filas de hasta cuatro fotos (4 por fila → 3 columnas cada una, 3 → 4, 2 → 6; una sola foto no se estira; nunca queda una foto sola en una fila; ver `wall.ts`).
-- El orden de los trabajos lo fija el propietario en la pantalla «Portada» (sin insignia ni cambio visual): un trabajo recién publicado va el primero. Las fotos ocultas desde `/app` no se pintan ni cuentan en «N fotografías», y siguen el orden que el propietario fija en la pantalla «Portada».
-- Un trabajo sin ninguna foto visible no tiene banda en el muro (no hay estado «Fotografías próximamente»).
-- Estados de error, vacío y paginación conservan el contrato de [PRODUCT.md](PRODUCT.md) con la misma tipografía.
-
-### Botón fijo de WhatsApp (móvil)
-
-- Solo por debajo de 700 px y solo con número de WhatsApp válido: botón verde a todo el ancho (12 px de margen, 52 px de alto, respeta el área segura) con «Escríbenos por WhatsApp ↗».
-- Aparece cuando el título sale de pantalla. Se retira al llegar a «contacto» o al pie, para no tapar el contenido final ni duplicar el CTA, y mientras hay un visor abierto (el dialog modal ya lo deja inerte y debajo de su fondo; el CSS lo oculta además con `:has(dialog[open])`).
-- Oculto es `visibility: hidden`: fuera del orden de tabulación y del árbol de accesibilidad. Entra con un desplazamiento de 16 px y fundido (0,22 s); con `prefers-reduced-motion` aparece sin transición.
+- Solo con número válido: botón **redondo** verde (62 px; 68 px desde 1100) abajo a la derecha, con el icono de WhatsApp y el nombre accesible «Escríbenos por WhatsApp (abre WhatsApp en otra pestaña)». Respeta el área segura.
+- Se retira mientras se ve el titular de la portada, la sección de contacto o el pie (zonas `[data-fab-hide]`), para no duplicar el CTA, y con un visor abierto. Oculto es `visibility: hidden`: fuera del tabulador y del árbol de accesibilidad. Entra con giro y escala; con `prefers-reduced-motion`, sin transición.
 
 ### Imagen para compartir
 
-Imagen Open Graph **estática y solo de marca**: logo oficial completo, a su proporción, sobre Carbon, más «CHAPA Y PINTURA» en Barlow Condensed 800; sin fotos de trabajos. Es `public/share/iguana-garage-og.png` (1200×630), generada a mano con `scripts/prepare-og-image.mjs` (no se ejecuta en build ni en peticiones) y enlazada desde los metadatos de `/` (`og:image`, `twitter:image` y `twitter:card=summary_large_image`). La URL es absoluta: `metadataBase` usa `RENDER_EXTERNAL_URL` o, si falta, la URL de producción.
+Imagen Open Graph **estática y solo de marca**: logo oficial completo, a su proporción, sobre Carbon, más «CHAPA Y PINTURA» en Barlow Condensed 800; sin fotos de trabajos. Es `public/share/iguana-garage-og.png` (1200×630), generada a mano con `scripts/prepare-og-image.mjs` (no se ejecuta en build ni en peticiones) y enlazada desde los metadatos de `/` (`og:image`, `twitter:image` y `twitter:card=summary_large_image`). La URL es absoluta: `metadataBase` usa `RENDER_EXTERNAL_URL` o, si falta, la URL de producción. No se ha regenerado con la tipografía nueva.
 
 ### Movimiento
 
-- **Título:** al cargar, sus dos líneas suben escalonadas (0,38 em y fundido, 0,75 s, la segunda con 0,12 s de retardo), una sola vez y solo con CSS.
-- **Entrada al hacer scroll** en titulares, bandas y contacto: aparición con ligero desplazamiento vertical (18 px, 0,45 s). Solo se oculta lo que queda bajo la primera pantalla, y solo con JavaScript (`RevealOnScroll`); sin JS todo es visible.
-- **Entrada de las fotos del muro:** cada foto sube y aparece (24 px y de opacidad 0 a 1, 0,5 s, escalonado de 60 ms entre fotos de una fila), una sola vez, y **no empieza hasta que la imagen está cargada y decodificada** (evento `load` + `decode()`, no un temporizador). Mientras carga, el hueco ya reservado (4:5, sin saltos de maquetación) muestra Metal con un brillo de carga sutil. Si la foto termina de cargar cuando ya está en pantalla aparece solo con fundido, sin desplazamiento. Solo anima `transform` y `opacity`; se mueve la capa de la foto, no el hueco. Estados `data-wall` = `loading` | `queued` | `rise` | `fade` (lógica pura en `photo-entry.ts`, gestión en `RevealOnScroll`); el atributo se retira al terminar. Si `decode()` de una imagen ya cargada no resolviera, se libera tras 1,5 s para que ninguna foto quede invisible. Un recorrido muy rápido puede saltarse un recuadro: espera en cola y sube al acercarse de nuevo.
-- Zoom muy leve (1,03) al pasar el ratón sobre una foto del muro.
-- Con `prefers-reduced-motion: reduce` no hay título animado, ni entrada animada, ni brillo de carga, ni zoom, ni pista del comparador, ni transiciones del visor o del botón fijo: la foto aparece directamente al cargar y todo se ve desde el principio.
+Intenso pero sin bucles: solo responde a la carga y al scroll. Todo lo que se mueve es `transform` u `opacity`.
+
+- **Al cargar** (CSS, una vez): las dos líneas del titular suben desde su línea (1,1 s), la librea crece, la fila del CTA funde y las cartas del abanico se reparten desde abajo con rebote, escalonadas 70 ms.
+- **Ligado al scroll** (`HomeMotion`, `motion.ts`): solo con JavaScript y sin «reducir movimiento», `HomeMotion` marca la página con `data-motion="live"` y escribe variables CSS. Cada fotograma lee todas las posiciones y después escribe, y solo lo que cambia.
+  - **Portada** (`--p`, con inercia): queda fijada 165svh (185svh desde 700) mientras el abanico se abre en semicírculo y sube, y el titular se encoge y se atenúa.
+  - **Antes y Después** (`--x`, con inercia): la sección se fija 330svh; el Antes se queda quieto, la pista lo lleva en horizontal hasta el Después con unas rayas verdes de chicane entre ambos y el Después se queda quieto. Las fotos y los rótulos se desplazan a distinta velocidad. Un indicador «Antes / Después» se rellena de verde.
+  - **Fotos del mosaico** (`--t`): una tapa Carbon se retira hacia abajo mientras la foto sube por la pantalla y la foto pasa de 1,25 a 1.
+  - **Columnas** (`--q`): se desplazan en sentidos opuestos (paralaje de ±45 px; ±90 px desde 1100).
+  - **Titulares** de «Trabajos realizados» y del contacto (`--t`): crecen al entrar, sin atenuarse (el contraste se mantiene siempre).
+- **Sin JavaScript o con `prefers-reduced-motion: reduce`:** nada se fija ni se anima. La portada mide una pantalla con el abanico entreabierto (sin la pista, que solo tiene sentido con movimiento), el Antes y el Después son dos pantallas apiladas, todas las fotos se ven desde el principio y el botón flotante aparece sin transición.
+- **Sin saltos de maquetación:** cada línea del titular va en una sola fila con interlineado fijo (el cambio de fuente no mueve nada), las cartas y las fotos reservan su proporción y las fotos fuera de pantalla cargan en diferido.
 
 ### Visores de fotos (público y privado)
 
@@ -94,12 +91,12 @@ Los dos visores comparten estilo, estructura y comportamiento, pero cada uno con
 - **Cabecera:** título del trabajo a la izquierda, contador «2 / 3» y cierre arriba a la derecha (48 px, sin anillo; con teclado muestra foco visible en tono hueso/texto, nunca verde). Un `role="status"` oculto anuncia «Fotografía 2 de 3».
 - **Flechas anterior/siguiente:** en escritorio (≥ 900 px), grandes (64 px) en columnas laterales a los lados de la foto; en móvil y tablet, compactas (44 px) sobre la foto. También flechas del teclado; Escape cierra y el foco vuelve al elemento que lo abrió. El deslizamiento se describe en «Tira de fotos».
 - **Miniaturas** centradas debajo (56 px móvil, 64 px escritorio), con recorte `cover` y punto focal; la activa lleva borde verde y opacidad completa, las demás se atenúan (`aria-pressed`). Con una sola foto no hay flechas ni miniaturas.
-- **Público (`pub-viewer`):** nombre del trabajo en Barlow Condensed (mayúsculas), tokens del portfolio, loaders y variantes del portfolio; el botón fijo de WhatsApp queda oculto con el visor abierto.
+- **Público (`pub-viewer`):** nombre del trabajo en Big Shoulders (mayúsculas), tokens del portfolio, loaders y variantes del portfolio; el botón flotante de WhatsApp queda oculto con el visor abierto.
 - **Privado (`app-viewer`):** tiene su propia piel, con sus loaders y rutas `/app/api/photos`, sin estilos del portfolio. Hoy no ofrece acceso al original desde el visor (el endpoint `?original=1` existe, pero no se enlaza).
 - **Tira de fotos:** el escenario es una tira horizontal con **solo tres fotos montadas** (actual, anterior y siguiente; nunca todas las del trabajo), cada una con el mismo `sizes`/variante que usará al mostrarse, para que al pasar ya estén descargadas y decodificadas. En táctil la tira sigue el dedo (el ratón no arrastra) y al soltar encaja en la vecina si el recorrido supera el umbral (20 % del ancho, entre 48 y 120 px) o hay velocidad de lanzamiento (≥ 0,5 px/ms con al menos 24 px); si no, vuelve a su sitio. Hacia un lado sin foto vecina hay resistencia elástica. `touch-action: pan-y` conserva el scroll vertical y un toque no cambia de foto. Flechas y teclado hacen la misma transición corta (≈ 0,22 s) y durante ella se ignora la entrada nueva. La lógica es `strip.ts` y `swipe.ts`.
 - **Foto aún no lista:** nunca se muestra una foto distinta de la que indica el contador. Mientras la grande no está cargada y decodificada, su miniatura (ya cargada en la tira de miniaturas) se enseña al instante ampliada con `contain` y ligeramente difuminada, y se funde a la foto buena al estar lista. Si falla, aparece «Fotografía no disponible.» sobre la miniatura, con «Reintentar foto» (hasta 3 veces). No cambia la política de caché: las fotos siguen `private, no-store`.
 - **Imágenes:** `sizes` sale de `viewerStageSizes` (alto disponible × proporción, restando cabecera, miniaturas y las columnas de flechas en escritorio). Con `prefers-reduced-motion` el cambio de foto es instantáneo, sin encaje animado ni fundido.
-- Las vistas previas fuera del visor pueden recortar con `cover` y punto focal; al ampliar siempre se muestra la imagen completa. Reservar espacio de imágenes y ajustar `sizes` al ancho realmente pintado (muro, comparador y visores).
+- Las vistas previas fuera del visor pueden recortar con `cover` y punto focal; al ampliar siempre se muestra la imagen completa. Reservar espacio de imágenes y ajustar `sizes` al ancho realmente pintado (abanico, Antes/Después, mosaico y visores).
 
 ## Gestión privada
 
@@ -122,7 +119,7 @@ En el taller, la última capa es el barniz: lo que da brillo. La gestión usa es
 - **Brillo = sale en la web:** lo publicado lleva verde Iguana y un reflejo especular (etiqueta «Publicado» con punto verde; tarjetas con filo de luz); lo privado es mate («Privado» con punto hueco). Lo oculto o vacío se marca con un rayado fino en tono hueso («Oculta», sin fotos, avisos de error).
 - **Tipografía:** Hubot Sans (técnica, de taller) para titulares, posiciones del muro y código de pintura; Mona Sans para texto e interfaz. Autoalojadas con `next/font` en `src/app/app/layout.tsx`. Sin etiquetas en mayúsculas.
 - **Marco:** cabecera mínima (logo y «Cerrar sesión») y un **dock flotante** abajo y centrado en todas las anchuras: «Trabajos», «Portada» y «Nuevo trabajo». En alta y edición el dock cede su sitio a la barra de guardado («Cancelar» / «Guardar trabajo»), con la misma forma y lugar.
-- **Pantallas:** listado en rejilla continua de fotos 4:5 (2 → 3 → 4 → 5 columnas) con estado sobre la foto; ficha con la foto a la izquierda y la hoja de datos a la derecha desde 1000 px (el código de pintura destaca); formulario en dos paneles (datos y fotografías 4:5); Portada con la transformación como el comparador público (dos fotos unidas por la costura verde con tirador) y el muro como filas numeradas, primero «En el muro» y al final «Sin publicar». El login es una tarjeta sobre Carbon con el formulario.
+- **Pantallas:** listado en rejilla continua de fotos 4:5 (2 → 3 → 4 → 5 columnas) con estado sobre la foto; ficha con la foto a la izquierda y la hoja de datos a la derecha desde 1000 px (el código de pintura destaca); formulario en dos paneles (datos y fotografías 4:5); Portada con la transformación como un comparador (dos fotos unidas por la costura verde con tirador) y el muro como filas numeradas, primero «En el muro» y al final «Sin publicar». El login es una tarjeta sobre Carbon con el formulario.
 - **Botones:** píldoras. Principal en verde; secundario con contorno; borrar es texto subrayado con icono y, en la confirmación, botón hueso con texto explícito.
 - **Movimiento:** solo responde a acciones. Al publicar un trabajo en Portada (y al activar «Publicar en portfolio») pasa una única franja de brillo, como una mano de barniz; el login la tiene una vez al cargar. Con `prefers-reduced-motion` no hay brillo, ni zoom, ni entrada de la bandeja, y los avisos no se retiran solos.
 

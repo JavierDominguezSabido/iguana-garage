@@ -1,5 +1,4 @@
 import { isUuid } from "@/features/jobs/validation";
-import type { PublicJob } from "./contract";
 import { PREPARED_IMAGE_WIDTHS } from "./variants";
 
 export const PUBLIC_IMAGE_WIDTHS: readonly number[] = PREPARED_IMAGE_WIDTHS;
@@ -22,10 +21,6 @@ export function photoRequest(job: string, media: string, url: URL): { path: stri
 }
 export function portfolioPage(input?: string): number {
   return input && /^[1-9]\d{0,3}$/.test(input) ? Number(input) : 1;
-}
-export function portfolioHero(jobs: readonly PublicJob[]): PublicJob | undefined {
-  // El listado mantiene su orden: el hero aporta una imagen de otro trabajo de esta página.
-  return jobs.findLast((job, index) => index > 0 && job.media.length > 0);
 }
 export function publicDate(date: string): string {
   return new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));

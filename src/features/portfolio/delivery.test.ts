@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import sharp from "sharp";
-import { photoRequest, publicPhotoUrl, portfolioPage, portfolioHero } from "./delivery";
-import type { PublicJob } from "./contract";
+import { photoRequest, publicPhotoUrl, portfolioPage } from "./delivery";
 import { resizePublicPhoto } from "./image-processing";
 
 const job = "22222222-2222-4222-8222-222222222222";
@@ -34,25 +33,4 @@ describe("entrega de derivados autorizados", () => {
 describe("paginación pública acotada", () => {
   it.each([undefined, "", "bad", "-1", "0", "1.5", "9999999"])("normaliza navegación inválida al inicio", (input) => expect(portfolioPage(input)).toBe(1));
   it("permite llegar a trabajos anteriores sin ampliar el contrato", () => expect(portfolioPage("2")).toBe(2));
-});
-
-describe("hero sin repetición inmediata del primer trabajo", () => {
-  const work = (id: string, photos = 1): PublicJob => ({ id, name: id, job_date: "2026-10-06", description: null, media: Array.from({ length: photos }, (_, index) => ({ id: `${id}-${index}`, path: `${id}/${index}.webp`, focal_x: 50, focal_y: 50 })) });
-  it("elige otro trabajo de la página y conserva el orden y las fotografías del listado", () => {
-    const jobs = [work("primero"), work("segundo"), work("tercero")];
-    const original = structuredClone(jobs);
-    expect(portfolioHero(jobs)?.id).toBe("tercero");
-    expect(jobs).toEqual(original);
-  });
-  it("salta trabajos sin fotos al buscar una alternativa al primero", () => {
-    const alternative = work("segundo");
-    expect(portfolioHero([work("primero"), alternative, work("sin-fotos", 0)])).toBe(alternative);
-  });
-  it("admite una alternativa aunque el primer trabajo no tenga fotos", () => {
-    const alternative = work("segundo");
-    expect(portfolioHero([work("primero", 0), alternative])).toBe(alternative);
-  });
-  it.each([[], [work("único")], [work("único", 3)], [work("primero"), work("sin-fotos", 0)], [work("sin-fotos", 0)]])("deja el hero a la identidad oficial si no hay otro trabajo con fotos", (...jobs: PublicJob[]) => {
-    expect(portfolioHero(jobs)).toBeUndefined();
-  });
 });
