@@ -96,11 +96,17 @@ body:has(> .app) { background: #0e1110; }
 .app .topbar { display: flex; align-items: center; gap: 12px; max-width: calc(var(--max) + 2 * var(--gutter)); min-height: 68px; margin-inline: auto; padding: 8px var(--gutter) 0; }
 .app .topbar-home { display: block; margin-left: -8px; border-radius: var(--r-s); }
 .app .topbar .brand { display: block; width: 168px; height: auto; }
+.app .topbar-actions { display: flex; align-items: center; gap: 2px; margin-left: auto; }
 .app .logout-form { position: relative; margin-left: auto; }
 .app .logout-form .alert { position: absolute; z-index: 20; top: 52px; right: 0; width: 260px; }
 .app .logout-button { display: inline-flex; align-items: center; gap: 8px; min-width: 44px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--ink-2); font: 500 .9rem var(--f-text); }
 .app .logout-button:hover { color: var(--ink); background: var(--panel); }
 .app .logout-button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.app .topbar-link { position: relative; display: inline-flex; align-items: center; gap: 8px; min-width: 44px; min-height: 44px; padding: 0 12px; border-radius: 999px; color: var(--ink-2); font: 500 .9rem var(--f-text); }
+.app .topbar-link:hover { color: var(--ink); background: var(--panel); }
+.app .topbar-link[aria-current="page"] { color: var(--ink); background: var(--raised); box-shadow: var(--edge); }
+.app .topbar-link[aria-current="page"] svg { color: var(--green-ink); }
+.app .topbar-link span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .app .shell { max-width: calc(var(--max) + 2 * var(--gutter)); margin-inline: auto; padding: 20px var(--gutter) calc(var(--dock-h) + var(--dock-y) + 48px); }
 
 .app .dock, .app .form-dock { position: fixed; z-index: 40; left: 50%; bottom: var(--dock-y); transform: translateX(-50%); width: min(calc(100% - 24px), 560px);
@@ -403,6 +409,16 @@ body:has(> .app) { background: #0e1110; }
 .app .password-field > input { padding-right: 52px; }
 .app .password-field > button { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); }
 
+/* —— Cuenta: cambiar contraseña ——————————————————————————————————————————————— */
+.app .account-email { font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.app .account-panel { max-width: 560px; }
+.app .password-form { display: grid; gap: 2px; }
+.app .password-form .field input[aria-invalid="true"] { border-color: var(--bone); background: var(--hatch), var(--sunk); }
+.app .password-form .alert { margin-bottom: 14px; }
+.app .password-form > .button { width: 100%; margin-top: 8px; }
+.app .password-ok { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 14px; padding: 12px 14px; border-radius: var(--r-s); background: var(--green-wash); color: var(--ink); font-size: .9rem; line-height: 1.45; }
+.app .password-ok svg { flex: none; margin-top: 1px; color: var(--green-ink); }
+
 /* —— Visor privado (piel app-viewer del componente compartido) ————————————————————— */
 .app .app-viewer { position: fixed; inset: 0; margin: auto; width: 100%; max-width: none; height: 100dvh; max-height: none; padding: 0; border: 0; border-radius: 0; background: color-mix(in srgb, var(--carbon) 95%, transparent); color: var(--ink); overflow: hidden; }
 .app .app-viewer[open] { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
@@ -445,7 +461,8 @@ html:has(dialog.app-viewer[open]) { overflow: hidden; }
   .app .photo-previews { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .app .confirm-actions { flex-direction: row; justify-content: flex-end; }
   .app .confirm-dialog { margin: auto; }
-  .app .logout-button span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+  .app .logout-button span, .app .topbar-link span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+  .app .password-form > .button { width: auto; justify-self: start; }
   .app .portada-bar-buttons { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .app .portada-bar-buttons .button:nth-child(3) { grid-column: auto; }
   .app .portada-tile { flex-basis: 120px; }

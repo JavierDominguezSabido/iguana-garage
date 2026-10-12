@@ -11,6 +11,12 @@ const SECTIONS: { href: string; label: string; icon: IconName; current: (path: s
 // Formularios: el dock cede su sitio a la barra de guardado del propio formulario (misma forma y lugar).
 export const isFormPath = (path: string) => path === "/app/new" || /^\/app\/jobs\/[^/]+\/edit$/.test(path);
 
+// Cuenta (cambiar contraseña): en la cabecera, junto a «Cerrar sesión», fuera del dock de secciones.
+export function AccountLink() {
+  const current = usePathname() === "/app/cuenta";
+  return <Link href="/app/cuenta" className="topbar-link" aria-current={current ? "page" : undefined}><Icon name="user" /><span>Cuenta</span></Link>;
+}
+
 // Dock flotante: la navegación de la gestión, abajo y centrado en todas las anchuras. Las acciones viven siempre en esa
 // capa inferior translúcida («barniz»); el contenido queda arriba, mate.
 export function Dock() {
