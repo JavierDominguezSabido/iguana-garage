@@ -27,8 +27,8 @@ export function PublicGallery({ job }: { job: PublicJob }) {
       <button type="button" className="pub-more" onClick={() => setSelectedPhoto(job.media[0].id)} aria-haspopup="dialog"><PhotosIcon />Ver fotos<span className="pub-sr-only"> de {job.name}</span></button>
     </header>
     <div className="pub-wall">{columns.map((column, columnIndex) => <div key={columnIndex} className="pub-col">
-      {column.map(({ item: photo, index }) => <div key={photo.id} className="pub-tile" style={{ "--r": mosaicRatio(index) } as CSSProperties} data-scrub="">
-        <PublicPhoto jobId={job.id} mediaId={photo.id} alt={`${job.name}, fotografía ${index + 1}`} sizes={sizes} preview focal={photo} onOpen={() => setSelectedPhoto(photo.id)} label={`Ampliar ${job.name}, fotografía ${index + 1}`} />
+      {column.map(({ item: photo, index }) => <div key={photo.id} className="pub-tile" style={{ "--r": mosaicRatio(index) } as CSSProperties}>
+        <PublicPhoto jobId={job.id} mediaId={photo.id} alt={`${job.name}, fotografía ${index + 1}`} sizes={sizes} preview focal={photo} maxWidth={640} onOpen={() => setSelectedPhoto(photo.id)} label={`Ampliar ${job.name}, fotografía ${index + 1}`} />
         {job.media.length > 1 && <span className="pub-tile-idx" aria-hidden="true">{index + 1}/{job.media.length}</span>}
       </div>)}
     </div>)}</div>

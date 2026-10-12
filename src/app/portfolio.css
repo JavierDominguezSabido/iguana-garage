@@ -37,8 +37,9 @@ html:has(.portfolio-page) { background: #0e1110; scrollbar-color: #2a2d2b #0e111
 /* Titulares de competición: condensada industrial en mayúsculas, inclinada como la rotulación de carreras. */
 .pub-hero h1, .pub-works-title, .pub-contact-title, .pub-band-name, .pub-ba-label { font-family: var(--pub-display); font-weight: 900; font-variation-settings: "opsz" 72; text-transform: uppercase; line-height: .8; letter-spacing: -.005em; }
 .pub-dot { color: var(--pub-green); }
-/* Etalonaje común: las fotos de móvil del taller se igualan en saturación y contraste (el visor muestra la foto tal cual). */
-.pub-photo img { filter: saturate(.8) contrast(1.08) brightness(.96); }
+/* Etalonaje común: las fotos del taller se igualan en saturación y contraste (el visor muestra la foto tal cual).
+   Solo desde 1100 px: en móvil cada filtro es una superficie de render más por foto en la GPU. */
+@media (min-width: 1100px) { .pub-photo img { filter: saturate(.8) contrast(1.08) brightness(.96); } }
 
 .pub-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .pub-text-action { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 0; color: inherit; text-decoration: underline; text-underline-offset: 4px; }
@@ -58,35 +59,69 @@ html:has(.portfolio-page) { background: #0e1110; scrollbar-color: #2a2d2b #0e111
 .pub-header .pub-cta { min-height: 44px; padding: 0 20px; font-size: 15px; }
 @media (min-width: 1100px) { .pub-logo { width: 196px; } }
 
-/* ── Portada: titular centrado y abanico de cartas que nace del borde inferior ── */
+/* ── Portada: titular centrado y abanico de cartas ── */
 .pub-hero { position: relative; }
-/* Sin movimiento la portada crece con su contenido: el abanico va en el flujo, debajo del titular, y nunca lo solapa. */
-.pub-hero-stage { position: relative; min-height: max(100svh, 620px); overflow: hidden; display: grid; grid-template-rows: auto 1fr; justify-items: center; align-content: start; padding: max(104px, 14svh) var(--side) 0; text-align: center; }
+/* La portada crece con su contenido: el abanico va en el flujo, debajo del titular, y nunca lo solapa. */
+.pub-hero-stage { position: relative; min-height: max(100svh, 600px); overflow: hidden; display: grid; grid-template-rows: auto 1fr; justify-items: center; align-content: start; padding: max(84px, 11svh) var(--side) 0; text-align: center; }
 .pub-hero-stage:not(:has(.pub-fan)) { align-content: center; padding-top: 0; }
 .pub-livery { position: absolute; left: 50%; top: 0; bottom: 0; width: 150px; translate: -50% 0; transform: skewX(-14deg); transform-origin: 50% 100%; pointer-events: none; opacity: .2;
   background: linear-gradient(90deg, transparent 0 18%, var(--pub-green) 18% 36%, transparent 36% 64%, var(--pub-green) 64% 82%, transparent 82%); }
 .pub-hero-copy { position: relative; z-index: 2; display: grid; justify-items: center; transform-origin: 50% 0; }
-.pub-hero h1 { font-size: 25vw; transform: skewX(-9deg); }
+.pub-hero h1 { font-size: min(25vw, 12svh); transform: skewX(-9deg); }
 /* Cada línea en una sola fila y con interlineado fijo: el cambio de fuente al cargar no mueve nada. */
 .pub-line { display: block; overflow: hidden; padding: .02em .06em .03em; margin-bottom: -.05em; white-space: nowrap; }
 .pub-line > span { display: block; }
 .pub-hero-row { display: grid; justify-items: center; gap: 12px; margin-top: 26px; }
-/* Abanico: arco ancho (pivote a 3,2 anchos de carta bajo cada una) compensado con cos() para que todas las cartas
-   apoyen en la misma línea: al abrirse, las exteriores no se hunden y los nombres siguen a la vista. La caja reserva
-   la carta, la caída de su esquina al girar (≈ .36 anchos) y un margen. El ancho de carta sale de la altura disponible. */
-.pub-fan { --cw: min(62vw, 30svh); --spread: 80deg; --open: 1; --r: calc(var(--cw) * 3.2); position: relative; z-index: 1; align-self: end; width: calc(100% + 2 * var(--side)); height: calc(var(--cw) * 1.62 + 76px); margin-top: 28px; }
-.pub-card { --a: calc(var(--k) * (24deg + var(--open) * (var(--spread) - 24deg)));
-  position: absolute; left: calc(50% - var(--cw) / 2); bottom: calc(var(--cw) * .36 + 16px); width: var(--cw); display: block; padding: 5px 5px 0; border-radius: 9px; background: var(--pub-bone); color: var(--pub-carbon);
-  transform-origin: 50% calc(100% + var(--r)); rotate: var(--a); translate: 0 calc(var(--r) * (cos(var(--a)) - 1)); box-shadow: 0 20px 36px -16px #000f; transition: transform .35s var(--ease-out); }
-/* Indicador de scroll: pista fina inclinada como la librea con una cuenta verde que baja. Sin texto ni foco; solo
-   con movimiento (lo muestra [data-motion="live"]) y se desvanece en cuanto empieza a abrirse el abanico. */
+
+/* Cartas (comunes): carta de colores con la foto y el nombre en una banda hueso. */
+.pub-card { display: block; color: var(--pub-carbon); border-radius: 9px; }
+.pub-card-body { display: block; padding: 5px 5px 0; border-radius: 9px; background: var(--pub-bone); box-shadow: 0 20px 36px -16px #000f; transition: transform .35s var(--ease-out); }
+.pub-card-photo { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 5px; background: var(--pub-metal); }
+.pub-card-label { display: block; padding: 7px 4px 22px; font: 800 17px / 1 var(--pub-display); font-variation-settings: "opsz" 72; text-transform: uppercase; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pub-card-label::before { content: ""; display: inline-block; width: 18px; height: 9px; margin-right: 7px; background: var(--pub-green); transform: skewX(-20deg); }
+.pub-card:focus-visible { outline-offset: 3px; }
+
+/* Móvil y tablet: carrusel nativo (scroll horizontal + scroll-snap, sin arrastre por JS). La carta centrada va recta y
+   las vecinas asoman inclinadas por los lados (data-pos, con una transición corta; sin ella con «reducir movimiento»).
+   El gesto horizontal no bloquea el vertical: el navegador decide el eje en cada gesto. */
+.pub-fan-wrap { position: relative; z-index: 1; align-self: center; display: grid; justify-items: center; gap: 0; width: calc(100% + 2 * var(--side)); margin-top: 2svh; }
+/* overflow-y: hidden es imprescindible: con overflow-x: auto el eje vertical pasaría a «auto», las vecinas inclinadas lo harían
+   desplazable unos píxeles y el navegador engancharía ahí el gesto vertical en vez de bajar la página. */
+.pub-fan { --cw: min(64vw, 26svh); display: flex; gap: 5vw; width: 100%; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 24px calc(50% - var(--cw) / 2) 38px; }
+.pub-fan::-webkit-scrollbar { display: none; }
+.pub-fan .pub-card { flex: 0 0 var(--cw); width: var(--cw); scroll-snap-align: center; scroll-snap-stop: always; }
+/* La centrada va recta y las vecinas asoman inclinadas (data-pos lo pone HeroFan al encajar cada carta). */
+.pub-fan .pub-card-body { transform-origin: 50% 100%; transition: transform .35s var(--ease-out), rotate .45s var(--ease-out), translate .45s var(--ease-out); }
+.pub-fan .pub-card[data-pos="l"] .pub-card-body { rotate: -12deg; translate: 0 6%; }
+.pub-fan .pub-card[data-pos="r"] .pub-card-body { rotate: 12deg; translate: 0 6%; }
+.pub-fan-ctrl { display: flex; align-items: center; gap: 6px; }
+.pub-fan-step { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--pub-bone); cursor: pointer; }
+.pub-fan-step:disabled { opacity: .3; cursor: default; }
+.pub-fan-step:not(:disabled):hover { background: #f8f4da1f; }
+.pub-fan-count { min-width: 64px; font-style: italic; font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.pub-fan-count b { color: var(--pub-green); font-weight: 800; }
+
+/* Indicador de scroll (escritorio): pista fina inclinada como la librea con una cuenta verde que baja. Sin texto ni
+   foco; solo con movimiento y se desvanece en cuanto empieza a abrirse el abanico. */
 .pub-cue { display: none; position: absolute; z-index: 2; right: var(--side); top: 50%; width: 3px; height: 72px; margin-top: -36px; overflow: hidden; background: #f8f4da38; transform: skewX(-14deg); pointer-events: none; }
 .pub-cue > span { display: block; width: 100%; height: 22px; background: var(--pub-green); }
-.pub-card-photo { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 5px; background: var(--pub-metal); }
-.pub-card-label { display: block; padding: 7px 4px 26px; font: 800 17px / 1 var(--pub-display); font-variation-settings: "opsz" 72; text-transform: uppercase; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pub-card-label::before { content: ""; display: inline-block; width: 18px; height: 9px; margin-right: 7px; background: var(--pub-green); transform: skewX(-20deg); }
-.pub-card:focus-visible { outline-offset: 3px; transform: translateY(-8%); z-index: 20; }
-@media (hover: hover) { .pub-card:hover { transform: translateY(-8%); } }
+
+/* Escritorio: abanico sobre un arco ancho (pivote a 3,8 anchos de carta bajo cada una) compensado con cos() para que todas
+   las cartas apoyen en la misma línea; los nombres quedan a la vista. La caja reserva la carta, la caída de su esquina
+   al girar (≈ .36 anchos) y un margen. El ancho de carta sale de la altura disponible. */
+@media (min-width: 1100px) {
+  .pub-fan-wrap { display: contents; }
+  .pub-fan-ctrl { display: none; }
+  .pub-fan { --cw: min(250px, 24svh); --spread: 92deg; --r: calc(var(--cw) * 3.8); display: block; position: relative; z-index: 1; align-self: end; overflow: visible; padding: 0; width: calc(100% + 2 * var(--side)); height: calc(var(--cw) * 1.62 + 80px); margin-top: 28px; }
+  .pub-fan .pub-card { --a: calc(var(--k) * var(--spread)); position: absolute; left: calc(50% - var(--cw) / 2); bottom: calc(var(--cw) * .36 + 16px);
+    transform-origin: 50% calc(100% + var(--r)); rotate: var(--a); translate: 0 calc(var(--r) * (cos(var(--a)) - 1)); }
+  .pub-fan .pub-card[data-pos] .pub-card-body { rotate: none; translate: none; }
+  .pub-card-label { font-size: 18px; padding-bottom: 26px; }
+}
+@media (min-width: 1100px) { .pub-fan .pub-card:focus-visible { z-index: 20; } .pub-fan .pub-card:focus-visible .pub-card-body { transform: translateY(-8%); } }
+@media (hover: hover) and (min-width: 1100px) { .pub-fan .pub-card:hover { z-index: 20; } .pub-fan .pub-card:hover .pub-card-body { transform: translateY(-8%); } }
+/* Escritorios bajos o estrechos (1100–1399): nombre más compacto para que el de la carta izquierda no quede tapado por su vecina. */
+@media (min-width: 1100px) and (max-width: 1399px) { .pub-card-label { font-size: 16px; letter-spacing: -.01em; } .pub-card-label::before { width: 12px; margin-right: 5px; } }
 
 /* ── Antes y Después: dos pantallas completas, una tras otra ── */
 .pub-ba-stage { position: relative; overflow: hidden; container-type: inline-size; }
@@ -116,7 +151,7 @@ html:has(.portfolio-page) { background: #0e1110; scrollbar-color: #2a2d2b #0e111
 .pub-col { display: grid; gap: 12px; }
 .pub-col + .pub-col { margin-top: 18%; }
 .pub-tile { position: relative; aspect-ratio: var(--r, 4 / 5); overflow: hidden; background: var(--pub-metal); }
-.pub-tile-idx { position: absolute; z-index: 1; left: 10px; bottom: 10px; padding: 2px 12px; font-size: 12px; font-style: italic; font-weight: 600; background: #0e1110c7; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); pointer-events: none; }
+.pub-tile-idx { position: absolute; z-index: 1; left: 10px; bottom: 10px; padding: 2px 12px; font-size: 12px; font-style: italic; font-weight: 600; background: #0e1110c7; transform: skewX(-14deg); pointer-events: none; }
 .pub-state { max-width: 60ch; margin: 8svh auto 0; padding: 0 var(--side); color: var(--pub-muted); text-align: center; line-height: 1.8; }
 .pub-pagination { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px 20px; padding: 12svh var(--side) 0; color: var(--pub-muted); }
 
@@ -146,15 +181,15 @@ html:has(.portfolio-page) { background: #0e1110; scrollbar-color: #2a2d2b #0e111
 body:has(dialog.pub-viewer[open]) .pub-fab { visibility: hidden; }
 
 @media (min-width: 700px) {
-  .pub-hero h1 { font-size: 19vw; }
-  .pub-fan { --cw: min(36vw, 26svh); --spread: 92deg; }
+  .pub-hero h1 { font-size: min(19vw, 15svh); }
+}
+@media (min-width: 700px) and (max-width: 1099px) {
+  .pub-fan { --cw: min(44vw, 32svh); gap: 3vw; }
   .pub-wall, .pub-col { gap: 20px; }
 }
 @media (min-width: 1100px) {
   .pub-hero-stage { padding-top: 13svh; }
   .pub-hero h1 { font-size: min(15.5vw, 29svh); }
-  .pub-fan { --cw: min(250px, 24svh); }
-  .pub-card-label { font-size: 20px; padding-bottom: 30px; }
   .pub-ba-label { bottom: 140px; }
   .pub-work { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 7vw; align-items: start; }
   .pub-band { position: sticky; top: 14svh; padding-top: 4svh; }
@@ -164,64 +199,136 @@ body:has(dialog.pub-viewer[open]) .pub-fab { visibility: hidden; }
   .pub-fab { right: 32px; bottom: 32px; width: 68px; height: 68px; }
 }
 
-/* ── Entrada al cargar (solo sin «reducir movimiento»): titular, fila de acciones, cartas y librea ── */
+/* ── Movimiento ──
+   Regla: solo se anima transform y opacity (nunca clip-path, filter, box-shadow, tamaños ni posiciones).
+   - Al cargar (CSS, una vez): titular, fila del CTA, cartas y librea. Propiedades distintas de las del scroll para no pisarse.
+   - Con el scroll, HomeMotion marca la página: data-motion="scroll" si el navegador tiene scroll-driven animations
+     (el compositor las ejecuta: ni JavaScript ni lecturas de layout por fotograma) y data-motion="js" si no
+     (listener pasivo, una escritura por fotograma con requestAnimationFrame y geometría cacheada; solo portada y Antes/Después).
+   - Sin JavaScript o con «reducir movimiento» no hay atributo: todo quieto y visible. */
 @media (prefers-reduced-motion: no-preference) {
   .pub-hero h1 .pub-line > span { animation: pub-up 1.1s var(--ease-out) .1s backwards; }
   .pub-hero h1 .pub-line + .pub-line > span { animation-delay: .22s; }
   .pub-hero-row { animation: pub-fade .8s ease .8s backwards; }
-  .pub-card { animation: pub-deal 1.2s var(--ease-kick) backwards; animation-delay: calc(.45s + var(--i) * .07s); }
-  .pub-livery { animation: pub-livery 1.4s var(--ease-wipe) .2s backwards; }
+  .pub-fan .pub-card-body { animation: pub-deal 1.1s var(--ease-kick) backwards; animation-delay: calc(.4s + var(--i) * .07s); }
+  .pub-livery { animation: pub-grow 1.4s var(--ease-wipe) .2s backwards; }
 }
 @keyframes pub-up { from { transform: translateY(110%); } }
 @keyframes pub-fade { from { opacity: 0; } }
-@keyframes pub-deal { from { translate: 0 120%; rotate: 0deg; } }
-@keyframes pub-livery { from { transform: skewX(-14deg) scaleY(0); } }
+@keyframes pub-grow { from { scale: 1 0; } }
+@keyframes pub-deal { from { transform: translateY(120%); } }
 
-/* ── Movimiento ligado al scroll ([data-motion="live"], lo pone HomeMotion) ── */
-.portfolio-page[data-motion="live"] .pub-hero { height: 165svh; }
-.portfolio-page[data-motion="live"] .pub-hero-stage { position: sticky; top: 0; height: 100svh; min-height: 0; }
-.portfolio-page[data-motion="live"] .pub-hero-copy { transform: translateY(calc(var(--p, 0) * -9svh)) scale(calc(1 - var(--p, 0) * .2)); opacity: calc(1 - var(--p, 0) * .35); }
-.portfolio-page[data-motion="live"] .pub-cue { display: block; opacity: calc(1 - var(--p, 0) * 6); }
-.portfolio-page[data-motion="live"] .pub-cue > span { animation: pub-cue 1.8s cubic-bezier(.6, 0, .3, 1) .6s infinite; }
+/* Disposición fijada (cualquier modo con movimiento): en escritorio la portada se fija para abrir el abanico; el
+   Antes/Después se fija en todas las anchuras para pasar en horizontal. */
+@media (min-width: 1100px) {
+  .portfolio-page[data-motion] .pub-hero { height: 185svh; }
+  .portfolio-page[data-motion] .pub-hero-stage { position: sticky; top: 0; height: 100svh; min-height: 0; }
+  .portfolio-page[data-motion] .pub-fan { position: absolute; left: 0; right: 0; bottom: 0; width: auto; margin: 0; }
+  .portfolio-page[data-motion] .pub-cue { display: block; }
+  .portfolio-page[data-motion] .pub-cue > span { animation: pub-cue 1.8s cubic-bezier(.6, 0, .3, 1) .6s infinite; }
+}
 @keyframes pub-cue { from { transform: translateY(-22px); } to { transform: translateY(72px); } }
 @media (prefers-reduced-motion: reduce) { .pub-cue { display: none !important; } }
-/* Con movimiento la portada mide una pantalla: el abanico se ancla abajo, sube desde fuera y se abre; abierto (--p = 1) cabe entero. */
-.portfolio-page[data-motion="live"] .pub-fan { position: absolute; left: 0; right: 0; bottom: 0; width: auto; margin: 0; --open: var(--p, 0); transform: translateY(calc((1 - var(--p, 0)) * 22svh)); }
-.portfolio-page[data-motion="live"] .pub-livery { transform: skewX(calc(-14deg - var(--p, 0) * 18deg)) scaleX(calc(1 + var(--p, 0) * 2.4)); }
-
-.portfolio-page[data-motion="live"] .pub-ba { height: 330svh; }
-.portfolio-page[data-motion="live"] .pub-ba-stage { position: sticky; top: 0; height: 100svh; min-height: 540px; }
-.portfolio-page[data-motion="live"] .pub-ba-track { position: absolute; inset: 0; width: 200cqw; display: flex; transform: translate3d(calc(var(--x, 0) * -100cqw), 0, 0); will-change: transform; }
-.portfolio-page[data-motion="live"] .pub-ba-slide { flex: none; width: 100cqw; height: 100%; min-height: 0; }
-.portfolio-page[data-motion="live"] .pub-ba-img { transform: translateX(calc((var(--x, 0) - var(--n)) * 10%)) scale(1.2); }
-.portfolio-page[data-motion="live"] .pub-ba-label { transform: translateX(calc((var(--x, 0) - var(--n)) * -60cqw)) skewX(calc(-9deg + (var(--x, 0) - var(--n)) * 20deg)); }
-.portfolio-page[data-motion="live"] .pub-ba-chicane { display: block; position: absolute; z-index: 3; top: -6%; bottom: -6%; left: 100cqw; width: 26cqw; translate: -50% 0; pointer-events: none;
-  background: repeating-linear-gradient(90deg, var(--pub-green) 0 16px, var(--pub-carbon) 16px 30px);
-  transform: skewX(-16deg) scaleX(clamp(0, calc(min(var(--x, 0), 1 - var(--x, 0)) * 7), 1)); }
-.portfolio-page[data-motion="live"] .pub-ba-hud { position: absolute; left: 0; right: 0; bottom: 0; justify-content: space-between; padding: 0 var(--side) 30px; }
-.portfolio-page[data-motion="live"] .pub-ba-steps { display: flex; gap: 6px; }
-/* Texto Carbon tanto sobre el hueso como sobre el relleno verde: contraste suficiente en todo el recorrido. */
-.portfolio-page[data-motion="live"] .pub-ba-steps span { position: relative; isolation: isolate; overflow: hidden; padding: 5px 18px; font-size: 13px; font-weight: 700; font-style: italic; color: var(--pub-carbon); background: #f8f4dae0; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
-.portfolio-page[data-motion="live"] .pub-ba-steps span::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--pub-green); transform-origin: left; transform: scaleX(var(--x, 0)); }
-.portfolio-page[data-motion="live"] .pub-ba-steps span:first-child::before { transform-origin: right; transform: scaleX(calc(1 - var(--x, 0))); }
-.portfolio-page[data-motion="live"] .pub-ba-job { order: -1; }
-
-.portfolio-page[data-motion="live"] .pub-tile::after { content: ""; position: absolute; inset: 0; z-index: 2; background: var(--pub-carbon); pointer-events: none; transform: translateY(calc(var(--t, 0) * 101%)); }
-.portfolio-page[data-motion="live"] .pub-tile .pub-photo { transform: scale(calc(1.25 - var(--t, 0) * .25)); }
-.portfolio-page[data-motion="live"] .pub-col { transform: translateY(calc((var(--q, .5) - .5) * 90px)); }
-.portfolio-page[data-motion="live"] .pub-col + .pub-col { transform: translateY(calc((var(--q, .5) - .5) * -90px)); }
-/* Los titulares solo crecen al entrar: no se atenúan, para no perder contraste en ningún momento. */
-.portfolio-page[data-motion="live"] .pub-works-title, .portfolio-page[data-motion="live"] .pub-contact-title { transform: scale(calc(.78 + var(--t, 0) * .22)) skewX(-9deg); }
+.portfolio-page[data-motion] .pub-ba { height: 330svh; }
+.portfolio-page[data-motion] .pub-ba-stage { position: sticky; top: 0; height: 100svh; min-height: 540px; }
+.portfolio-page[data-motion] .pub-ba-track { position: absolute; inset: 0; width: 200cqw; display: flex; }
+.portfolio-page[data-motion] .pub-ba-slide { flex: none; width: 100cqw; height: 100%; min-height: 0; }
+.portfolio-page[data-motion] .pub-ba-img { transform: scale(1.2); }
+.portfolio-page[data-motion] .pub-ba-chicane { display: block; position: absolute; z-index: 3; top: -6%; bottom: -6%; left: 100cqw; width: 26cqw; translate: -50% 0; pointer-events: none;
+  background: repeating-linear-gradient(90deg, var(--pub-green) 0 16px, var(--pub-carbon) 16px 30px); transform: skewX(-16deg) scaleX(0); }
+.portfolio-page[data-motion] .pub-ba-hud { position: absolute; left: 0; right: 0; bottom: 0; justify-content: space-between; padding: 0 var(--side) 30px; }
+.portfolio-page[data-motion] .pub-ba-steps { display: flex; gap: 6px; }
+/* Paralelogramo con skew (no clip-path) y texto Carbon tanto sobre el hueso como sobre el relleno verde. */
+.portfolio-page[data-motion] .pub-ba-steps span { position: relative; isolation: isolate; overflow: hidden; padding: 5px 18px; font-size: 13px; font-weight: 700; font-style: italic; color: var(--pub-carbon); background: #f8f4dae0; transform: skewX(-14deg); }
+.portfolio-page[data-motion] .pub-ba-steps span::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--pub-green); transform-origin: left; transform: scaleX(0); }
+.portfolio-page[data-motion] .pub-ba-steps span:first-child::before { transform-origin: right; transform: scaleX(1); }
+.portfolio-page[data-motion] .pub-ba-job { order: -1; }
 @media (max-width: 699px) {
-  .portfolio-page[data-motion="live"] .pub-ba-hud { flex-direction: column; justify-content: flex-end; gap: 12px; }
-  .portfolio-page[data-motion="live"] .pub-ba-job { order: 0; }
-  .portfolio-page[data-motion="live"] .pub-ba-label { bottom: 190px; }
+  .portfolio-page[data-motion] .pub-ba-hud { flex-direction: column; justify-content: flex-end; gap: 12px; }
+  .portfolio-page[data-motion] .pub-ba-job { order: 0; }
+  .portfolio-page[data-motion] .pub-ba-label { bottom: 190px; }
 }
-@media (min-width: 700px) { .portfolio-page[data-motion="live"] .pub-hero { height: 185svh; } }
+
+/* Scroll-driven (compositor). Rangos: la portada y el Antes/Después usan «contain» de su propia línea de tiempo (de que su
+   borde superior llega arriba a que el inferior llega abajo); fotos, columnas y titulares usan su paso por la pantalla. */
+@supports (animation-timeline: view()) {
+  .portfolio-page[data-motion="scroll"] .pub-hero { view-timeline: --hero block; }
+  .portfolio-page[data-motion="scroll"] .pub-ba { view-timeline: --ba block; }
+  .portfolio-page[data-motion="scroll"] .pub-work { view-timeline: --work block; }
+  .portfolio-page[data-motion="scroll"] :is(.pub-hero-copy, .pub-livery, .pub-fan, .pub-cue) { animation-timeline: --hero; animation-range: contain 0% contain 100%; animation-fill-mode: both; animation-timing-function: linear; animation-duration: auto; }
+  @media (min-width: 1100px) {
+    .portfolio-page[data-motion="scroll"] .pub-hero-copy { animation-name: pub-hero-copy; }
+    .portfolio-page[data-motion="scroll"] .pub-livery { animation-name: pub-grow, pub-hero-livery; animation-duration: 1.4s, auto; animation-timing-function: var(--ease-wipe), linear; animation-delay: .2s, 0s; animation-fill-mode: backwards, both; animation-timeline: auto, --hero; animation-range: normal, contain 0% contain 100%; }
+    .portfolio-page[data-motion="scroll"] .pub-fan { animation-name: pub-hero-fan; }
+    /* Dos animaciones en propiedades distintas: la entrada (transform) y la apertura con el scroll (rotate/translate). */
+    .portfolio-page[data-motion="scroll"] .pub-fan .pub-card { animation: pub-hero-card linear both; animation-timeline: --hero; animation-range: contain 0% contain 100%; }
+    .portfolio-page[data-motion="scroll"] .pub-cue { animation-name: pub-hero-cue; }
+  }
+  .portfolio-page[data-motion="scroll"] :is(.pub-ba-track, .pub-ba-img, .pub-ba-label, .pub-ba-chicane) { animation-timeline: --ba; animation-range: contain 0% contain 100%; animation-fill-mode: both; animation-timing-function: linear; animation-duration: auto; }
+  .portfolio-page[data-motion="scroll"] .pub-ba-steps span::before { animation-timeline: --ba; animation-range: contain 0% contain 100%; animation-fill-mode: both; animation-timing-function: linear; animation-duration: auto; }
+  .portfolio-page[data-motion="scroll"] .pub-ba-track { animation-name: pub-ba-track; }
+  .portfolio-page[data-motion="scroll"] .pub-ba-slide-0 .pub-ba-img { animation-name: pub-ba-img-0; }
+  .portfolio-page[data-motion="scroll"] .pub-ba-slide-1 .pub-ba-img { animation-name: pub-ba-img-1; }
+  .portfolio-page[data-motion="scroll"] .pub-ba-slide-0 .pub-ba-label { animation-name: pub-ba-label-0; }
+  .portfolio-page[data-motion="scroll"] .pub-ba-slide-1 .pub-ba-label { animation-name: pub-ba-label-1; }
+  .portfolio-page[data-motion="scroll"] .pub-ba-chicane { animation-name: pub-ba-chicane; }
+  .portfolio-page[data-motion="scroll"] .pub-ba-steps span:first-child::before { animation-name: pub-ba-step-0; }
+  .portfolio-page[data-motion="scroll"] .pub-ba-steps span:last-child::before { animation-name: pub-ba-step-1; }
+  /* Fotos del mosaico: una tapa Carbon se retira hacia abajo al subir la foto. */
+  .portfolio-page[data-motion="scroll"] .pub-tile::after { content: ""; position: absolute; inset: 0; z-index: 2; background: var(--pub-carbon); pointer-events: none;
+    animation: pub-tile-cover linear both; animation-timeline: view(); animation-range: cover 0% cover 38%; }
+  .portfolio-page[data-motion="scroll"] .pub-works-title, .portfolio-page[data-motion="scroll"] .pub-contact-title { animation: pub-title-grow linear both; animation-timeline: view(); animation-range: entry 0% cover 40%; }
+  /* Desde 700 px, además: la foto pasa de 1,25 a 1 y las columnas se desplazan en sentidos opuestos. En móvil no:
+     menos capas animadas a la vez para un teléfono modesto. */
+  @media (min-width: 700px) {
+    .portfolio-page[data-motion="scroll"] .pub-tile .pub-photo { animation: pub-tile-photo linear both; animation-timeline: view(); animation-range: cover 0% cover 38%; }
+    .portfolio-page[data-motion="scroll"] .pub-col { --para: 45px; animation: pub-col linear both; animation-timeline: --work; animation-range: cover 0% cover 100%; }
+    .portfolio-page[data-motion="scroll"] .pub-col + .pub-col { --para: -45px; }
+  }
+  @media (min-width: 1100px) {
+    .portfolio-page[data-motion="scroll"] .pub-col { --para: 90px; }
+    .portfolio-page[data-motion="scroll"] .pub-col + .pub-col { --para: -90px; }
+  }
+}
+@keyframes pub-hero-copy { to { transform: translateY(-9svh) scale(.8); opacity: .65; } }
+@keyframes pub-hero-livery { to { transform: skewX(-32deg) scaleX(3.4); } }
+@keyframes pub-hero-fan { from { transform: translateY(22svh); } to { transform: none; } }
+@keyframes pub-hero-cue { 0% { opacity: 1; } 16%, 100% { opacity: 0; } }
+/* El abanico se abre: de 24° de apertura total a --spread, con la compensación de cos() en cinco pasos. */
+@keyframes pub-hero-card {
+  0% { rotate: calc(var(--k) * 24deg); translate: 0 calc(var(--r) * (cos(calc(var(--k) * 24deg)) - 1)); }
+  25% { rotate: calc(var(--k) * (24deg + (var(--spread) - 24deg) * .25)); translate: 0 calc(var(--r) * (cos(calc(var(--k) * (24deg + (var(--spread) - 24deg) * .25))) - 1)); }
+  50% { rotate: calc(var(--k) * (24deg + (var(--spread) - 24deg) * .5)); translate: 0 calc(var(--r) * (cos(calc(var(--k) * (24deg + (var(--spread) - 24deg) * .5))) - 1)); }
+  75% { rotate: calc(var(--k) * (24deg + (var(--spread) - 24deg) * .75)); translate: 0 calc(var(--r) * (cos(calc(var(--k) * (24deg + (var(--spread) - 24deg) * .75))) - 1)); }
+  100% { rotate: calc(var(--k) * var(--spread)); translate: 0 calc(var(--r) * (cos(calc(var(--k) * var(--spread))) - 1)); }
+}
+@keyframes pub-ba-track { 0%, 26% { transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 74%, 100% { transform: translate3d(-100cqw, 0, 0); } }
+@keyframes pub-ba-img-0 { 0%, 26% { transform: translateX(0) scale(1.2); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 74%, 100% { transform: translateX(10%) scale(1.2); } }
+@keyframes pub-ba-img-1 { 0%, 26% { transform: translateX(-10%) scale(1.2); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 74%, 100% { transform: translateX(0) scale(1.2); } }
+@keyframes pub-ba-label-0 { 0%, 26% { transform: translateX(0) skewX(-9deg); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 74%, 100% { transform: translateX(-60cqw) skewX(11deg); } }
+@keyframes pub-ba-label-1 { 0%, 26% { transform: translateX(60cqw) skewX(-29deg); animation-timing-function: cubic-bezier(.65, 0, .35, 1); } 74%, 100% { transform: translateX(0) skewX(-9deg); } }
+@keyframes pub-ba-chicane { 0%, 28% { transform: skewX(-16deg) scaleX(0); } 40%, 60% { transform: skewX(-16deg) scaleX(1); } 72%, 100% { transform: skewX(-16deg) scaleX(0); } }
+@keyframes pub-ba-step-0 { 0%, 26% { transform: scaleX(1); } 74%, 100% { transform: scaleX(0); } }
+@keyframes pub-ba-step-1 { 0%, 26% { transform: scaleX(0); } 74%, 100% { transform: scaleX(1); } }
+@keyframes pub-tile-cover { from { transform: translateY(0); } to { transform: translateY(101%); } }
+@keyframes pub-tile-photo { from { transform: scale(1.25); } to { transform: scale(1); } }
+@keyframes pub-col { from { transform: translateY(calc(var(--para) * -1)); } to { transform: translateY(var(--para)); } }
+@keyframes pub-title-grow { from { transform: scale(.78) skewX(-9deg); } to { transform: scale(1) skewX(-9deg); } }
+
+/* Respaldo sin scroll-driven animations (data-motion="js"): HomeMotion escribe --p y --x una vez por fotograma. */
 @media (min-width: 1100px) {
-  .portfolio-page[data-motion="live"] .pub-col { transform: translateY(calc((var(--q, .5) - .5) * 180px)); }
-  .portfolio-page[data-motion="live"] .pub-col + .pub-col { transform: translateY(calc((var(--q, .5) - .5) * -180px)); }
+  .portfolio-page[data-motion="js"] .pub-hero-copy { transform: translateY(calc(var(--p, 0) * -9svh)) scale(calc(1 - var(--p, 0) * .2)); opacity: calc(1 - var(--p, 0) * .35); }
+  .portfolio-page[data-motion="js"] .pub-livery { transform: skewX(calc(-14deg - var(--p, 0) * 18deg)) scaleX(calc(1 + var(--p, 0) * 2.4)); }
+  .portfolio-page[data-motion="js"] .pub-fan { transform: translateY(calc((1 - var(--p, 0)) * 22svh)); }
+  .portfolio-page[data-motion="js"] .pub-fan .pub-card { --a: calc(var(--k) * (24deg + var(--p, 0) * (var(--spread) - 24deg))); }
+  .portfolio-page[data-motion="js"] .pub-cue { opacity: calc(1 - var(--p, 0) * 6); }
 }
+.portfolio-page[data-motion="js"] .pub-ba-track { transform: translate3d(calc(var(--x, 0) * -100cqw), 0, 0); }
+.portfolio-page[data-motion="js"] .pub-ba-img { transform: translateX(calc((var(--x, 0) - var(--n)) * 10%)) scale(1.2); }
+.portfolio-page[data-motion="js"] .pub-ba-label { transform: translateX(calc((var(--x, 0) - var(--n)) * -60cqw)) skewX(calc(-9deg + (var(--x, 0) - var(--n)) * 20deg)); }
+.portfolio-page[data-motion="js"] .pub-ba-chicane { transform: skewX(-16deg) scaleX(clamp(0, calc(min(var(--x, 0), 1 - var(--x, 0)) * 7), 1)); }
+.portfolio-page[data-motion="js"] .pub-ba-steps span::before { transform: scaleX(var(--x, 0)); }
+.portfolio-page[data-motion="js"] .pub-ba-steps span:first-child::before { transform: scaleX(calc(1 - var(--x, 0))); }
 
 /* Visor a pantalla completa (dialog nativo modal): fondo Carbon casi opaco y sin panel. Centrado respecto al viewport con
    fixed/inset/margin:auto (Tailwind Preflight elimina el margen automático del dialog). Piel pública: Big Shoulders, Saira y tokens del portfolio. */

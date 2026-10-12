@@ -24,3 +24,14 @@ it("el visor contain y las fotos sin punto focal no reciben object-position", ()
   expect(renderToStaticMarkup(createElement(PublicPhoto, { ...ids, focal: { focal_x: 20, focal_y: 80 } }))).not.toContain("object-position:20%");
   expect(renderToStaticMarkup(createElement(PublicPhoto, { ...ids, preview: true }))).not.toContain("object-position");
 });
+it("las fotos que se animan piden como mucho la variante indicada (390/640), aunque la pantalla tenga mucha densidad", () => {
+  const markup = renderToStaticMarkup(createElement(PublicPhoto, { ...ids, preview: true, maxWidth: 640 }));
+  const widths = [...markup.matchAll(/[?&]w=(\d+)/g)].map((match) => Number(match[1]));
+  expect(widths.length).toBeGreaterThan(0);
+  expect(Math.max(...widths)).toBe(640);
+});
+it("en pantallas anchas puede servir variantes mayores con una fuente propia de <picture>", () => {
+  const markup = renderToStaticMarkup(createElement(PublicPhoto, { ...ids, preview: true, maxWidth: 640, wide: { media: "(min-width: 1100px)", sizes: "100vw" } }));
+  expect(markup).toMatch(/<picture><source media="\(min-width: 1100px\)" srcSet="[^"]*w=1600[^"]*" sizes="100vw"\/><img /);
+  expect(markup).toContain("</picture>");
+});

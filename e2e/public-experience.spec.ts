@@ -19,8 +19,9 @@ test("escaparate: bandas por trabajo, visor, accesibilidad y contacto", async ({
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
-  // axe mide el contraste con la opacidad real: se audita con las animaciones de entrada ya terminadas (el brillo de carga es infinito y no cuenta).
-  await page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== "running" || animation.effect?.getComputedTiming().iterations === Infinity));
+  // axe mide el contraste con la opacidad real: se audita con las animaciones de entrada ya terminadas (el brillo de carga es
+  // infinito y no cuenta; las ligadas al scroll no terminan nunca por tiempo).
+  await page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== "running" || animation.timeline !== document.timeline || animation.effect?.getComputedTiming().iterations === Infinity));
   await page.evaluate((source) => {
     const script = document.createElement("script");
     script.nonce = document.querySelector<HTMLScriptElement>("script[nonce]")?.nonce ?? "";

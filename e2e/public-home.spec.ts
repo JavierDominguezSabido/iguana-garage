@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 // Solo lecturas públicas: no cuentas, fixtures ni mutaciones en Supabase. No depende de los nombres de los trabajos.
-const live = (page: Page) => page.locator('.portfolio-page[data-motion="live"]');
+const live = (page: Page) => page.locator(".portfolio-page[data-motion]"); // «scroll» (CSS) o «js» (respaldo)
 const noOverflow = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
 async function scrollThrough(page: Page) {
   for (let step = 0; step < 120; step++) {
@@ -28,6 +28,7 @@ test("portada: titular, abanico de trabajos que lleva a su banda y sin login ni 
 
 test("Antes/Después: dos pantallas rotuladas con la pareja elegida y «Ver fotos» abre el visor en el Después", async ({ page }) => {
   await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible(); // la página ya salió del estado de carga en streaming
   const pair = page.getByRole("region", { name: /^Antes y después: / });
   test.skip(await pair.count() === 0, "Sin pareja elegida en Portada no hay Antes/Después");
   await expect(pair.locator("figcaption")).toHaveText(["Antes", "Después"]);
@@ -39,22 +40,53 @@ test("Antes/Después: dos pantallas rotuladas con la pareja elegida y «Ver foto
   await page.keyboard.press("Escape"); await expect(dialog).toHaveCount(0);
 });
 
-test("movimiento: la portada y el Antes/Después avanzan con el scroll y cada foto acaba destapada", async ({ page }) => {
+test("movimiento: en escritorio el abanico se abre con el scroll, el Antes/Después pasa al Después y cada foto acaba destapada", async ({ page }) => {
   await page.goto("/");
   await expect(live(page)).toHaveCount(1);
-  await expect(page.locator(".pub-cue")).toBeVisible();
-  const open = () => page.locator(".pub-hero").evaluate((hero) => Number(getComputedStyle(hero).getPropertyValue("--p") || 0));
-  await page.evaluate(() => scrollTo({ top: innerHeight * 0.6, behavior: "instant" }));
-  await expect.poll(open).toBeGreaterThan(0.3);
+  const desktop = page.viewportSize()!.width >= 1100;
+  await expect(page.locator(".pub-cue")).toBeVisible({ visible: desktop }); // el indicador de scroll solo acompaña al abanico de escritorio
+  if (desktop) {
+    await page.waitForTimeout(2000); // reparto de cartas terminado
+    const edge = () => page.locator(".pub-card").last().evaluate((card) => Math.abs(parseFloat(getComputedStyle(card).rotate) || 0));
+    const closed = await edge();
+    await page.evaluate(() => { const hero = document.querySelector<HTMLElement>(".pub-hero")!; scrollTo({ top: hero.offsetTop + hero.offsetHeight - innerHeight, behavior: "instant" }); });
+    await expect.poll(edge).toBeGreaterThan(closed + 10);
+  }
   const pair = page.locator(".pub-ba");
   if (await pair.count()) {
     await page.evaluate(() => { const section = document.querySelector<HTMLElement>(".pub-ba")!; scrollTo({ top: section.offsetTop + section.offsetHeight - innerHeight, behavior: "instant" }); });
-    await expect.poll(() => pair.evaluate((section) => Number(getComputedStyle(section).getPropertyValue("--x") || 0))).toBe(1);
+    // La pista avanza una pantalla entera: el Después queda delante.
+    await expect.poll(() => page.locator(".pub-ba-track").evaluate((track) => Math.round(new DOMMatrix(getComputedStyle(track).transform).m41 + track.parentElement!.clientWidth))).toBe(0);
   }
   await scrollThrough(page);
-  const tiles = await page.locator(".pub-tile").evaluateAll((items) => items.map((tile) => getComputedStyle(tile).getPropertyValue("--t")));
-  expect(tiles.length).toBeGreaterThan(0);
-  for (const value of tiles) expect(Number(value)).toBe(1);
+  const covers = await page.locator(".pub-tile").evaluateAll((tiles) => tiles.map((tile) => { const cover = getComputedStyle(tile, "::after"); return cover.content === "none" || new DOMMatrix(cover.transform).m42 >= tile.clientHeight; }));
+  expect(covers.length).toBeGreaterThan(0);
+  expect(covers.every(Boolean)).toBe(true);
+  expect(await noOverflow(page)).toBe(true);
+});
+
+test("abanico en móvil y tablet: carrusel que encaja carta a carta con botones, teclado y contador", async ({ page }) => {
+  test.skip(page.viewportSize()!.width >= 1100, "En escritorio es el abanico que se abre con el scroll");
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  const fan = page.getByRole("navigation", { name: "Trabajos en portada" });
+  const count = page.locator(".pub-fan-count");
+  const total = await fan.locator(".pub-card").count();
+  test.skip(total < 2, "Con una sola carta no hay nada que pasar");
+  await expect(count).toHaveText(`Carta 1 / de ${total}`);
+  const centred = () => fan.evaluate((track) => { const box = track.getBoundingClientRect(), centre = box.left + box.width / 2; return [...track.querySelectorAll(".pub-card")].findIndex((card) => { const b = card.getBoundingClientRect(); return Math.abs((b.left + b.right) / 2 - centre) < 4; }); });
+  await expect(page.getByRole("button", { name: "Carta anterior" })).toBeDisabled();
+  await page.getByRole("button", { name: "Carta siguiente" }).click();
+  await expect(count).toHaveText(`Carta 2 / de ${total}`);
+  await expect.poll(centred).toBe(1);
+  await fan.getByRole("link").first().focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(count).toHaveText(`Carta 1 / de ${total}`);
+  await expect.poll(centred).toBe(0);
+  // La carta centrada va recta y la vecina, inclinada asomando por el lado.
+  const tilt = () => fan.locator(".pub-card-body").evaluateAll((bodies) => bodies.slice(0, 2).map((body) => Math.round(Math.abs(parseFloat(getComputedStyle(body).rotate) || 0))));
+  await expect.poll(tilt).toEqual([0, 12]);
+  expect(await fan.evaluate((track) => getComputedStyle(track).overflowY)).toBe("hidden"); // no se queda con el gesto vertical
   expect(await noOverflow(page)).toBe(true);
 });
 

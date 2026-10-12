@@ -18,7 +18,7 @@ export function BeforeAfter({ transformation }: { transformation: PublicTransfor
     <div className="pub-ba-stage">
       <div className="pub-ba-track">
         {slides.map(({ label, photo }, index) => <figure key={label} className={`pub-ba-slide pub-ba-slide-${index}`} style={{ "--n": index } as CSSProperties}>
-          <div className="pub-ba-img"><PublicPhoto jobId={job.id} mediaId={photo.id} alt={`${job.name}, ${label.toLowerCase()}`} sizes="100vw" preview focal={photo} /></div>
+          <div className="pub-ba-img"><PublicPhoto jobId={job.id} mediaId={photo.id} alt={`${job.name}, ${label.toLowerCase()}`} sizes="100vw" preview focal={photo} maxWidth={640} wide={{ media: "(min-width: 1100px)", sizes: "100vw" }} /></div>
           <figcaption className="pub-ba-label">{label}</figcaption>
         </figure>)}
         <span className="pub-ba-chicane" aria-hidden="true" />

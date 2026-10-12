@@ -60,12 +60,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
       </section>
       {transformation && <BeforeAfter transformation={transformation} />}
       <section className="pub-works" id="trabajos" aria-labelledby="works-title">
-        <h2 id="works-title" className="pub-works-title" data-scrub=""><span>Trabajos</span> <span>realizados</span></h2>
+        <h2 id="works-title" className="pub-works-title"><span>Trabajos</span> <span>realizados</span></h2>
         {failed ? <div className="pub-state" role="alert"><p>No hemos podido cargar los trabajos.</p><a className="pub-text-action" href={`/?page=${page}#trabajos`}>Volver a cargar <span aria-hidden="true">↻</span></a></div> : !jobs.length ? <div className="pub-state"><p>{page === 1 ? "Estamos preparando las fotografías de nuestros trabajos." : "No hay más trabajos en esta página."}</p>{page > 1 && <a className="pub-text-action" href="/#trabajos">Volver a los trabajos</a>}</div> : <div className="pub-work-list">{jobs.map((job) => <PublicGallery key={job.id} job={job} />)}</div>}
         {!failed && (hasNext || page > 1) && <nav className="pub-pagination" aria-label="Páginas de trabajos">{page > 1 && <a className="pub-more" href={`/?page=${page - 1}#trabajos`}>← Más recientes</a>}<span>Página {page}</span>{hasNext && <a className="pub-more" href={`/?page=${page + 1}#trabajos`}>Trabajos anteriores →</a>}</nav>}
       </section>
       <section className="pub-contact" id="contacto" aria-labelledby="contact-title" data-fab-hide="">
-        <h2 id="contact-title" className="pub-contact-title" data-scrub=""><span>¿Hablamos</span> <span>de tu coche?</span></h2>
+        <h2 id="contact-title" className="pub-contact-title"><span>¿Hablamos</span> <span>de tu coche?</span></h2>
         <p>Cuéntanos qué necesitas.</p>
         {contact ? <ContactLink contact={contact} /> : <p className="pub-contact-pending">Nuestro contacto por WhatsApp estará disponible próximamente.</p>}
       </section>

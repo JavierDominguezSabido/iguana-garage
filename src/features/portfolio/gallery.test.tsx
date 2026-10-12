@@ -37,3 +37,7 @@ it("cada foto pide el ancho de su columna", () => {
   expect(render(work(2))).toContain('sizes="(min-width: 1100px) 26vw, 46vw"');
   expect(render(work(1))).toContain('sizes="(min-width: 1100px) 40vw, 92vw"');
 });
+it("las fotos del mosaico, que se animan al entrar, piden como mucho la variante de 640", () => {
+  const widths = [...render(work(3)).matchAll(/[?&]w=(\d+)/g)].map((match) => Number(match[1]));
+  expect(Math.max(...widths)).toBe(640);
+});

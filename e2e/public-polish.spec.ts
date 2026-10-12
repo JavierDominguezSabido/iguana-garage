@@ -82,7 +82,7 @@ test("portada: las dos líneas del titular suben y las cartas se reparten una so
   await page.waitForTimeout(2400);
   expect(await starts(page, "pub-up")).toBe(2);
   expect(await starts(page, "pub-deal")).toBe(await page.locator(".pub-card").count());
-  const running = await page.evaluate(() => [...document.querySelectorAll(".pub-hero h1 .pub-line > span, .pub-card")].flatMap((element) => element.getAnimations()).filter((animation) => animation.playState === "running").length);
+  const running = await page.evaluate(() => [...document.querySelectorAll(".pub-hero h1 .pub-line > span, .pub-card-body")].flatMap((element) => element.getAnimations()).filter((animation) => animation.playState === "running").length);
   expect(running).toBe(0);
   await page.evaluate(() => scrollTo(0, 600)); await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(300);
   expect(await starts(page, "pub-up")).toBe(2);
@@ -94,8 +94,8 @@ test.describe("con movimiento reducido", () => {
     await recordAnimations(page);
     await page.goto("/");
     await scrollThrough(page);
-    for (const name of ["pub-up", "pub-deal", "pub-fade", "pub-livery"]) expect(await starts(page, name)).toBe(0);
-    await expect(page.locator('[data-motion="live"]')).toHaveCount(0);
+    for (const name of ["pub-up", "pub-deal", "pub-fade", "pub-grow"]) expect(await starts(page, name)).toBe(0);
+    await expect(page.locator("[data-motion]")).toHaveCount(0);
   });
 });
 
