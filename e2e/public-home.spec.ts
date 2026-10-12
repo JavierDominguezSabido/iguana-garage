@@ -42,6 +42,7 @@ test("Antes/Después: dos pantallas rotuladas con la pareja elegida y «Ver foto
 test("movimiento: la portada y el Antes/Después avanzan con el scroll y cada foto acaba destapada", async ({ page }) => {
   await page.goto("/");
   await expect(live(page)).toHaveCount(1);
+  await expect(page.locator(".pub-cue")).toBeVisible();
   const open = () => page.locator(".pub-hero").evaluate((hero) => Number(getComputedStyle(hero).getPropertyValue("--p") || 0));
   await page.evaluate(() => scrollTo({ top: innerHeight * 0.6, behavior: "instant" }));
   await expect.poll(open).toBeGreaterThan(0.3);
@@ -65,7 +66,7 @@ test.describe("con movimiento reducido", () => {
     await expect(live(page)).toHaveCount(0);
     const running = await page.evaluate(() => document.getAnimations().filter((animation) => animation.playState === "running").length);
     expect(running).toBe(0);
-    await expect(page.locator(".pub-hint")).toBeHidden(); // la pista del abanico solo tiene sentido con movimiento
+    await expect(page.locator(".pub-cue")).toBeHidden(); // el indicador de scroll solo existe con movimiento
     const pair = page.locator(".pub-ba-slide");
     if (await pair.count()) {
       const [before, after] = await pair.evaluateAll((slides) => slides.map((slide) => slide.getBoundingClientRect().top + scrollY));

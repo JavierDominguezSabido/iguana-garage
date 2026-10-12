@@ -11,7 +11,6 @@ import { BeforeAfter } from "@/features/portfolio/before-after";
 import { HeroFan } from "@/features/portfolio/fan";
 import { FloatingContact } from "@/features/portfolio/floating-contact";
 import { HomeMotion } from "@/features/portfolio/home-motion";
-import { Provisional } from "@/features/portfolio/provisional";
 import logo from "../../assets/brand/iguana-garage-logo-horizontal.png";
 import "./portfolio.css";
 
@@ -53,11 +52,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
           <span className="pub-livery" aria-hidden="true" />
           <div className="pub-hero-copy" data-fab-hide="">
             <h1 id="hero-title"><span className="pub-line"><span>Chapa y</span></span> <span className="pub-line"><span>pintura<span className="pub-dot">.</span></span></span></h1>
-            <div className="pub-hero-row">
-              <ContactLink contact={contact} />
-              {jobs.length > 0 && <p className="pub-hint"><Provisional>Baja y se abre el abanico.</Provisional></p>}
-            </div>
+            <div className="pub-hero-row"><ContactLink contact={contact} /></div>
           </div>
+          {jobs.length > 0 && <span className="pub-cue" aria-hidden="true"><span /></span>}
           <HeroFan jobs={jobs} />
         </div>
       </section>

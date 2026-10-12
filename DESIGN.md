@@ -29,7 +29,7 @@ Home «de competición», elegida por el propietario con un test de gusto: sensa
 
 - **Marca:** assets oficiales y los cuatro colores base (más derivados: Iguana claro `#8FB04A` para hover y un Carbon más profundo `#080A09` bajo las fotos); sin azul ni tema claro.
 - **Fotografía real:** solo las fotos publicadas del contrato público. Son fotos de móvil hechas en el taller (casi todas verticales, calidad y encuadre variables). Nada de stock, IA ni imágenes de relleno. Se recortan con `cover` y punto focal y se igualan con un etalonaje común (`saturate(.8) contrast(1.08) brightness(.96)`); el visor las muestra tal cual.
-- **Datos y copy:** solo existen nombre, fecha, descripción opcional y fotos (con punto focal) por trabajo. No inventar categorías, códigos, teléfonos, redes, presupuestos, servicios ni promesas. Ningún dato ni nombre va fijo en el código: se corrigen desde `/app`. Los textos nuevos pendientes de aprobación se marcan con `Provisional` («[texto provisional]»).
+- **Datos y copy:** solo existen nombre, fecha, descripción opcional y fotos (con punto focal) por trabajo. No inventar categorías, códigos, teléfonos, redes, presupuestos, servicios ni promesas. Ningún dato ni nombre va fijo en el código: se corrigen desde `/app`.
 - **Funcionalidad pública** de [PRODUCT.md](PRODUCT.md): trabajos paginados, transformación Antes/Después opcional, visor, contacto por WhatsApp con estado pendiente, estados de carga/vacío/error, sin login visible ni PWA.
 
 ### Tipografía
@@ -45,7 +45,8 @@ Home «de competición», elegida por el propietario con un test de gusto: sensa
 ### Estructura y orden
 
 1. **Cabecera:** logo oficial. Sin número de WhatsApp válido, además, «Contacto ↗», que lleva a la sección de contacto.
-2. **Portada:** titular centrado «Chapa y pintura.» (punto en verde), CTA de WhatsApp y una pista provisional. Debajo, un **abanico de cartas** que nace del borde inferior: una carta por trabajo de la página (su primera foto visible, con el nombre en una banda hueso como una carta de colores); si hay menos de siete trabajos, completan el abanico otras fotos de los mismos trabajos, decorativas (`aria-hidden`, sin foco). Cada carta principal es un enlace a la banda de su trabajo. Sin fotos no hay abanico y el titular se centra.
+2. **Portada:** titular centrado «Chapa y pintura.» (punto en verde) y CTA de WhatsApp, sin más texto. Con movimiento, un **indicador de scroll** sin texto a la derecha, a media altura: pista fina de 3 × 72 px inclinada como la librea, con una cuenta verde que baja; decorativo (`aria-hidden`), no tapa nada, se desvanece al empezar a abrirse el abanico y no existe con «reducir movimiento». Debajo, un **abanico de cartas** que nace del borde inferior: una carta por trabajo de la página (su primera foto visible, con el nombre en una banda hueso como una carta de colores); si hay menos de siete trabajos, completan el abanico otras fotos de los mismos trabajos, decorativas (`aria-hidden`, sin foco). Cada carta principal es un enlace a la banda de su trabajo. Sin fotos no hay abanico y el titular se centra.
+   - **Geometría del abanico:** las cartas giran sobre un arco ancho (pivote a 3,2 anchos de carta bajo cada una) y cada una sube lo que su giro la haría hundirse (`cos()`), así que todas apoyan en la misma línea y, abierto, se ve entero con los nombres legibles dentro de la portada, sin solaparse con el titular ni con la sección siguiente. El ancho de carta sale de la altura de pantalla: `min(62vw, 30svh)` en móvil, `min(36vw, 26svh)` desde 700 y `min(250px, 24svh)` desde 1100; apertura de 80° (92° desde 700). Comprobado en 1920×1080, 1440×900, 1366×768, 1280×720, 1024×768, 820×1180, 768×1024, 412×915, 390×844 y 375×667.
 3. **Antes y Después** (solo con la pareja elegida en `/app` → Portada y solo en la página 1): dos pantallas completas, una tras otra, con «ANTES» en hueso y «DESPUÉS» en verde, el nombre y la fecha del trabajo y «Ver fotos» (visor abierto en el Después). Sin pareja válida no hay sección.
 4. **«Trabajos realizados»:** titular centrado y una banda por trabajo (ver Mosaico).
 5. **Contacto** («¿Hablamos de tu coche?», «Cuéntanos qué necesitas.» y CTA, o el aviso de contacto pendiente) y pie con logo, «Chapa y pintura.» y «Volver arriba».
@@ -67,7 +68,7 @@ Contenedor máximo de 1760 px. Márgenes laterales de 24 px (móvil), 48 px (≥
 
 ### Imagen para compartir
 
-Imagen Open Graph **estática y solo de marca**: logo oficial completo, a su proporción, sobre Carbon, más «CHAPA Y PINTURA» en Barlow Condensed 800; sin fotos de trabajos. Es `public/share/iguana-garage-og.png` (1200×630), generada a mano con `scripts/prepare-og-image.mjs` (no se ejecuta en build ni en peticiones) y enlazada desde los metadatos de `/` (`og:image`, `twitter:image` y `twitter:card=summary_large_image`). La URL es absoluta: `metadataBase` usa `RENDER_EXTERNAL_URL` o, si falta, la URL de producción. No se ha regenerado con la tipografía nueva.
+Imagen Open Graph **estática y solo de marca**: logo oficial completo, a su proporción, sobre Carbon, más «CHAPA Y PINTURA.» en Big Shoulders 900 inclinada como en la home (punto en verde) y las dos franjas verdes de la librea detrás; sin fotos de trabajos. Es `public/share/iguana-garage-og.png` (1200×630), generada a mano con `scripts/prepare-og-image.mjs` (no se ejecuta en build ni en peticiones) y enlazada desde los metadatos de `/` (`og:image`, `twitter:image` y `twitter:card=summary_large_image`). La URL es absoluta: `metadataBase` usa `RENDER_EXTERNAL_URL` o, si falta, la URL de producción.
 
 ### Movimiento
 
@@ -75,12 +76,12 @@ Intenso pero sin bucles: solo responde a la carga y al scroll. Todo lo que se mu
 
 - **Al cargar** (CSS, una vez): las dos líneas del titular suben desde su línea (1,1 s), la librea crece, la fila del CTA funde y las cartas del abanico se reparten desde abajo con rebote, escalonadas 70 ms.
 - **Ligado al scroll** (`HomeMotion`, `motion.ts`): solo con JavaScript y sin «reducir movimiento», `HomeMotion` marca la página con `data-motion="live"` y escribe variables CSS. Cada fotograma lee todas las posiciones y después escribe, y solo lo que cambia.
-  - **Portada** (`--p`, con inercia): queda fijada 165svh (185svh desde 700) mientras el abanico se abre en semicírculo y sube, y el titular se encoge y se atenúa.
+  - **Portada** (`--p`, con inercia): queda fijada 165svh (185svh desde 700) mientras el abanico, anclado abajo, sube desde fuera de la pantalla y se abre, y el titular se encoge y se atenúa. Abierto del todo cabe entero en la pantalla.
   - **Antes y Después** (`--x`, con inercia): la sección se fija 330svh; el Antes se queda quieto, la pista lo lleva en horizontal hasta el Después con unas rayas verdes de chicane entre ambos y el Después se queda quieto. Las fotos y los rótulos se desplazan a distinta velocidad. Un indicador «Antes / Después» se rellena de verde.
   - **Fotos del mosaico** (`--t`): una tapa Carbon se retira hacia abajo mientras la foto sube por la pantalla y la foto pasa de 1,25 a 1.
   - **Columnas** (`--q`): se desplazan en sentidos opuestos (paralaje de ±45 px; ±90 px desde 1100).
   - **Titulares** de «Trabajos realizados» y del contacto (`--t`): crecen al entrar, sin atenuarse (el contraste se mantiene siempre).
-- **Sin JavaScript o con `prefers-reduced-motion: reduce`:** nada se fija ni se anima. La portada mide una pantalla con el abanico entreabierto (sin la pista, que solo tiene sentido con movimiento), el Antes y el Después son dos pantallas apiladas, todas las fotos se ven desde el principio y el botón flotante aparece sin transición.
+- **Sin JavaScript o con `prefers-reduced-motion: reduce`:** nada se fija ni se anima. La portada crece con su contenido: el abanico, abierto, va en el flujo debajo del titular (nunca lo solapa) y no hay indicador de scroll; el Antes y el Después son dos pantallas apiladas, todas las fotos se ven desde el principio y el botón flotante aparece sin transición.
 - **Sin saltos de maquetación:** cada línea del titular va en una sola fila con interlineado fijo (el cambio de fuente no mueve nada), las cartas y las fotos reservan su proporción y las fotos fuera de pantalla cargan en diferido.
 
 ### Visores de fotos (público y privado)

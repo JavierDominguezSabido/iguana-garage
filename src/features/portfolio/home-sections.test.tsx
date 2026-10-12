@@ -5,7 +5,6 @@ import type { PublicJob } from "./contract";
 import { BeforeAfter } from "./before-after";
 import { HeroFan } from "./fan";
 import { FloatingContact } from "./floating-contact";
-import { Provisional } from "./provisional";
 
 const id = (n: number, k = 0) => `${String(n).repeat(8)}-${String(k).repeat(4)}-4111-8111-111111111111`;
 const job = (n: number, photos: number): PublicJob => ({ id: id(n), name: `Trabajo ${n}`, job_date: "2026-01-15", description: null,
@@ -54,8 +53,4 @@ describe("botón flotante de WhatsApp", () => {
     expect(markup).toContain('aria-label="Escríbenos por WhatsApp (abre WhatsApp en otra pestaña)"');
     expect(markup).toContain('<svg'); expect(markup).toContain('aria-hidden="true"');
   });
-});
-
-it("los textos pendientes de aprobar se marcan como provisionales", () => {
-  expect(html(createElement(Provisional, null, "Texto nuevo"))).toBe('<span class="pub-prov">Texto nuevo<span class="pub-prov-mark" aria-hidden="true">[texto provisional]</span></span>');
 });

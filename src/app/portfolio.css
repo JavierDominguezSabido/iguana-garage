@@ -50,9 +50,6 @@ html:has(.portfolio-page) { background: #0e1110; scrollbar-color: #2a2d2b #0e111
 .pub-more { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 24px; border: 0; color: var(--pub-bone); font: italic 600 16px var(--pub-text); background: color-mix(in srgb, var(--pub-metal) 88%, transparent); clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); cursor: pointer; transition: background .2s; }
 .pub-more:hover { background: #424643; }
 .pub-more:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--pub-bone); }
-/* Texto nuevo pendiente de aprobar */
-.pub-prov { text-decoration: underline dotted 1px; text-underline-offset: .18em; text-decoration-color: color-mix(in srgb, currentColor 50%, transparent); }
-.pub-prov-mark { margin-left: .4em; font: normal 500 11px / 1 var(--pub-text); vertical-align: super; color: var(--pub-muted); white-space: nowrap; }
 
 /* Cabecera: logo oficial (se recorta el margen transparente del PNG, nunca el arte). */
 .pub-header { position: absolute; z-index: 30; inset: 0 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px var(--side); }
@@ -63,7 +60,8 @@ html:has(.portfolio-page) { background: #0e1110; scrollbar-color: #2a2d2b #0e111
 
 /* ── Portada: titular centrado y abanico de cartas que nace del borde inferior ── */
 .pub-hero { position: relative; }
-.pub-hero-stage { position: relative; height: 100svh; min-height: 620px; overflow: hidden; display: grid; justify-items: center; align-content: start; padding: max(104px, 14svh) var(--side) 0; text-align: center; }
+/* Sin movimiento la portada crece con su contenido: el abanico va en el flujo, debajo del titular, y nunca lo solapa. */
+.pub-hero-stage { position: relative; min-height: max(100svh, 620px); overflow: hidden; display: grid; grid-template-rows: auto 1fr; justify-items: center; align-content: start; padding: max(104px, 14svh) var(--side) 0; text-align: center; }
 .pub-hero-stage:not(:has(.pub-fan)) { align-content: center; padding-top: 0; }
 .pub-livery { position: absolute; left: 50%; top: 0; bottom: 0; width: 150px; translate: -50% 0; transform: skewX(-14deg); transform-origin: 50% 100%; pointer-events: none; opacity: .2;
   background: linear-gradient(90deg, transparent 0 18%, var(--pub-green) 18% 36%, transparent 36% 64%, var(--pub-green) 64% 82%, transparent 82%); }
@@ -73,15 +71,22 @@ html:has(.portfolio-page) { background: #0e1110; scrollbar-color: #2a2d2b #0e111
 .pub-line { display: block; overflow: hidden; padding: .02em .06em .03em; margin-bottom: -.05em; white-space: nowrap; }
 .pub-line > span { display: block; }
 .pub-hero-row { display: grid; justify-items: center; gap: 12px; margin-top: 26px; }
-.pub-hint { color: var(--pub-muted); font-size: 15px; font-style: italic; visibility: hidden; }
-.pub-fan { --cw: 52vw; --swing: 62deg; --open: .18; position: absolute; left: 50%; bottom: 0; width: 0; height: 0; z-index: 1; }
-.pub-card { position: absolute; left: calc(var(--cw) / -2); bottom: 5svh; width: var(--cw); display: block; padding: 5px 5px 0; border-radius: 9px; background: var(--pub-bone); color: var(--pub-carbon);
-  transform-origin: 50% 210%; rotate: calc(var(--k) * (22deg + var(--open) * var(--swing))); box-shadow: 0 20px 36px -16px #000f; transition: translate .35s var(--ease-out); }
+/* Abanico: arco ancho (pivote a 3,2 anchos de carta bajo cada una) compensado con cos() para que todas las cartas
+   apoyen en la misma línea: al abrirse, las exteriores no se hunden y los nombres siguen a la vista. La caja reserva
+   la carta, la caída de su esquina al girar (≈ .36 anchos) y un margen. El ancho de carta sale de la altura disponible. */
+.pub-fan { --cw: min(62vw, 30svh); --spread: 80deg; --open: 1; --r: calc(var(--cw) * 3.2); position: relative; z-index: 1; align-self: end; width: calc(100% + 2 * var(--side)); height: calc(var(--cw) * 1.62 + 76px); margin-top: 28px; }
+.pub-card { --a: calc(var(--k) * (24deg + var(--open) * (var(--spread) - 24deg)));
+  position: absolute; left: calc(50% - var(--cw) / 2); bottom: calc(var(--cw) * .36 + 16px); width: var(--cw); display: block; padding: 5px 5px 0; border-radius: 9px; background: var(--pub-bone); color: var(--pub-carbon);
+  transform-origin: 50% calc(100% + var(--r)); rotate: var(--a); translate: 0 calc(var(--r) * (cos(var(--a)) - 1)); box-shadow: 0 20px 36px -16px #000f; transition: transform .35s var(--ease-out); }
+/* Indicador de scroll: pista fina inclinada como la librea con una cuenta verde que baja. Sin texto ni foco; solo
+   con movimiento (lo muestra [data-motion="live"]) y se desvanece en cuanto empieza a abrirse el abanico. */
+.pub-cue { display: none; position: absolute; z-index: 2; right: var(--side); top: 50%; width: 3px; height: 72px; margin-top: -36px; overflow: hidden; background: #f8f4da38; transform: skewX(-14deg); pointer-events: none; }
+.pub-cue > span { display: block; width: 100%; height: 22px; background: var(--pub-green); }
 .pub-card-photo { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 5px; background: var(--pub-metal); }
 .pub-card-label { display: block; padding: 7px 4px 26px; font: 800 17px / 1 var(--pub-display); font-variation-settings: "opsz" 72; text-transform: uppercase; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pub-card-label::before { content: ""; display: inline-block; width: 18px; height: 9px; margin-right: 7px; background: var(--pub-green); transform: skewX(-20deg); }
-.pub-card:focus-visible { outline-offset: 3px; translate: 0 -10%; z-index: 20; }
-@media (hover: hover) { .pub-card:hover { translate: 0 -10%; } }
+.pub-card:focus-visible { outline-offset: 3px; transform: translateY(-8%); z-index: 20; }
+@media (hover: hover) { .pub-card:hover { transform: translateY(-8%); } }
 
 /* ── Antes y Después: dos pantallas completas, una tras otra ── */
 .pub-ba-stage { position: relative; overflow: hidden; container-type: inline-size; }
@@ -142,16 +147,13 @@ body:has(dialog.pub-viewer[open]) .pub-fab { visibility: hidden; }
 
 @media (min-width: 700px) {
   .pub-hero h1 { font-size: 19vw; }
-  .pub-fan { --cw: 36vw; --swing: 92deg; }
-  .pub-card { bottom: 3svh; transform-origin: 50% 230%; }
+  .pub-fan { --cw: min(36vw, 26svh); --spread: 92deg; }
   .pub-wall, .pub-col { gap: 20px; }
 }
 @media (min-width: 1100px) {
   .pub-hero-stage { padding-top: 13svh; }
   .pub-hero h1 { font-size: min(15.5vw, 29svh); }
-  .pub-hint { font-size: 16px; }
-  .pub-fan { --cw: min(250px, 28vw); }
-  .pub-card { bottom: -4svh; }
+  .pub-fan { --cw: min(250px, 24svh); }
   .pub-card-label { font-size: 20px; padding-bottom: 30px; }
   .pub-ba-label { bottom: 140px; }
   .pub-work { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 7vw; align-items: start; }
@@ -176,11 +178,15 @@ body:has(dialog.pub-viewer[open]) .pub-fab { visibility: hidden; }
 @keyframes pub-livery { from { transform: skewX(-14deg) scaleY(0); } }
 
 /* ── Movimiento ligado al scroll ([data-motion="live"], lo pone HomeMotion) ── */
-.portfolio-page[data-motion="live"] .pub-hint { visibility: visible; }
 .portfolio-page[data-motion="live"] .pub-hero { height: 165svh; }
-.portfolio-page[data-motion="live"] .pub-hero-stage { position: sticky; top: 0; }
+.portfolio-page[data-motion="live"] .pub-hero-stage { position: sticky; top: 0; height: 100svh; min-height: 0; }
 .portfolio-page[data-motion="live"] .pub-hero-copy { transform: translateY(calc(var(--p, 0) * -9svh)) scale(calc(1 - var(--p, 0) * .2)); opacity: calc(1 - var(--p, 0) * .35); }
-.portfolio-page[data-motion="live"] .pub-fan { --open: var(--p, 0); transform: translateY(calc((1 - var(--p, 0)) * 7svh)); }
+.portfolio-page[data-motion="live"] .pub-cue { display: block; opacity: calc(1 - var(--p, 0) * 6); }
+.portfolio-page[data-motion="live"] .pub-cue > span { animation: pub-cue 1.8s cubic-bezier(.6, 0, .3, 1) .6s infinite; }
+@keyframes pub-cue { from { transform: translateY(-22px); } to { transform: translateY(72px); } }
+@media (prefers-reduced-motion: reduce) { .pub-cue { display: none !important; } }
+/* Con movimiento la portada mide una pantalla: el abanico se ancla abajo, sube desde fuera y se abre; abierto (--p = 1) cabe entero. */
+.portfolio-page[data-motion="live"] .pub-fan { position: absolute; left: 0; right: 0; bottom: 0; width: auto; margin: 0; --open: var(--p, 0); transform: translateY(calc((1 - var(--p, 0)) * 22svh)); }
 .portfolio-page[data-motion="live"] .pub-livery { transform: skewX(calc(-14deg - var(--p, 0) * 18deg)) scaleX(calc(1 + var(--p, 0) * 2.4)); }
 
 .portfolio-page[data-motion="live"] .pub-ba { height: 330svh; }
