@@ -17,6 +17,8 @@ const arrow = (d: string) => <svg viewBox="0 0 24 24" width="22" height="22" fil
 // del teclado pasan de carta en carta.
 export function HeroFan({ jobs }: { jobs: readonly PublicJob[] }) {
   const cards = fanCards(jobs);
+  // El carrusel solo recorre y cuenta las cartas de trabajos (van primero); las repetidas no salen en él (CSS).
+  const total = cards.filter((card) => card.primary).length;
   const track = useRef<HTMLElement>(null);
   const [current, setCurrent] = useState(0);
   useEffect(() => {
@@ -46,20 +48,20 @@ export function HeroFan({ jobs }: { jobs: readonly PublicJob[] }) {
   const keys = (event: KeyboardEvent<HTMLElement>) => {
     if (!matchMedia(NARROW).matches || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
     event.preventDefault();
-    go(Math.min(cards.length - 1, Math.max(0, current + (event.key === "ArrowRight" ? 1 : -1))));
+    go(Math.min(total - 1, Math.max(0, current + (event.key === "ArrowRight" ? 1 : -1))));
   };
   return <div className="pub-fan-wrap">
     <nav ref={track} className="pub-fan" aria-label="Trabajos en portada" onKeyDown={keys}>
       {cards.map((card, index) => <a key={card.photo.id} href={`#trabajo-${card.job.id}`} className="pub-card" data-pos={index < current ? "l" : index > current ? "r" : "c"} style={{ "--k": fanSlot(index, cards.length), "--i": index } as CSSProperties}
         {...(card.primary ? {} : { "aria-hidden": true, tabIndex: -1 })}>
-        <span className="pub-card-body"><span className="pub-card-photo"><PublicPhoto jobId={card.job.id} mediaId={card.photo.id} alt="" sizes="(min-width: 1100px) 250px, (min-width: 700px) 44vw, 64vw" preview focal={card.photo} maxWidth={640} /></span>
+        <span className="pub-card-body"><span className="pub-card-photo"><PublicPhoto jobId={card.job.id} mediaId={card.photo.id} alt="" sizes="(min-width: 1100px) 250px, (min-width: 700px) 44vw, 64vw" preload={index < Math.min(2, total)} preview focal={card.photo} maxWidth={640} /></span>
         <span className="pub-card-label">{card.job.name}</span></span>
       </a>)}
     </nav>
     <div className="pub-fan-ctrl">
       <button type="button" className="pub-fan-step" aria-label="Carta anterior" disabled={current === 0} onClick={() => go(current - 1)}>{arrow("M15 5l-7 7 7 7")}</button>
-      <p className="pub-fan-count" aria-live="polite"><span className="pub-sr-only">Carta </span><b>{current + 1}</b><span aria-hidden="true"> / </span><span className="pub-sr-only"> de </span>{cards.length}</p>
-      <button type="button" className="pub-fan-step" aria-label="Carta siguiente" disabled={current === cards.length - 1} onClick={() => go(current + 1)}>{arrow("M9 5l7 7-7 7")}</button>
+      <p className="pub-fan-count" aria-live="polite"><span className="pub-sr-only">Carta </span><b>{current + 1}</b><span aria-hidden="true"> / </span><span className="pub-sr-only"> de </span>{total}</p>
+      <button type="button" className="pub-fan-step" aria-label="Carta siguiente" disabled={current >= total - 1} onClick={() => go(current + 1)}>{arrow("M9 5l7 7-7 7")}</button>
     </div>
   </div>;
 }

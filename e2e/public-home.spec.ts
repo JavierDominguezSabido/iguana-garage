@@ -71,7 +71,7 @@ test("abanico en móvil y tablet: carrusel que encaja carta a carta con botones,
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   const fan = page.getByRole("navigation", { name: "Trabajos en portada" });
   const count = page.locator(".pub-fan-count");
-  const total = await fan.locator(".pub-card").count();
+  const total = await fan.locator('.pub-card:not([aria-hidden="true"])').count(); // las repetidas no salen en el carrusel
   test.skip(total < 2, "Con una sola carta no hay nada que pasar");
   await expect(count).toHaveText(`Carta 1 / de ${total}`);
   const centred = () => fan.evaluate((track) => { const box = track.getBoundingClientRect(), centre = box.left + box.width / 2; return [...track.querySelectorAll(".pub-card")].findIndex((card) => { const b = card.getBoundingClientRect(); return Math.abs((b.left + b.right) / 2 - centre) < 4; }); });

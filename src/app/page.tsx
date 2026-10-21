@@ -43,7 +43,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
     <HomeMotion />
     <a className="skip-link" href="#contenido-publico">Ir al contenido</a>
     <header className="pub-header">
-      <a href="#inicio" className="pub-logo" aria-label="Iguana Garage — inicio"><Logo sizes="(min-width: 1100px) 228px, 182px" priority /></a>
+      <a href="#inicio" className="pub-logo-link" aria-label="Iguana Garage — inicio"><span className="pub-logo"><Logo sizes="(min-width: 1100px) 228px, 182px" priority /></span></a>
       {!contact && <ContactLink contact={contact} compact />}
     </header>
     <main id="contenido-publico">

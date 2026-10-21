@@ -28,7 +28,15 @@ describe("abanico de la portada", () => {
     expect(markup).toContain('class="pub-fan-ctrl"');
     expect(markup).toMatch(/<button type="button" class="pub-fan-step" aria-label="Carta anterior" disabled="">/);
     expect(markup).toMatch(/<button type="button" class="pub-fan-step" aria-label="Carta siguiente">/);
-    expect(markup).toContain('aria-live="polite"><span class="pub-sr-only">Carta </span><b>1</b><span aria-hidden="true"> / </span><span class="pub-sr-only"> de </span>3</p>');
+  });
+  it("el contador solo cuenta las cartas de trabajos, no las repetidas decorativas", () => {
+    expect(markup).toContain('aria-live="polite"><span class="pub-sr-only">Carta </span><b>1</b><span aria-hidden="true"> / </span><span class="pub-sr-only"> de </span>2</p>');
+    expect(html(createElement(HeroFan, { jobs: [job(1, 3)] }))).toMatch(/aria-label="Carta siguiente" disabled="">/);
+  });
+  it("las dos primeras cartas, a la vista al cargar, se piden enseguida y con prioridad alta", () => {
+    const images = [...markup.matchAll(/<img [^>]*>/g)].map((match) => match[0]);
+    expect(images.slice(0, 2).every((image) => image.includes('loading="eager"') && image.includes('fetchPriority="high"'))).toBe(true);
+    expect(images[2]).toContain('loading="lazy"'); expect(images[2]).not.toContain('fetchPriority="high"');
   });
   it("las fotos de las cartas, que se animan, piden como mucho la variante de 640", () => {
     const widths = [...markup.matchAll(/[?&]w=(\d+)/g)].map((match) => Number(match[1]));
@@ -48,10 +56,10 @@ describe("Antes y Después", () => {
     expect(markup).toContain("<figcaption class=\"pub-ba-label\">Después</figcaption>");
     expect(markup.indexOf(work.media[2].id)).toBeLessThan(markup.indexOf(work.media[0].id));
   });
-  it("en móvil la foto animada pide como mucho 640; en escritorio una fuente propia con las variantes grandes", () => {
-    expect(markup.match(/<picture><source media="\(min-width: 1100px\)"/g)).toHaveLength(2);
-    const imgWidths = [...markup.matchAll(/<img [^>]*srcSet="([^"]*)"/g)].flatMap((match) => [...match[1].matchAll(/w=(\d+)/g)].map((w) => Number(w[1])));
-    expect(Math.max(...imgWidths)).toBe(640);
+  it("a pantalla completa puede usar todas las variantes preparadas, también en el móvil", () => {
+    const imgWidths = [...markup.matchAll(/<img [^>]*srcSet="([^"]*)"/g)].map((match) => [...match[1].matchAll(/w=(\d+)/g)].map((w) => Number(w[1])));
+    expect(imgWidths).toHaveLength(2);
+    for (const widths of imgWidths) expect(Math.max(...widths)).toBe(1600);
   });
   it("tiene nombre accesible y «Ver fotos» abre el visor", () => {
     expect(markup).toContain("Antes y después: Trabajo 3");

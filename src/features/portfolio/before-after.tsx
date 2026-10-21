@@ -9,6 +9,7 @@ import { PublicViewer } from "./viewer";
 
 // Antes y Después: la pareja elegida en /app → Portada, una tras otra a pantalla completa. Con movimiento, la sección
 // se fija y el scroll la lleva en horizontal del Antes al Después (--x de HomeMotion); sin él, dos pantallas apiladas.
+// Sin tope de variante: es el momento estrella y a pantalla completa en un móvil la de 640 se ve blanda.
 export function BeforeAfter({ transformation }: { transformation: PublicTransformation }) {
   const { job, before, after } = transformation;
   const [viewing, setViewing] = useState(false);
@@ -18,7 +19,7 @@ export function BeforeAfter({ transformation }: { transformation: PublicTransfor
     <div className="pub-ba-stage">
       <div className="pub-ba-track">
         {slides.map(({ label, photo }, index) => <figure key={label} className={`pub-ba-slide pub-ba-slide-${index}`} style={{ "--n": index } as CSSProperties}>
-          <div className="pub-ba-img"><PublicPhoto jobId={job.id} mediaId={photo.id} alt={`${job.name}, ${label.toLowerCase()}`} sizes="100vw" preview focal={photo} maxWidth={640} wide={{ media: "(min-width: 1100px)", sizes: "100vw" }} /></div>
+          <div className="pub-ba-img"><PublicPhoto jobId={job.id} mediaId={photo.id} alt={`${job.name}, ${label.toLowerCase()}`} sizes="100vw" preview focal={photo} /></div>
           <figcaption className="pub-ba-label">{label}</figcaption>
         </figure>)}
         <span className="pub-ba-chicane" aria-hidden="true" />

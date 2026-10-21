@@ -1,7 +1,7 @@
 /* Home pública «competición»: Carbon con acento verde, condensada industrial inclinada y mucho aire.
    Sin JavaScript o con «reducir movimiento» todo es visible y quieto. Con movimiento, HomeMotion marca
-   [data-motion="live"] y escribe --p (portada), --x (Antes/Después), --t (destapado) y --q (paralaje):
-   todo lo que se mueve es transform u opacity. */
+   [data-motion="scroll"] (scroll-driven animations en el compositor) o [data-motion="js"] (respaldo que escribe
+   --p en la portada y --x en el Antes/Después): todo lo que se mueve es transform u opacity. */
 .portfolio-page {
   --pub-green: #7a9a3a;
   --pub-green-hi: #8fb04a;
@@ -56,6 +56,8 @@ html:has(.portfolio-page) { background: #0e1110; scrollbar-color: #2a2d2b #0e111
 .pub-header { position: absolute; z-index: 30; inset: 0 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px var(--side); }
 .pub-logo { display: block; position: relative; width: 156px; aspect-ratio: 5.49; overflow: hidden; flex: none; }
 .pub-logo .brand { position: absolute; width: 116.3%; max-width: none; height: auto; left: -9.3%; top: -61.7%; }
+/* Zona táctil de al menos 44 px sin mover el logo: el enlace crece por arriba y por abajo. */
+.pub-logo-link { display: block; flex: none; padding-block: 8px; margin-block: -8px; }
 .pub-header .pub-cta { min-height: 44px; padding: 0 20px; font-size: 15px; }
 @media (min-width: 1100px) { .pub-logo { width: 196px; } }
 
@@ -94,6 +96,8 @@ html:has(.portfolio-page) { background: #0e1110; scrollbar-color: #2a2d2b #0e111
 .pub-fan .pub-card-body { transform-origin: 50% 100%; transition: transform .35s var(--ease-out), rotate .45s var(--ease-out), translate .45s var(--ease-out); }
 .pub-fan .pub-card[data-pos="l"] .pub-card-body { rotate: -12deg; translate: 0 6%; }
 .pub-fan .pub-card[data-pos="r"] .pub-card-body { rotate: 12deg; translate: 0 6%; }
+/* Las cartas repetidas solo completan el abanico de escritorio: el carrusel recorre y cuenta los trabajos. */
+@media (max-width: 1099px) { .pub-fan .pub-card[aria-hidden="true"] { display: none; } }
 .pub-fan-ctrl { display: flex; align-items: center; gap: 6px; }
 .pub-fan-step { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--pub-bone); cursor: pointer; }
 .pub-fan-step:disabled { opacity: .3; cursor: default; }
@@ -128,7 +132,9 @@ html:has(.portfolio-page) { background: #0e1110; scrollbar-color: #2a2d2b #0e111
 .pub-ba-slide { position: relative; height: 100svh; min-height: 540px; overflow: hidden; background: var(--pub-pit); }
 .pub-ba-img { position: absolute; inset: 0; }
 .pub-ba-slide::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(#080a0959, transparent 24%, transparent 50%, #080a09e0); }
-.pub-ba-label { position: absolute; z-index: 2; left: 0; right: 0; bottom: 128px; text-align: center; font-size: min(27vw, 44svh); transform: skewX(-9deg); text-shadow: 0 4px 40px #0008; }
+.pub-ba-label { position: absolute; z-index: 2; left: 0; right: 0; bottom: 128px; text-align: center; font-size: min(27vw, 44svh); transform: skewX(-9deg); text-shadow: 0 0 .12em #080a09b3, 0 4px 40px #0008; }
+/* Velo Carbon detrás del rótulo (se mueve con él) y halo ceñido a las letras: legible también sobre una carrocería blanca. */
+.pub-ba-label::before { content: ""; position: absolute; z-index: -1; inset: -45% -15%; background: radial-gradient(closest-side, #080a09e6 50%, transparent); pointer-events: none; }
 .pub-ba-slide-1 .pub-ba-label { color: var(--pub-green); }
 .pub-ba-chicane, .pub-ba-steps { display: none; }
 .pub-ba-hud { position: relative; z-index: 3; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px 24px; padding: 28px var(--side); text-align: center; }
@@ -137,7 +143,7 @@ html:has(.portfolio-page) { background: #0e1110; scrollbar-color: #2a2d2b #0e111
 
 /* ── Trabajos: banda + mosaico escalonado, con mucho aire ── */
 .pub-works { padding-top: var(--air); }
-.pub-works-title { padding: 0 var(--side); text-align: center; font-size: min(22vw, 240px); line-height: .9; transform: skewX(-9deg); }
+.pub-works-title { padding: 0 var(--side); text-align: center; font-size: min(18.5vw, 240px); line-height: .9; transform: skewX(-9deg); }
 .pub-works-title span, .pub-contact-title span { display: block; }
 .pub-work { display: grid; gap: 84px; max-width: 1760px; margin-inline: auto; padding: var(--air) var(--side) 0; scroll-margin-top: 0; }
 .pub-band { display: grid; gap: 16px; justify-items: start; align-content: start; }
@@ -225,7 +231,7 @@ body:has(dialog.pub-viewer[open]) .pub-fab { visibility: hidden; }
   .portfolio-page[data-motion] .pub-hero-stage { position: sticky; top: 0; height: 100svh; min-height: 0; }
   .portfolio-page[data-motion] .pub-fan { position: absolute; left: 0; right: 0; bottom: 0; width: auto; margin: 0; }
   .portfolio-page[data-motion] .pub-cue { display: block; }
-  .portfolio-page[data-motion] .pub-cue > span { animation: pub-cue 1.8s cubic-bezier(.6, 0, .3, 1) .6s infinite; }
+  .portfolio-page[data-motion] .pub-cue > span { animation: pub-cue 1.8s cubic-bezier(.6, 0, .3, 1) .6s 3 backwards; }
 }
 @keyframes pub-cue { from { transform: translateY(-22px); } to { transform: translateY(72px); } }
 @media (prefers-reduced-motion: reduce) { .pub-cue { display: none !important; } }
@@ -243,7 +249,9 @@ body:has(dialog.pub-viewer[open]) .pub-fab { visibility: hidden; }
 .portfolio-page[data-motion] .pub-ba-steps span::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--pub-green); transform-origin: left; transform: scaleX(0); }
 .portfolio-page[data-motion] .pub-ba-steps span:first-child::before { transform-origin: right; transform: scaleX(1); }
 .portfolio-page[data-motion] .pub-ba-job { order: -1; }
+/* En el móvil, menos recorrido: 200svh (100svh de scroll) en vez de 330svh, con los mismos tramos quietos y el cruce. */
 @media (max-width: 699px) {
+  .portfolio-page[data-motion] .pub-ba { height: 200svh; }
   .portfolio-page[data-motion] .pub-ba-hud { flex-direction: column; justify-content: flex-end; gap: 12px; }
   .portfolio-page[data-motion] .pub-ba-job { order: 0; }
   .portfolio-page[data-motion] .pub-ba-label { bottom: 190px; }
@@ -258,6 +266,7 @@ body:has(dialog.pub-viewer[open]) .pub-fab { visibility: hidden; }
   .portfolio-page[data-motion="scroll"] :is(.pub-hero-copy, .pub-livery, .pub-fan, .pub-cue) { animation-timeline: --hero; animation-range: contain 0% contain 100%; animation-fill-mode: both; animation-timing-function: linear; animation-duration: auto; }
   @media (min-width: 1100px) {
     .portfolio-page[data-motion="scroll"] .pub-hero-copy { animation-name: pub-hero-copy; }
+    .portfolio-page[data-motion="scroll"] .pub-hero h1 { animation: pub-hero-title linear both; animation-timeline: --hero; animation-range: contain 0% contain 100%; }
     .portfolio-page[data-motion="scroll"] .pub-livery { animation-name: pub-grow, pub-hero-livery; animation-duration: 1.4s, auto; animation-timing-function: var(--ease-wipe), linear; animation-delay: .2s, 0s; animation-fill-mode: backwards, both; animation-timeline: auto, --hero; animation-range: normal, contain 0% contain 100%; }
     .portfolio-page[data-motion="scroll"] .pub-fan { animation-name: pub-hero-fan; }
     /* Dos animaciones en propiedades distintas: la entrada (transform) y la apertura con el scroll (rotate/translate). */
@@ -290,7 +299,11 @@ body:has(dialog.pub-viewer[open]) .pub-fab { visibility: hidden; }
     .portfolio-page[data-motion="scroll"] .pub-col + .pub-col { --para: -90px; }
   }
 }
-@keyframes pub-hero-copy { to { transform: translateY(-9svh) scale(.8); opacity: .65; } }
+/* La portada sube y solo el titular se encoge y se atenúa; el CTA conserva tamaño y contraste y queda por encima del
+   abanico abierto (comprobado de 1100×700 a 1920×1080). El titular baja lo que encoge por abajo (.15 de su alto ≈ .24 ×
+   su cuerpo) para que el CTA no se separe. */
+@keyframes pub-hero-copy { to { transform: translateY(-22svh); } }
+@keyframes pub-hero-title { to { scale: .7; translate: 0 calc(min(15.5vw, 29svh) * .24); opacity: .65; } }
 @keyframes pub-hero-livery { to { transform: skewX(-32deg) scaleX(3.4); } }
 @keyframes pub-hero-fan { from { transform: translateY(22svh); } to { transform: none; } }
 @keyframes pub-hero-cue { 0% { opacity: 1; } 16%, 100% { opacity: 0; } }
@@ -317,7 +330,8 @@ body:has(dialog.pub-viewer[open]) .pub-fab { visibility: hidden; }
 
 /* Respaldo sin scroll-driven animations (data-motion="js"): HomeMotion escribe --p y --x una vez por fotograma. */
 @media (min-width: 1100px) {
-  .portfolio-page[data-motion="js"] .pub-hero-copy { transform: translateY(calc(var(--p, 0) * -9svh)) scale(calc(1 - var(--p, 0) * .2)); opacity: calc(1 - var(--p, 0) * .35); }
+  .portfolio-page[data-motion="js"] .pub-hero-copy { transform: translateY(calc(var(--p, 0) * -22svh)); }
+  .portfolio-page[data-motion="js"] .pub-hero h1 { scale: calc(1 - var(--p, 0) * .3); translate: 0 calc(var(--p, 0) * min(15.5vw, 29svh) * .24); opacity: calc(1 - var(--p, 0) * .35); }
   .portfolio-page[data-motion="js"] .pub-livery { transform: skewX(calc(-14deg - var(--p, 0) * 18deg)) scaleX(calc(1 + var(--p, 0) * 2.4)); }
   .portfolio-page[data-motion="js"] .pub-fan { transform: translateY(calc((1 - var(--p, 0)) * 22svh)); }
   .portfolio-page[data-motion="js"] .pub-fan .pub-card { --a: calc(var(--k) * (24deg + var(--p, 0) * (var(--spread) - 24deg))); }
@@ -355,7 +369,7 @@ html:has(dialog.pub-viewer[open]) { overflow: hidden; }
 .pub-viewer-slide[data-state="ready"] .pub-viewer-full { opacity: 1; }
 .pub-viewer-slide[data-state="ready"] .pub-viewer-ph { opacity: 0; }
 .pub-viewer-failed { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px; text-align: center; background: color-mix(in srgb, var(--pub-carbon) 55%, transparent); color: var(--pub-muted); }
-.pub-viewer-failed button { min-height: 44px; padding: 0 18px; border: 1px solid var(--pub-bone); border-radius: 2px; background: transparent; color: var(--pub-bone); font: 600 .8rem var(--pub-text); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.pub-viewer-failed button { min-height: 44px; padding: 0 18px; border: 1px solid var(--pub-bone); border-radius: 2px; background: transparent; color: var(--pub-bone); font: italic 600 15px var(--pub-text); cursor: pointer; }
 @media (prefers-reduced-motion: no-preference) {
   .pub-viewer-track[data-animating] .pub-viewer-slide { transition: transform .22s cubic-bezier(.2, .7, .2, 1); }
   .pub-viewer-full, .pub-viewer-ph { transition: opacity .25s ease; }
