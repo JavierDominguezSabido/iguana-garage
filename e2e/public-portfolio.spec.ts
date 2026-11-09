@@ -66,8 +66,9 @@ test("V1: portfolio anónimo, proporciones, publicación/retirada y limpieza", a
     await expect(publicPage.locator('a[href="/login"],a[href^="/app"]')).toHaveCount(0);
     await expect(publicPage.getByText("Estamos preparando las fotografías de nuestros trabajos.")).toBeVisible();
     await audit(publicPage); await publicPage.screenshot({ path: testInfo.outputPath("public-empty.png"), fullPage: true });
-    await publicPage.locator("#contacto").scrollIntoViewIfNeeded(); await expect(publicPage.getByRole("heading", { name: "¿Hablamos de tu coche?" })).toBeVisible();
-    if (!process.env.IGUANA_WHATSAPP_NUMBER) await expect(publicPage.locator('a[href^="https://wa.me/"],a[href^="tel:"]')).toHaveCount(0);
+    // CONTACTO desactivado: no hay sección ni enlaces de contacto.
+    await expect(publicPage.locator("#contacto")).toHaveCount(0);
+    await expect(publicPage.locator('a[href^="https://wa.me/"],a[href^="tel:"]')).toHaveCount(0);
     await publicPage.goto("http://127.0.0.1:3100/app"); await expect(publicPage).toHaveURL(/\/login$/);
     expect((await publicPage.request.get("http://127.0.0.1:3100/login")).headers()["x-robots-tag"]).toContain("noindex");
     await login(page); await page.getByRole("link", { name: "Nuevo trabajo", exact: true }).click();

@@ -111,7 +111,8 @@ test.describe("con movimiento reducido", () => {
   });
 });
 
-test("botón flotante de WhatsApp: redondo abajo a la derecha, oculto en portada, contacto y con el visor abierto", async ({ page }) => {
+// CONTACTO desactivado (ver src/app/page.tsx): quitar el skip al reactivarlo.
+test.skip("botón flotante de WhatsApp: redondo abajo a la derecha, oculto en portada, contacto y con el visor abierto", async ({ page }) => {
   await page.goto("/");
   const fab = page.locator(".pub-fab");
   if (await fab.count() === 0) {

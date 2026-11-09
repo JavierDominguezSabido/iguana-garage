@@ -55,7 +55,7 @@ Link preview image (Open Graph), brand-only by design:
 - **Before/After:** an optional transformation chosen by the owner, shown as two full-screen views. With motion, the section pins and scrolling carries you horizontally from Before to After.
 - **Jobs and photo mosaic:** published jobs in a manual order set by the owner, 12 per page, each with its photos in a staggered two-column mosaic and a focal point per photo.
 - **Photo viewer:** native modal `dialog`, swipe strip that follows the finger, thumbnails, keyboard support, focus return and blurred-thumbnail placeholders while the full photo loads.
-- **WhatsApp contact:** CTA and floating button built from a configured E.164 number, with a graceful "contact pending" state.
+- **WhatsApp contact (currently disabled, code commented out in `src/app/page.tsx`):** CTA and floating button built from a configured E.164 number, with a graceful "contact pending" state.
 - **No public login link and no manifest**: the public side is fully separate from the private one.
 
 ### Private app (`/app`)

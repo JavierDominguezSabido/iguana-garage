@@ -23,6 +23,8 @@ Los 14 demos se eliminaron intencionadamente: `assets/demo/` ya no existe; no re
 
 ## Portfolio público (`/`): diseño final
 
+> **Contacto desactivado:** de momento la home no muestra CTA de WhatsApp, «Contacto ↗», sección de contacto ni botón flotante (código comentado, marcado «CONTACTO», en `src/app/page.tsx`). Los apartados de abajo sobre contacto y botón flotante describen el diseño al reactivarlo.
+
 Home «de competición», elegida por el propietario con un test de gusto: sensación deportiva de competición, titulares en condensada industrial, oscuro con acento verde de marca, trabajos en mosaico, Antes y Después uno tras otro a pantalla completa, movimiento intenso (sin marquesinas ni textos en bucle), composición muy aireada y portada con un abanico de fotos. Composición centrada y movimiento continuo ligado al scroll. Implementación en `src/app/page.tsx`, `src/app/portfolio.css` y `src/features/portfolio/`.
 
 ### Límites que siguen vigentes
