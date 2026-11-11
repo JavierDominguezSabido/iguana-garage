@@ -1,0 +1,25 @@
+name: Supabase keepalive
+
+# Evita la pausa por inactividad (7 días) del plan Free de Supabase.
+on:
+  schedule:
+    - cron: "0 9 */3 * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      # anon no puede leer las tablas (RLS/revoke): la única lectura pública es el RPC list_public_jobs.
+      - name: iguana-garage
+        env:
+          URL: ${{ secrets.IGUANA_URL }}
+          KEY: ${{ secrets.IGUANA_KEY }}
+        run: |
+          curl -f -s -X POST "$URL/rest/v1/rpc/list_public_jobs" \
+            -H "apikey: $KEY" \
+            -H "Authorization: Bearer $KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"p_limit":1}' > /dev/null
