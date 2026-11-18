@@ -2,7 +2,7 @@
 
 **A real-world website for an auto body and paint shop: a photo-first public portfolio plus a private installable app (PWA) where the owner manages their work from a phone.**
 
-🌐 **Live:** <https://iguana-garage.onrender.com>. The public site is online, but the shop currently manages its jobs only through the private app, so the public wall may be empty. The screenshots below show both parts with real content.
+The public site is online, but the shop currently manages its jobs only through the private app, so the public wall may be empty. The screenshots below show both parts with real content.
 
 ![The home page fan of job cards opening as you scroll](docs/readme/hero-fan.gif)
 
