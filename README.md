@@ -2,7 +2,7 @@
 
 **A real-world website for an auto body and paint shop: a photo-first public portfolio plus a private installable app (PWA) where the owner manages their work from a phone.**
 
-🌐 **Live:** <https://iguana-garage.onrender.com>
+🌐 **Live:** <https://iguana-garage.onrender.com>. The public site is online, but the shop currently manages its jobs only through the private app, so the public wall may be empty. The screenshots below show both parts with real content.
 
 ![The home page fan of job cards opening as you scroll](docs/readme/hero-fan.gif)
 
@@ -10,7 +10,7 @@
 
 Iguana Garage is a body and paint workshop. It needed a website that shows finished repairs honestly, with real phone photos taken in the shop, and a way for the owner to publish new work without a CMS or a developer.
 
-The project is in production with real data and has two parts:
+The project is in production: the shop owner uses the private app with real data. It has two parts:
 
 - **Public portfolio** at `/`: a single, motion-driven home page with the published jobs, a full-screen Before/After, a photo viewer and WhatsApp contact.
 - **Private app** at `/app`: an installable PWA where the single owner uploads photos, edits jobs, orders the home page and decides what goes public.
@@ -47,6 +47,17 @@ Link preview image (Open Graph), brand-only by design:
 | --- | --- | --- |
 | <img src="docs/readme/app-trabajo.webp" width="260" alt="Job detail"><br><sub>Job detail; hours and paint code stay private.</sub> | <img src="docs/readme/app-editar.webp" width="260" alt="Job edit form"><br><sub>Edit form with a sticky save bar.</sub> | <img src="docs/readme/app-encuadre.webp" width="260" alt="Photo focal point editor"><br><sub>Focal point editor for cropped previews.</sub> |
 
+## How it was built: AI-assisted development
+
+I built Iguana Garage with AI coding agents (Claude Code), acting as the developer in charge: I defined what to build, reviewed every plan before any code was written and decided what reached production.
+
+- **Repository docs as the agents' source of truth.** `CLAUDE.md` loads [AGENTS.md](AGENTS.md) (operation, security, QA), [PRODUCT.md](PRODUCT.md) (features, data, architecture) and [DESIGN.md](DESIGN.md) (visual identity), so every session starts from the same rules. When the code and a document disagree, the same change updates the document.
+- **Plan first, then code.** New features and database changes start with a written plan; I review the plan and the migration before anything is implemented.
+- **One branch per task.** Every change lives on its own branch from an up-to-date `main`, and nothing is committed, pushed or merged without my approval, because a push to `main` deploys to production on Render.
+- **Careful production changes.** Migrations are reviewed before being applied, with a backup of the production database taken first, and destructive test suites never run against real data.
+- **Design by comparison.** Prototypes in clearly different directions, a choice, then a separate typography pass (see [Design process](#design-process)).
+- **Verification.** Type checks, lint, unit, isolated database and end-to-end tests, plus a final check on a real phone after each deploy.
+
 ## Features
 
 ### Public site (`/`)
@@ -77,6 +88,7 @@ Link preview image (Open Graph), brand-only by design:
 - **Scroll-driven animations with a fallback.** All scroll-linked motion (fan, Before/After, mosaic parallax) uses CSS `animation-timeline`, so it runs on the compositor with no JavaScript on scroll. Browsers without support get a fallback that writes CSS variables from a passive listener, one `requestAnimationFrame` write per frame. Only `transform` and `opacity` are animated. `prefers-reduced-motion` and no-JS get a static, fully usable layout.
 - **Performance, measured.** Moving the scroll-linked motion off the main thread took dropped frames from **86 % to 0 %** under 4× CPU throttling. A Lighthouse run (mobile emulation, local production build) scores 100 for Accessibility, Best Practices and SEO, 0 CLS and 60 ms of total blocking time.
 - **Accessibility.** 44 px touch targets, visible focus, labelled controls, announced reorder moves (including keyboard alternatives to every drag gesture), native dialog semantics in the viewer and reduced-motion support.
+- **Scheduled keepalive.** A GitHub Actions workflow calls a read-only public RPC every three days so the free Supabase project is not paused for inactivity.
 - **Atomic operations.** Reordering jobs and photos goes through PostgreSQL RPCs, and PostgreSQL/Storage mismatches are handled with explicit recovery and cleanup steps.
 
 ## Design process
@@ -108,4 +120,4 @@ Environment variables, Supabase setup, deployment on Render and the rest of the 
 
 ## Notes
 
-The photos in this repository's screenshots are real work published on the live site. Brand assets in `assets/brand/` are the shop's identity and are not licensed for reuse.
+The photos in this repository's screenshots are real work from the shop, taken with a phone in the workshop. Brand assets in `assets/brand/` are the shop's identity and are not licensed for reuse.
